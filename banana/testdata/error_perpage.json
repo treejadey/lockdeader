@@ -1,0 +1,9 @@
+{
+    "_sErrorCode": "INPUT_ERRORS",
+    "_aErrorData": {
+        "_nPerpage": {
+            "_sErrorCode": "INVALID_PERPAGE",
+            "_sErrorMessage": "`_nPerpage` cannot exceed 50"
+        }
+    }
+}

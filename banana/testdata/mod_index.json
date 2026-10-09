@@ -1,0 +1,126 @@
+{
+    "_aMetadata": {
+        "_nRecordCount": 3,
+        "_bIsComplete": false,
+        "_nPerpage": 2
+    },
+    "_aRecords": [
+        {
+            "_idRow": 725782,
+            "_sModelName": "Mod",
+            "_sSingularTitle": "Mod",
+            "_sIconClasses": "SubmissionType Mod",
+            "_sName": "СЕРЕГА ПИРАТ",
+            "_sProfileUrl": "https://gamebanana.com/mods/725782",
+            "_tsDateAdded": 1791551094,
+            "_tsDateModified": 1791551094,
+            "_bHasFiles": true,
+            "_aTags": [],
+            "_aPreviewMedia": {
+                "_aImages": [
+                    {
+                        "_sType": "screenshot",
+                        "_sBaseUrl": "https://images.gamebanana.com/img/ss/mods",
+                        "_sFile": "6ac8e5dd3af9f.jpg",
+                        "_sFile220": "220-90_6ac8e5dd3af9f.jpg",
+                        "_hFile220": 217,
+                        "_wFile220": 220,
+                        "_sFile530": "530-90_6ac8e5dd3af9f.jpg",
+                        "_hFile530": 524,
+                        "_wFile530": 530,
+                        "_sFile100": "100-90_6ac8e5dd3af9f.jpg",
+                        "_hFile100": 99,
+                        "_wFile100": 100
+                    }
+                ]
+            },
+            "_aSubmitter": {
+                "_idRow": 5995409,
+                "_sName": "artemka talant",
+                "_bIsOnline": true,
+                "_bHasRipe": false,
+                "_sProfileUrl": "https://gamebanana.com/members/5995409",
+                "_sAvatarUrl": "https://images.gamebanana.com/static/img/defaults/avatar.gif"
+            },
+            "_aGame": {
+                "_idRow": 20948,
+                "_sName": "Deadlock",
+                "_sProfileUrl": "https://gamebanana.com/games/20948",
+                "_sIconUrl": "https://images.gamebanana.com/img/ico/games/6abe8b273abb4.png"
+            },
+            "_aRootCategory": {
+                "_sName": "Animations",
+                "_sProfileUrl": "https://gamebanana.com/mods/cats/47611",
+                "_sIconUrl": "https://images.gamebanana.com/img/ico/ModCategory/6a64e45dd9812.png"
+            },
+            "_sVersion": "",
+            "_bIsObsolete": false,
+            "_sInitialVisibility": "show",
+            "_bHasContentRatings": false,
+            "_bWasFeatured": false,
+            "_bIsOwnedByAccessor": false
+        },
+        {
+            "_idRow": 725781,
+            "_sModelName": "Mod",
+            "_sSingularTitle": "Mod",
+            "_sIconClasses": "SubmissionType Mod",
+            "_sName": "very happy rem on gloat",
+            "_sProfileUrl": "https://gamebanana.com/mods/725781",
+            "_tsDateAdded": 1791551063,
+            "_tsDateModified": 1791551063,
+            "_tsDateUpdated": 1791560000,
+            "_bHasFiles": true,
+            "_aTags": [
+                "Software Used: Blender",
+                "Source 2"
+            ],
+            "_aPreviewMedia": {
+                "_aImages": [
+                    {
+                        "_sType": "screenshot",
+                        "_sBaseUrl": "https://images.gamebanana.com/img/ss/mods",
+                        "_sFile": "6ac8e63bce9e7.jpg",
+                        "_sFile100": "100-90_6ac8e63bce9e7.jpg",
+                        "_hFile100": 100,
+                        "_wFile100": 100,
+                        "_sCaption": "Rem, very happy"
+                    }
+                ]
+            },
+            "_aSubmitter": {
+                "_idRow": 5325703,
+                "_sName": "bwymp",
+                "_bIsOnline": true,
+                "_bHasRipe": false,
+                "_sProfileUrl": "https://gamebanana.com/members/5325703",
+                "_sAvatarUrl": "https://images.gamebanana.com/static/img/defaults/avatar.gif"
+            },
+            "_aGame": {
+                "_idRow": 20948,
+                "_sName": "Deadlock",
+                "_sProfileUrl": "https://gamebanana.com/games/20948",
+                "_sIconUrl": "https://images.gamebanana.com/img/ico/games/6abe8b273abb4.png"
+            },
+            "_aRootCategory": {
+                "_sName": "Skins",
+                "_sProfileUrl": "https://gamebanana.com/mods/cats/33295",
+                "_sIconUrl": ""
+            },
+            "_aSubCategory": {
+                "_sName": "Rem",
+                "_sProfileUrl": "https://gamebanana.com/mods/cats/42675",
+                "_sIconUrl": "https://images.gamebanana.com/img/ico/ModCategory/69959cdaca091.png"
+            },
+            "_sVersion": "1",
+            "_bIsObsolete": false,
+            "_sInitialVisibility": "show",
+            "_bHasContentRatings": false,
+            "_bWasFeatured": false,
+            "_bIsOwnedByAccessor": false,
+            "_nLikeCount": 12,
+            "_nViewCount": 340,
+            "_nPostCount": 2
+        }
+    ]
+}

@@ -1,0 +1,82 @@
+{
+    "_idRow": 599927,
+    "_sName": "Yamato redesign (NEW ICONS and COLORS!)",
+    "_sProfileUrl": "https://gamebanana.com/mods/599927",
+    "_tsDateModified": 1771254510,
+    "_tsDateAdded": 1749645061,
+    "_tsDateUpdated": 1771254604,
+    "_aPreviewMedia": {
+        "_aImages": [
+            {
+                "_sType": "screenshot",
+                "_sBaseUrl": "https://images.gamebanana.com/img/ss/mods",
+                "_sFile": "6988989395e38.jpg",
+                "_sFile220": "220-90_6988989395e38.jpg",
+                "_hFile220": 165,
+                "_wFile220": 220,
+                "_sFile530": "530-90_6988989395e38.jpg",
+                "_hFile530": 397,
+                "_wFile530": 530,
+                "_sFile100": "100-90_6988989395e38.jpg",
+                "_hFile100": 75,
+                "_wFile100": 100,
+                "_sFile800": "800-90_6988989395e38.jpg",
+                "_hFile800": 599,
+                "_wFile800": 800
+            }
+        ]
+    },
+    "_nPostCount": 96,
+    "_sDownloadUrl": "https://gamebanana.com/mods/download/599927",
+    "_nDownloadCount": 683309,
+    "_aFiles": [
+        {
+            "_idRow": 1627082,
+            "_sFile": "yamato_red_3f484.rar",
+            "_nFilesize": 24670571,
+            "_tsDateAdded": 1771254120,
+            "_nDownloadCount": 136947,
+            "_sDownloadUrl": "https://gamebanana.com/dl/1627082",
+            "_sMd5Checksum": "5c87adef48470236adff65cbe693fbd6",
+            "_sDescription": "Original mod colors"
+        }
+    ],
+    "_sDescription": "Yamato NEW model!",
+    "_sText": "Redesigned Yamato with a new look<br><br>Installation instructions in <span class=\"RedColor\">readme.txt</span><br><br>Design and Model made by me <br>stay tuned",
+    "_bIsObsolete": false,
+    "_nLikeCount": 528,
+    "_nViewCount": 202892,
+    "_sVersion": "1.3",
+    "_aSubmitter": {
+        "_idRow": 4183371,
+        "_sName": "Kirill Senzu",
+        "_sProfileUrl": "https://gamebanana.com/members/4183371",
+        "_sAvatarUrl": "https://images.gamebanana.com/img/av/686cd55eed86d.png"
+    },
+    "_aGame": {
+        "_idRow": 20948,
+        "_sName": "Deadlock",
+        "_sAbbreviation": "DL",
+        "_sProfileUrl": "https://gamebanana.com/games/20948",
+        "_sIconUrl": "https://images.gamebanana.com/img/ico/games/6abe8b273abb4.png",
+        "_sBannerUrl": "https://images.gamebanana.com/img/ico/games/6abe8b273abb4.png",
+        "_nSubscriberCount": 13777,
+        "_bHasSubmissionQueue": false,
+        "_bAccessorIsSubscribed": false
+    },
+    "_aCategory": {
+        "_idRow": 33328,
+        "_sName": "Yamato",
+        "_sModelName": "ModCategory",
+        "_sProfileUrl": "https://gamebanana.com/mods/cats/33328",
+        "_sIconUrl": "https://images.gamebanana.com/img/ico/ModCategory/6931cb1d2667d.png",
+        "_bIsObsolete": false
+    },
+    "_aSuperCategory": {
+        "_idRow": 33295,
+        "_sName": "Skins",
+        "_sModelName": "ModCategory",
+        "_sProfileUrl": "https://gamebanana.com/mods/cats/33295",
+        "_sIconUrl": ""
+    }
+}
