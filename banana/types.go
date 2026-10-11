@@ -20,6 +20,7 @@ type Mod struct {
 	Version           string       `json:"_sVersion"`
 	IsObsolete        bool         `json:"_bIsObsolete"`
 	HasContentRatings bool         `json:"_bHasContentRatings"`
+	InitialVisibility string       `json:"_sInitialVisibility"` // one of the Visibility constants
 	WasFeatured       bool         `json:"_bWasFeatured"`
 	LikeCount         int          `json:"_nLikeCount"`
 	ViewCount         int          `json:"_nViewCount"`
@@ -40,6 +41,20 @@ func (m Mod) UpdatedAt() time.Time {
 	return time.Unix(m.DateUpdated, 0)
 }
 
+// How GameBanana initially presents a submission, which it decides from the
+// submission's content ratings.
+const (
+	VisibilityShow = "show" // shown as normal, e.g. a mod rated for tobacco use
+	VisibilityWarn = "warn" // shown behind a warning, e.g. skimpy attire
+	VisibilityHide = "hide" // hidden until clicked, e.g. nudity or sexual content
+)
+
+// IsNSFW reports whether GameBanana treats the mod as not safe for work: shown
+// behind a warning, or hidden until clicked.
+func (m Mod) IsNSFW() bool {
+	return m.InitialVisibility == VisibilityWarn || m.InitialVisibility == VisibilityHide
+}
+
 // LastUpdated returns when the mod last received an update, or when it was
 // added if it has never been updated.
 func (m Mod) LastUpdated() time.Time {
@@ -52,9 +67,13 @@ func (m Mod) LastUpdated() time.Time {
 // Thumbnail returns the first preview image, if any.
 func (m Mod) Thumbnail() (PreviewImage, bool) { return m.PreviewMedia.First() }
 
-// PreviewMedia holds a submission's preview images.
+// PreviewMedia holds a submission's preview images, or for a sound, a preview
+// of how it sounds.
 type PreviewMedia struct {
-	Images []PreviewImage `json:"_aImages"`
+	Images   []PreviewImage `json:"_aImages"`
+	Metadata struct {
+		AudioURL string `json:"_sAudioUrl"` // optional
+	} `json:"_aMetadata"`
 }
 
 // First returns the first preview image, if any.

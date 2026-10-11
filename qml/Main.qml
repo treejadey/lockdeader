@@ -2,47 +2,29 @@ import QtQuick
 import QtQuick.Controls.Fusion
 import QtQuick.Layouts
 
-// Every QML file imports QtQuick.Controls.Fusion rather than plain
-// QtQuick.Controls, so the stock controls look the same on every desktop.
-// Otherwise e.g. KDE Plasma substitutes its own style, which draws with the
-// system palette and ignores the theme below.
-ApplicationWindow {
+AppWindow {
     id: window
 
-    width: 1100
-    height: 720
+    width: 1300
+    height: 730
+    // The mods page is the widest; every page has room at this width.
+    minimumWidth: sidebar.Layout.preferredWidth + modsPage.minimumWidth
+    minimumHeight: 560
     visible: true
     title: "lockdeader"
-    color: Theme.base
-
-    // Dark palette for the stock controls (buttons, scroll bars, spinners, tooltips).
-    palette {
-        window: Theme.base
-        windowText: Theme.text
-        base: Theme.surface
-        alternateBase: Theme.overlay
-        text: Theme.text
-        button: Theme.overlay
-        buttonText: Theme.text
-        highlight: Theme.highlightMed
-        highlightedText: Theme.text
-        light: Theme.highlightHigh
-        midlight: Theme.highlightMed
-        mid: Theme.overlay
-        dark: Theme.base
-        shadow: "black"
-        placeholderText: Theme.muted
-        toolTipBase: Theme.overlay
-        toolTipText: Theme.text
-    }
 
     RowLayout {
         anchors.fill: parent
         spacing: 0
+        // Keeps text from wobbling on fractionally scaled displays.
+        transform: PixelNudge {}
 
         Sidebar {
             id: sidebar
-            Layout.preferredWidth: 208
+            settingsSections: settingsPage.sectionList
+            currentSettingsSection: settingsPage.currentSection
+            onSettingsSectionClicked: (index) => settingsPage.goToSection(index)
+            Layout.preferredWidth: 240
             Layout.fillHeight: true
         }
 
@@ -51,17 +33,41 @@ ApplicationWindow {
             Layout.fillHeight: true
             currentIndex: sidebar.currentIndex
 
-            ModsPage {}
+            ModsPage {
+                id: modsPage
 
-            PlaceholderPage {
-                title: "Installed mods"
-                text: "Mods you install will show up here."
+                crumbs: sidebar.categoryPath
+                onCrumbClicked: (depth) => sidebar.goToCategory(depth)
             }
 
-            PlaceholderPage {
-                title: "Settings"
-                text: "Nothing to configure yet."
+            InstalledPage {}
+
+            SettingsPage {
+                id: settingsPage
             }
         }
     }
+
+    // Says what just happened, e.g. that a mod has started downloading, near
+    // the top of the window. It's in the overlay, over any dialog, so it isn't
+    // hidden by one closing as it appears.
+    Item {
+        parent: Overlay.overlay
+        anchors.fill: parent
+        z: 1000
+        // Popups don't get the nudge on the window's content.
+        transform: PixelNudge {}
+
+        Toast {
+            id: toast
+
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: 16
+            maximumWidth: Math.min(420, parent.width - 32)
+        }
+    }
+
+    // Each message from the installer bumps messageId; show it.
+    readonly property int installMessageId: installed.messageId
+    onInstallMessageIdChanged: toast.show(installed.message)
 }

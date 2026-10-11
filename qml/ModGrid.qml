@@ -22,6 +22,12 @@ Item {
     signal retry()
     signal modClicked(int modId)
 
+    // Scrolls just far enough to show the card in row (of the model).
+    function showRow(row) {
+        wheel.stop()
+        grid.positionViewAtIndex(row, GridView.Contain)
+    }
+
     GridView {
         id: grid
 
@@ -58,38 +64,22 @@ Item {
             onClicked: root.modClicked(modId)
         }
 
-        // Fixed height whether or not anything is showing, so the content
-        // doesn't jump when loading starts or stops.
-        footer: Item {
+        footer: LoadMoreFooter {
             width: grid.width
-            height: 56
-
-            BusyIndicator {
-                anchors.centerIn: parent
-                running: root.loading && grid.count > 0
-            }
-
-            Row {
-                anchors.centerIn: parent
-                spacing: 12
-                visible: root.error !== "" && grid.count > 0
-
-                Label {
-                    anchors.verticalCenter: parent.verticalCenter
-                    width: Math.min(implicitWidth, grid.width - retryButton.width - parent.spacing - 32)
-                    text: "Couldn't load more mods: " + root.error
-                    elide: Text.ElideRight
-                }
-
-                Button {
-                    id: retryButton
-                    text: "Retry"
-                    onClicked: root.retry()
-                }
-            }
+            loading: root.loading && grid.count > 0
+            error: grid.count > 0 ? root.error : ""
+            onRetry: root.retry()
         }
 
         ScrollBar.vertical: scrollBar
+
+        // Emptied for a new listing, e.g. another category: start at the top.
+        onCountChanged: {
+            if (count === 0) {
+                wheel.stop()
+                positionViewAtBeginning()
+            }
+        }
     }
 
     SmoothWheel {

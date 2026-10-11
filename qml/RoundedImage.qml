@@ -4,6 +4,7 @@ import QtQuick.Effects
 // An image cropped to fill its size and clipped to rounded corners. Shows a
 // placeholder colour until the image has loaded, then fades it in. Make the
 // placeholder transparent to show something else underneath while loading.
+// A blurred image is blurred heavily, like an NSFW mod's card.
 Item {
     id: root
 
@@ -11,6 +12,7 @@ Item {
     readonly property alias status: image.status
     property real radius: 6
     property color placeholderColor: Theme.overlay
+    property bool blurred: false
 
     Item {
         anchors.fill: parent
@@ -36,6 +38,16 @@ Item {
             asynchronous: true
             fillMode: Image.PreserveAspectCrop
             opacity: status === Image.Ready ? 1 : 0
+
+            layer.enabled: root.blurred
+            layer.effect: MultiEffect {
+                blurEnabled: true
+                blur: 1.0
+                blurMax: 32
+                // Without padding, the blur repeats the edge pixels instead
+                // of fading into transparency around the border.
+                autoPaddingEnabled: false
+            }
 
             Behavior on opacity {
                 NumberAnimation {

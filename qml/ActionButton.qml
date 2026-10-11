@@ -10,8 +10,17 @@ import QtQuick.Controls.Fusion
 // Motion matches SidebarItem: Carbon's productive button micro-interaction,
 // fast-01 (70 ms) with standard easing. Hovering lightens the background;
 // pressing darkens it and shrinks the button slightly, as if pushed in.
+// While disabled it takes the app's disabled look (see DisabledFill), with
+// muted text.
 AbstractButton {
     id: root
+
+    // The background's colour at rest; hovering lightens it. Overlay suits
+    // the panels; on something already overlay, e.g. a settings row, use
+    // highlightMed.
+    property color baseColor: Theme.overlay
+    // For the label; e.g. Theme.base on a light baseColor such as foam.
+    property color textColor: Theme.text
 
     implicitWidth: implicitContentWidth + leftPadding + rightPadding
     implicitHeight: 34
@@ -25,7 +34,6 @@ AbstractButton {
     icon.height: 18
 
     scale: down ? 0.97 : 1
-    opacity: enabled ? 1 : 0.4
 
     Behavior on scale {
         NumberAnimation {
@@ -41,9 +49,12 @@ AbstractButton {
 
     background: Rectangle {
         radius: 6
-        color: root.down ? Theme.highlightLow
-             : root.hovered ? Qt.lighter(Theme.overlay, 1.25)
-             : Theme.overlay
+        // Clear while disabled, so its antialiased edge doesn't show around
+        // the disabled look's.
+        color: !root.enabled ? Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0)
+             : root.down ? Qt.darker(root.baseColor, 1.15)
+             : root.hovered ? Qt.lighter(root.baseColor, 1.25)
+             : root.baseColor
         // Only shown when focused with the keyboard.
         border.width: root.visualFocus ? 1 : 0
         border.color: Theme.iris
@@ -54,6 +65,12 @@ AbstractButton {
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: Motion.productiveStandard
             }
+        }
+
+        DisabledFill {
+            anchors.fill: parent
+            radius: parent.radius
+            shown: !root.enabled
         }
     }
 
@@ -71,8 +88,16 @@ AbstractButton {
                 anchors.verticalCenter: parent.verticalCenter
                 visible: text !== ""
                 text: root.text
-                color: Theme.text
+                color: root.enabled ? root.textColor : Theme.disabledText
                 font.weight: Font.DemiBold
+
+                Behavior on color {
+                    ColorAnimation {
+                        duration: Motion.fast01
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Motion.productiveStandard
+                    }
+                }
             }
 
             Image {
@@ -82,6 +107,7 @@ AbstractButton {
                 visible: root.icon.source.toString() !== ""
                 source: root.icon.source
                 sourceSize: Qt.size(width, height)
+                opacity: root.enabled ? 1 : 0.4
             }
         }
     }

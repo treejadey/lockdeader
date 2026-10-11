@@ -16,7 +16,7 @@ func TestGetModProfile(t *testing.T) {
 		w.Write(fixture)
 	})
 
-	p, err := c.GetModProfile(context.Background(), 599927)
+	p, err := c.GetModProfile(context.Background(), SectionMods, 599927)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,12 +53,31 @@ func TestGetModProfile(t *testing.T) {
 	}
 }
 
+func TestGetModProfileSection(t *testing.T) {
+	var gotPath string
+	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		w.Write([]byte(`{"_aPreviewMedia": {"_aMetadata": {"_sAudioUrl": "https://files.gamebanana.com/preview/sounds/seven_hover.mp3"}}}`))
+	})
+
+	p, err := c.GetModProfile(context.Background(), SectionSounds, 92990)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotPath != "/Sound/92990/ProfilePage" {
+		t.Errorf("path = %q, want /Sound/92990/ProfilePage", gotPath)
+	}
+	if got := p.PreviewMedia.Metadata.AudioURL; got != "https://files.gamebanana.com/preview/sounds/seven_hover.mp3" {
+		t.Errorf("AudioURL = %q", got)
+	}
+}
+
 func TestGetModProfileAPIError(t *testing.T) {
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 	})
 
-	_, err := c.GetModProfile(context.Background(), 1)
+	_, err := c.GetModProfile(context.Background(), SectionMods, 1)
 	var apiErr *APIError
 	if !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusNotFound {
 		t.Fatalf("err = %v, want *APIError with 404", err)

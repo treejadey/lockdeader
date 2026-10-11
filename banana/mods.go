@@ -19,17 +19,32 @@ const (
 	SortMostDownloaded Sort = "Generic_MostDownloaded"
 )
 
+// Section is a part of GameBanana with its own kind of submissions and its own
+// categories. The API calls it a model, as in "Mod/Index".
+type Section string
+
+const (
+	SectionMods   Section = "Mod"
+	SectionSounds Section = "Sound"
+)
+
 // ListModsOptions configures ListMods. Zero values select sensible defaults.
 type ListModsOptions struct {
-	GameID  int  // defaults to DeadlockGameID
-	Page    int  // 1-based; defaults to 1
-	PerPage int  // defaults to MaxPerPage; values above MaxPerPage are clamped
-	Sort    Sort // defaults to the API's own ordering (newest first)
+	GameID     int     // defaults to DeadlockGameID
+	Section    Section // defaults to SectionMods
+	CategoryID int     // only list this category, including its subcategories; 0 for all
+	Name       string  // only list mods whose name contains this, ignoring case; "" for all
+	Page       int     // 1-based; defaults to 1
+	PerPage    int     // defaults to MaxPerPage; values above MaxPerPage are clamped
+	Sort       Sort    // defaults to the API's own ordering (newest first)
 }
 
 func (o ListModsOptions) withDefaults() ListModsOptions {
 	if o.GameID == 0 {
 		o.GameID = DeadlockGameID
+	}
+	if o.Section == "" {
+		o.Section = SectionMods
 	}
 	if o.Page < 1 {
 		o.Page = 1
@@ -72,6 +87,12 @@ func (c *Client) ListMods(ctx context.Context, opts ListModsOptions) (*ModPage, 
 
 	q := url.Values{}
 	q.Set("_aFilters[Generic_Game]", strconv.Itoa(opts.GameID))
+	if opts.CategoryID != 0 {
+		q.Set("_aFilters[Generic_Category]", strconv.Itoa(opts.CategoryID))
+	}
+	if opts.Name != "" {
+		q.Set("_aFilters[Generic_Name]", "contains,"+opts.Name)
+	}
 	q.Set("_nPage", strconv.Itoa(opts.Page))
 	q.Set("_nPerpage", strconv.Itoa(opts.PerPage))
 	if opts.Sort != SortDefault {
@@ -79,7 +100,7 @@ func (c *Client) ListMods(ctx context.Context, opts ListModsOptions) (*ModPage, 
 	}
 
 	var resp indexResponse
-	if err := c.get(ctx, "Mod/Index", q, &resp); err != nil {
+	if err := c.get(ctx, string(opts.Section)+"/Index", q, &resp); err != nil {
 		return nil, err
 	}
 

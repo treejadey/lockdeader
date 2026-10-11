@@ -18,6 +18,16 @@ QtObject {
     readonly property color gold: "#f6c177"
     readonly property color rose: "#ebbcba"
     readonly property color love: "#eb6f92"
+    readonly property color pine: "#31748f"
     readonly property color foam: "#9ccfd8"
     readonly property color iris: "#c4a7e7"
+
+    // Disabled controls, everywhere: a slight gradient from brighter at the
+    // top to darker at the bottom (see DisabledFill), and muted text. Small
+    // marks, such as a checkbox, are a lighter grey, so they still show up.
+    readonly property color disabledTop: "#423f53"
+    readonly property color disabledBottom: "#302e3e"
+    readonly property color disabledMarkTop: "#7e7c8a"
+    readonly property color disabledMarkBottom: "#757380"
+    readonly property color disabledText: muted
 }

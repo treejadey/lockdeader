@@ -5,8 +5,10 @@ import QtQuick.Controls.Fusion
 // as fits, but never larger than its own size, over a dimmed backdrop. Below it
 // is its caption and, for galleries, a strip of all the images.
 //
-// Left/Right or the arrow buttons step through the images. Escape, the close
-// button or clicking the backdrop closes it. Use show() to open it.
+// Left/Right or the arrow buttons step through the images, wrapping around from
+// the last to the first and back, so they can cycle forever. Escape, the close
+// button or clicking the backdrop closes it. Right-clicking the image offers to
+// copy it or its link. Use show() to open it, and notify() to confirm a copy.
 //
 // Motion: opening a big image is a moment worth noticing, so the image comes
 // in with Carbon's expressive entrance, growing slightly into place, while the
@@ -22,14 +24,25 @@ Popup {
         ? images[Math.max(0, Math.min(index, images.length - 1))]
         : ({ full: "", thumbnail: "", caption: "" })
 
+    // Emitted from the image's right-click menu, with the full-size image's URL.
+    signal copyImageRequested(string url)
+    signal copyLinkRequested(string url)
+
+    // Briefly shows a short message, e.g. "Image copied".
+    function notify(message) {
+        toast.show(message)
+    }
+
     function show(images, index) {
         root.images = images
         root.index = index
         open()
     }
 
+    // Moves delta images on, wrapping around at either end.
     function step(delta) {
-        index = Math.max(0, Math.min(images.length - 1, index + delta))
+        if (images.length > 0)
+            index = (index + delta + images.length) % images.length
     }
 
     parent: Overlay.overlay
@@ -117,6 +130,9 @@ Popup {
         id: stage
 
         anchors.fill: parent
+        // Keeps text from wobbling on fractionally scaled displays. The viewer
+        // is a popup, so the nudge on the main window's content doesn't reach it.
+        transform: PixelNudge {}
 
         // The space the image may take up.
         Item {
@@ -179,9 +195,34 @@ Popup {
                 running: full.status === Image.Loading
             }
 
-            // Clicking the image itself shouldn't close the viewer.
+            // Clicking the image itself doesn't close the viewer; right-clicking
+            // it opens the copy menu.
             MouseArea {
                 anchors.fill: parent
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onClicked: (mouse) => {
+                    // At the click itself: without a position, the menu goes
+                    // to the global cursor position, which Wayland doesn't
+                    // reliably report to apps.
+                    if (mouse.button === Qt.RightButton)
+                        imageMenu.popup(mouse.x, mouse.y)
+                }
+            }
+
+            PopupMenu {
+                id: imageMenu
+
+                PopupMenuItem {
+                    text: "Copy image"
+                    icon.source: "icons/copy_24_regular.svg"
+                    onTriggered: root.copyImageRequested(root.current.full)
+                }
+
+                PopupMenuItem {
+                    text: "Copy image link"
+                    icon.source: "icons/link_24_regular.svg"
+                    onTriggered: root.copyLinkRequested(root.current.full)
+                }
             }
         }
 
@@ -229,7 +270,6 @@ Popup {
             icon.width: 24
             icon.height: 24
             visible: root.images.length > 1
-            enabled: root.index > 0
             onClicked: root.step(-1)
         }
 
@@ -245,7 +285,6 @@ Popup {
             icon.width: 24
             icon.height: 24
             visible: root.images.length > 1
-            enabled: root.index < root.images.length - 1
             onClicked: root.step(1)
         }
 
@@ -262,6 +301,14 @@ Popup {
             ToolTip.visible: hovered
             ToolTip.delay: 500
             ToolTip.text: "Close (Esc)"
+        }
+
+        // Confirms a copy.
+        Toast {
+            id: toast
+
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: 16
         }
     }
 }

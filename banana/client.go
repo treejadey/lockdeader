@@ -22,6 +22,10 @@ const (
 	// MaxPerPage is the largest page size the API accepts.
 	MaxPerPage = 50
 
+	// ImageHost serves preview images. A file there never changes: new
+	// uploads always get a new name, so cached copies never go stale.
+	ImageHost = "images.gamebanana.com"
+
 	ClientVersion = "0.1.0"
 )
 
@@ -82,4 +86,54 @@ func (c *Client) get(ctx context.Context, path string, q url.Values, out any) er
 	// Drain so the connection can be reused.
 	_, _ = io.Copy(io.Discard, resp.Body)
 	return nil
+}
+
+// Download fetches the file at url, such as a preview image or sound, which
+// may be on another host than the API. Responses other than 200 OK are errors.
+func (c *Client) Download(ctx context.Context, url string) ([]byte, error) {
+	hc := c.HTTPClient
+	if hc == nil {
+		hc = http.DefaultClient
+	}
+	body, _, err := c.open(ctx, hc, url)
+	if err != nil {
+		return nil, err
+	}
+	defer body.Close()
+	return io.ReadAll(body)
+}
+
+// OpenDownload starts downloading the file at url, such as a mod's archive
+// (File.DownloadURL), and returns its contents for the caller to read and
+// close, along with its size in bytes, or -1 if the server didn't say.
+// Unlike the client's other requests, it has no time limit, since big files
+// take a while on slow connections; ctx can cancel it. Responses other than
+// 200 OK are errors.
+func (c *Client) OpenDownload(ctx context.Context, url string) (io.ReadCloser, int64, error) {
+	hc := http.Client{}
+	if c.HTTPClient != nil {
+		hc = *c.HTTPClient
+	}
+	hc.Timeout = 0
+	return c.open(ctx, &hc, url)
+}
+
+func (c *Client) open(ctx context.Context, hc *http.Client, url string) (io.ReadCloser, int64, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+	if c.UserAgent != "" {
+		req.Header.Set("User-Agent", c.UserAgent)
+	}
+
+	resp, err := hc.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, 0, fmt.Errorf("banana: downloading %s: HTTP %d", url, resp.StatusCode)
+	}
+	return resp.Body, resp.ContentLength, nil
 }

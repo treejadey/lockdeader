@@ -34,13 +34,15 @@ func newTestClient(t *testing.T, handler http.HandlerFunc) *Client {
 
 func TestListModsRequest(t *testing.T) {
 	tests := []struct {
-		name string
-		opts ListModsOptions
-		want url.Values
+		name     string
+		opts     ListModsOptions
+		wantPath string
+		want     url.Values
 	}{
 		{
-			name: "defaults",
-			opts: ListModsOptions{},
+			name:     "defaults",
+			opts:     ListModsOptions{},
+			wantPath: "/Mod/Index",
 			want: url.Values{
 				"_aFilters[Generic_Game]": {"20948"},
 				"_nPage":                  {"1"},
@@ -48,8 +50,9 @@ func TestListModsRequest(t *testing.T) {
 			},
 		},
 		{
-			name: "explicit",
-			opts: ListModsOptions{GameID: 123, Page: 4, PerPage: 10, Sort: SortMostLiked},
+			name:     "explicit",
+			opts:     ListModsOptions{GameID: 123, Page: 4, PerPage: 10, Sort: SortMostLiked},
+			wantPath: "/Mod/Index",
 			want: url.Values{
 				"_aFilters[Generic_Game]": {"123"},
 				"_nPage":                  {"4"},
@@ -58,8 +61,32 @@ func TestListModsRequest(t *testing.T) {
 			},
 		},
 		{
-			name: "per page clamped",
-			opts: ListModsOptions{PerPage: 500},
+			name:     "category in another section",
+			opts:     ListModsOptions{Section: SectionSounds, CategoryID: 6270},
+			wantPath: "/Sound/Index",
+			want: url.Values{
+				"_aFilters[Generic_Game]":     {"20948"},
+				"_aFilters[Generic_Category]": {"6270"},
+				"_nPage":                      {"1"},
+				"_nPerpage":                   {"50"},
+			},
+		},
+		{
+			name:     "name",
+			opts:     ListModsOptions{CategoryID: 33295, Name: "green abrams"},
+			wantPath: "/Mod/Index",
+			want: url.Values{
+				"_aFilters[Generic_Game]":     {"20948"},
+				"_aFilters[Generic_Category]": {"33295"},
+				"_aFilters[Generic_Name]":     {"contains,green abrams"},
+				"_nPage":                      {"1"},
+				"_nPerpage":                   {"50"},
+			},
+		},
+		{
+			name:     "per page clamped",
+			opts:     ListModsOptions{PerPage: 500},
+			wantPath: "/Mod/Index",
 			want: url.Values{
 				"_aFilters[Generic_Game]": {"20948"},
 				"_nPage":                  {"1"},
@@ -84,8 +111,8 @@ func TestListModsRequest(t *testing.T) {
 			if _, err := c.ListMods(context.Background(), tt.opts); err != nil {
 				t.Fatal(err)
 			}
-			if gotPath != "/Mod/Index" {
-				t.Errorf("path = %q, want /Mod/Index", gotPath)
+			if gotPath != tt.wantPath {
+				t.Errorf("path = %q, want %q", gotPath, tt.wantPath)
 			}
 			if gotUA != defaultUserAgent {
 				t.Errorf("User-Agent = %q, want %q", gotUA, defaultUserAgent)
@@ -125,6 +152,9 @@ func TestListModsDecode(t *testing.T) {
 	}
 	if first.Submitter.Name != "artemka talant" || first.Game.ID != DeadlockGameID {
 		t.Errorf("first mod submitter/game = %q/%d", first.Submitter.Name, first.Game.ID)
+	}
+	if first.InitialVisibility != VisibilityShow || first.IsNSFW() {
+		t.Errorf("first mod visibility = %q", first.InitialVisibility)
 	}
 	if first.RootCategory.Name != "Animations" || first.SubCategory != nil {
 		t.Errorf("first mod categories = %q/%v", first.RootCategory.Name, first.SubCategory)
@@ -240,5 +270,19 @@ func TestAllModsError(t *testing.T) {
 	}
 	if count != 1 {
 		t.Errorf("yielded %d times, want 1", count)
+	}
+}
+
+func TestModIsNSFW(t *testing.T) {
+	tests := map[string]bool{
+		VisibilityShow: false,
+		VisibilityWarn: true,
+		VisibilityHide: true,
+		"":             false, // missing from the response
+	}
+	for visibility, want := range tests {
+		if got := (Mod{InitialVisibility: visibility}).IsNSFW(); got != want {
+			t.Errorf("IsNSFW() with visibility %q = %v, want %v", visibility, got, want)
+		}
 	}
 }

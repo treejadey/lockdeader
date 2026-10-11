@@ -4,8 +4,11 @@ import QtQuick.Effects
 import QtQuick.Layouts
 
 // Shows one mod: a large preview with its name and author over it, the
-// description, and an install button. While no mod is open it shows a hint
-// instead, so the panel can stay on screen and the grid beside it never moves.
+// description, and an install button. The author's name links to their
+// GameBanana profile. A sound has no preview image, so it gets
+// just its name and author, and a player for its audio preview. While no mod is
+// open the panel shows a hint instead, so it can stay on screen and the grid
+// beside it never moves.
 Rectangle {
     id: root
 
@@ -14,20 +17,29 @@ Rectangle {
     property bool open: false
     property string name
     property string author
+    // The author's GameBanana profile.
+    property string authorUrl
     property string image
     // All preview images, as {full, thumbnail, caption} objects.
     property var images: []
+    // A sound's audio preview.
+    property string audio
     property string profileUrl
     // Rich text (Qt's HTML subset).
     property string description
     property bool loading: false
     property string error: ""
+    // Pauses the sound when the panel closes. Not needed where the sound's
+    // player stays on screen elsewhere, e.g. in the list of sounds.
+    property bool pauseOnClose: true
 
     signal installClicked()
     // Emitted when one of the mod's images is clicked, to show it full size.
     signal imageClicked(int index)
 
     color: Theme.surface
+
+    onOpenChanged: if (!open && pauseOnClose) player.pause()
 
     // Start each mod's description and gallery from the beginning.
     onProfileUrlChanged: {
@@ -53,19 +65,26 @@ Rectangle {
             spacing: 0
 
             // Preview image with the name and author over it. Clicking it
-            // shows the image full size.
+            // shows the image full size. Without an image, it's just the name
+            // and author.
             Item {
+                id: header
+
+                readonly property bool hasImage: root.image !== ""
+
                 Layout.fillWidth: true
-                Layout.preferredHeight: Math.round(width * 1.15)
+                Layout.preferredHeight: hasImage ? Math.round(width * 1.15) : info.implicitHeight + 20
                 clip: true
 
                 Rectangle {
                     anchors.fill: parent
+                    visible: header.hasImage
                     color: Theme.overlay
                 }
 
                 Image {
                     anchors.fill: parent
+                    visible: header.hasImage
                     source: root.image
                     sourceSize: Qt.size(width, height)
                     asynchronous: true
@@ -84,6 +103,7 @@ Rectangle {
                 // Darkens the edges so the text and the link icon stay readable.
                 Rectangle {
                     anchors.fill: parent
+                    visible: header.hasImage
                     gradient: Gradient {
                         GradientStop { position: 0.0; color: Qt.rgba(0, 0, 0, 0.35) }
                         GradientStop { position: 0.4; color: Qt.rgba(0, 0, 0, 0) }
@@ -91,24 +111,33 @@ Rectangle {
                     }
                 }
 
+                // MouseAreas rather than TapHandlers here, over the text and on
+                // the link icon below: pointer handlers would all see a click
+                // on the text or the icon. Declared before the text, so the
+                // text is on top of it.
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: root.images.length > 0
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.imageClicked(0)
+                }
+
+                TextShadow {
+                    source: headerText
+                }
+
                 Item {
+                    id: headerText
+
                     anchors {
                         left: parent.left
                         right: parent.right
                         bottom: parent.bottom
                         margins: 10
+                        // Without an image, the name starts at the top, beside the link icon.
+                        rightMargin: header.hasImage ? 10 : 40
                     }
                     height: info.implicitHeight
-                    layer.enabled: true
-                    layer.effect: MultiEffect {
-                        shadowEnabled: true
-                        shadowColor: "black"
-                        shadowOpacity: 0.6
-                        shadowBlur: 1.0
-                        blurMax: 4
-                        shadowHorizontalOffset: 0
-                        shadowVerticalOffset: 1
-                    }
 
                     Column {
                         id: info
@@ -128,23 +157,45 @@ Rectangle {
                         }
 
                         Label {
-                            width: parent.width
+                            // Only as wide as the name, so only the name is a link.
+                            width: Math.min(implicitWidth, parent.width)
                             text: root.author
-                            color: Theme.gold
+                            color: authorArea.containsMouse ? Qt.lighter(Theme.gold, 1.15) : Theme.gold
                             font.pixelSize: 14
                             font.weight: Font.Medium
+                            font.underline: root.authorUrl !== ""
                             elide: Text.ElideRight
+
+                            Behavior on color {
+                                ColorAnimation {
+                                    duration: Motion.fast01
+                                    easing.type: Easing.BezierSpline
+                                    easing.bezierCurve: Motion.productiveStandard
+                                }
+                            }
+
+                            MouseArea {
+                                id: authorArea
+                                anchors.fill: parent
+                                enabled: root.authorUrl !== ""
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: Qt.openUrlExternally(root.authorUrl)
+                            }
+
+                            ToolTip.visible: authorArea.containsMouse
+                            ToolTip.delay: 500
+                            ToolTip.text: "Open profile on GameBanana"
                         }
                     }
-                }
 
-                // MouseAreas rather than TapHandlers here and on the link icon
-                // below: pointer handlers would both see a click on the icon.
-                MouseArea {
-                    anchors.fill: parent
-                    enabled: root.images.length > 0
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: root.imageClicked(0)
+                    // The name isn't a link: this keeps the image's pointer and
+                    // click away from it. Under the author's link.
+                    MouseArea {
+                        anchors.fill: info
+                        z: -1
+                        hoverEnabled: true
+                    }
                 }
 
                 // Opens the mod's GameBanana page in the browser.
@@ -173,6 +224,19 @@ Rectangle {
                     ToolTip.delay: 500
                     ToolTip.text: "Open on GameBanana"
                 }
+            }
+
+            SoundPlayer {
+                id: player
+
+                Layout.fillWidth: true
+                Layout.leftMargin: 10
+                Layout.rightMargin: 10
+                Layout.topMargin: 2
+                visible: root.audio !== ""
+                source: root.audio
+                // The volume is in the bar along the top.
+                showVolume: false
             }
 
             Item {

@@ -1,12 +1,25 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// Stand-in for pages that haven't been built yet.
+// Stand-in for pages that haven't been built yet, under the bar every page
+// has. Its search field doesn't search anything yet.
 Item {
     id: root
 
     property string title
     property string text
+    property string searchPlaceholder
+
+    TopBar {
+        id: topBar
+
+        searchPlaceholder: root.searchPlaceholder
+        anchors {
+            top: parent.top
+            left: parent.left
+            right: parent.right
+        }
+    }
 
     Column {
         anchors.centerIn: parent

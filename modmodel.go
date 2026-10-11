@@ -19,6 +19,8 @@ const (
 	roleCategory
 	roleThumbnail
 	roleUpdated
+	roleNSFW
+	roleAudio
 )
 
 var modRoleNames = map[int][]byte{
@@ -28,14 +30,18 @@ var modRoleNames = map[int][]byte{
 	roleCategory:  []byte("category"),
 	roleThumbnail: []byte("thumbnail"),
 	roleUpdated:   []byte("updated"),
+	roleNSFW:      []byte("nsfw"),
+	roleAudio:     []byte("audio"),
 }
 
 // thumbnailWidth is the preview variant requested from GameBanana. Cards are
 // never wider than this, so previews stay sharp without fetching full images.
 const thumbnailWidth = 530
 
-// modListModel exposes GameBanana's mod listing to QML views. Pages are fetched
-// on demand: views call canFetchMore/fetchMore as they approach the last row.
+// modListModel exposes GameBanana's mod listing to QML views, for one section
+// or category at a time, optionally narrowed down by a search. Pages are
+// fetched on demand: views call canFetchMore/fetchMore as they approach the
+// last row.
 // All methods must be called on the Qt main thread.
 //
 // It's a QStandardItemModel rather than a QAbstractListModel subclass because
@@ -44,9 +50,18 @@ type modListModel struct {
 	*qt.QStandardItemModel
 
 	client *banana.Client
-	state  *qml.QQmlPropertyMap // "loading" and "error", for the UI
+	state  *qml.QQmlPropertyMap // "section", "loading" and "error", for the UI
 
-	byID map[int]banana.Mod // every mod loaded so far
+	section    banana.Section
+	categoryID int                // 0 for the whole section
+	query      string             // only mods with this in their name; "" for all
+	hideNSFW   bool               // leaves out mods GameBanana marks as NSFW
+	generation int                // goes up with every category or query change
+	byID       map[int]banana.Mod // every mod loaded so far in this category
+	rows       []int              // the ids of the mods in each row
+
+	// Called after a page has been added to the list. Optional.
+	onPage func()
 
 	nextPage int
 	loading  bool
@@ -59,10 +74,12 @@ func newModListModel(client *banana.Client, state *qml.QQmlPropertyMap) *modList
 		QStandardItemModel: qt.NewQStandardItemModel(),
 		client:             client,
 		state:              state,
+		section:            banana.SectionMods,
 		byID:               make(map[int]banana.Mod),
 		nextPage:           1,
 	}
 	m.SetItemRoleNames(modRoleNames)
+	m.state.Insert("section", qt.NewQVariant14(string(m.section)))
 	m.setLoading(false)
 	m.setError(nil)
 
@@ -90,23 +107,108 @@ func (m *modListModel) FetchNextPage() {
 	}
 	m.setLoading(true)
 
-	page := m.nextPage
+	generation := m.generation
+	opts := banana.ListModsOptions{Section: m.section, CategoryID: m.categoryID, Name: m.query, Page: m.nextPage}
 	go func() {
-		result, err := m.client.ListMods(context.Background(), banana.ListModsOptions{Page: page})
+		result, err := m.client.ListMods(context.Background(), opts)
 
 		mainthread.Start(func() {
+			if generation != m.generation {
+				return // the category or query changed in the meantime
+			}
 			m.setLoading(false)
 			if err != nil {
-				slog.Error("failed to fetch mods", "page", page, "err", err)
+				slog.Error("failed to fetch mods", "section", opts.Section, "category", opts.CategoryID,
+					"query", opts.Name, "page", opts.Page, "err", err)
 				m.setError(err)
 				return
 			}
-			slog.Info("fetched mods", "page", page, "count", len(result.Mods), "total", result.Total)
+			slog.Info("fetched mods", "section", opts.Section, "category", opts.CategoryID,
+				"query", opts.Name, "page", opts.Page, "count", len(result.Mods), "total", result.Total)
 			m.nextPage++
 			m.done = result.IsLast
-			m.append(result.Mods)
+			if m.append(result.Mods) == 0 && !m.done {
+				// Every mod on the page was left out. The view won't ask for
+				// more when nothing was added, so ask for it here.
+				m.FetchNextPage()
+				return
+			}
+			if m.onPage != nil {
+				m.onPage()
+			}
 		})
 	}()
+}
+
+// SetCategory replaces the list with the mods in a category of section, or in
+// the whole section if id is 0, starting again from the first page.
+func (m *modListModel) SetCategory(section banana.Section, id int) (changed bool) {
+	if section == m.section && id == m.categoryID {
+		return false
+	}
+	m.section = section
+	m.categoryID = id
+	m.state.Insert("section", qt.NewQVariant14(string(section)))
+	m.reload()
+	return true
+}
+
+// SetQuery replaces the list with the mods whose name contains query,
+// ignoring case, in the same category; "" lists them all again.
+func (m *modListModel) SetQuery(query string) (changed bool) {
+	query = normalizeQuery(query)
+	if query == m.query {
+		return false
+	}
+	m.query = query
+	m.reload()
+	return true
+}
+
+// SetHideNSFW leaves mods GameBanana marks as NSFW out of the list, or lists
+// them again, starting again from the first page.
+func (m *modListModel) SetHideNSFW(hide bool) (changed bool) {
+	if hide == m.hideNSFW {
+		return false
+	}
+	m.hideNSFW = hide
+	m.reload()
+	return true
+}
+
+// Query returns the search the list is narrowed down by, if any.
+func (m *modListModel) Query() string {
+	return m.query
+}
+
+// Generation identifies the current listing: it changes whenever the list is
+// emptied for another category or query.
+func (m *modListModel) Generation() int {
+	return m.generation
+}
+
+// Loaded reports whether at least one mod of the current listing has
+// arrived, or there's nothing to load.
+func (m *modListModel) Loaded() bool {
+	return len(m.rows) > 0 || m.done
+}
+
+// reload empties the list and starts again from the first page.
+func (m *modListModel) reload() {
+	m.generation++
+	m.SetRowCount(0)
+	clear(m.byID)
+	m.rows = m.rows[:0]
+	m.nextPage = 1
+	m.done = false
+	m.setLoading(false)
+	m.setError(nil)
+	m.FetchNextPage()
+}
+
+// Section returns the section the listed mods are from.
+func (m *modListModel) Section() banana.Section {
+	return m.section
 }
 
 // Lookup returns a mod that has already been loaded into the list.
@@ -135,9 +237,16 @@ func (m *modListModel) setError(err error) {
 	m.state.Insert("error", qt.NewQVariant14(msg))
 }
 
-func (m *modListModel) append(mods []banana.Mod) {
+// append adds mods to the end of the list, except those left out, and
+// returns how many it added.
+func (m *modListModel) append(mods []banana.Mod) (added int) {
 	for _, mod := range mods {
+		if m.hideNSFW && mod.IsNSFW() {
+			continue
+		}
+		added++
 		m.byID[mod.ID] = mod
+		m.rows = append(m.rows, mod.ID)
 
 		item := qt.NewQStandardItem()
 		item.SetEditable(false)
@@ -148,8 +257,11 @@ func (m *modListModel) append(mods []banana.Mod) {
 		item.SetData(qt.NewQVariant14(previewURL(mod.PreviewMedia)), roleThumbnail)
 		// A Unix timestamp; QML formats it relative to now ("3 hours ago").
 		item.SetData(qt.NewQVariant6(mod.LastUpdated().Unix()), roleUpdated)
+		item.SetData(qt.NewQVariant8(mod.IsNSFW()), roleNSFW)
+		item.SetData(qt.NewQVariant14(mod.PreviewMedia.Metadata.AudioURL), roleAudio)
 		m.AppendRow([]*qt.QStandardItem{item})
 	}
+	return added
 }
 
 // modCategory formats a mod's category for display, e.g. "Skins - Vindicta".
