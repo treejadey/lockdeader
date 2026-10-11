@@ -107,7 +107,7 @@ Popup {
         id: backdrop
 
         anchors.fill: parent
-        color: Qt.rgba(Theme.base.r, Theme.base.g, Theme.base.b, 0.92)
+        color: Theme.backdrop
 
         // A MouseArea rather than a TapHandler: pointer handlers see every
         // press under them, even ones the image above has already taken.
@@ -229,7 +229,7 @@ Popup {
             width: Math.min(implicitWidth, parent.width - 48)
             height: text !== "" ? implicitHeight : 0
             text: root.current.caption
-            color: Theme.text
+            color: Theme.textOnBackdrop
             elide: Text.ElideRight
         }
 

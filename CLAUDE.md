@@ -124,7 +124,7 @@ Applies to Go, QML (including its JavaScript), C and C++.
 - Import `QtQuick.Controls.Fusion`, never plain `QtQuick.Controls`; otherwise KDE Plasma substitutes its own style and ignores the app theme.
 - Don't name a component after a Qt Quick Controls type (e.g. Qt 6.10's `SearchField`): the control wins over the file in `qml/`. Hence `SearchBox`.
 - Colours come from the `Theme` singleton: Rosé Pine while the system prefers a dark style, Rosé Pine Dawn otherwise, as elementary OS asks of apps that work in both. It follows the system's preference (`Application.styleHints.colorScheme`) and changes along with it; with no preference, it's light. Anything new has to work in both:
-  - pick colours by role rather than for how they look in one style: `accent`/`textOnAccent` for the main action (foam, with dark text, in both), `field` behind text being typed, `textOnPicture` for text and icons over pictures;
+  - pick colours by role rather than for how they look in one style: `accent`/`textOnAccent` for the main action (foam, with dark text, in both), `field` behind text being typed, `textOnPicture` for text and icons over pictures, `backdrop` (dark in both styles) behind dialogs and the image viewer, with `textOnBackdrop` for text drawn straight on it;
   - for hovering, use `Theme.lift()` rather than `Qt.lighter`, which barely shows in the light style.
 - Animation durations and easing curves come from the `Motion` singleton (IBM Carbon motion tokens, productive and expressive). Don't hard-code either.
 - Fonts are bundled in `fonts/` (see `fonts/README.md`): Inter for all UI text, JetBrains Mono for monospace. `fonts.go` embeds and loads them.

@@ -39,6 +39,12 @@ QtObject {
     // standing out from it in the light one.
     readonly property color field: theme.dark ? theme.highlightLow : theme.surface
 
+    // Dims the window behind a dialog or the image viewer. Dark in both
+    // styles, as in the dark one, so what's on top stands out; text drawn
+    // straight on it uses textOnBackdrop.
+    readonly property color backdrop: Qt.rgba(0x19 / 255, 0x17 / 255, 0x24 / 255, 0.92)
+    readonly property color textOnBackdrop: "#e0def4"
+
     // Text and icons on top of pictures, e.g. a mod's name on its card, are
     // light whatever the style, over a dark shade.
     readonly property color textOnPicture: "white"

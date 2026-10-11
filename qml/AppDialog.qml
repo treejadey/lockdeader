@@ -96,7 +96,7 @@ Popup {
         id: backdrop
 
         anchors.fill: parent
-        color: Qt.rgba(Theme.base.r, Theme.base.g, Theme.base.b, 0.92)
+        color: Theme.backdrop
 
         // A MouseArea rather than a TapHandler: pointer handlers see every
         // press under them, even ones the dialog above has already taken.
