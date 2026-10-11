@@ -26,6 +26,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err := setWindowIcon(); err != nil {
+		slog.Warn("failed to set the window icon", "err", err)
+	}
+
 	dirs, err := appdata.Setup()
 	if err != nil {
 		slog.Error("failed to set up the data directory", "err", err)
