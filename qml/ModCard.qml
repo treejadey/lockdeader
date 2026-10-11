@@ -29,7 +29,7 @@ Item {
     property real horizontalOffset: 0
     property bool showUpdated: true
     property bool showAuthor: true
-    // Darkens the image, e.g. while the mod is installing.
+    // Darkens the image, e.g. while the mod is turned off or installing.
     property bool dimmed: false
     // Keeps the bottom line clear of whatever is in the tile's bottom-right
     // corner.

@@ -3,8 +3,8 @@ import QtQuick.Controls.Fusion
 
 // Installed mods as a grid of cards, like ModGrid's: each with a checkbox in
 // its bottom-right corner that turns it on or off, as does clicking the card.
-// A mod that's installing is dimmed, its checkbox greyed out, and its
-// progress is shown under it.
+// A mod that's turned off has its image dimmed. So does one that's
+// installing, with its checkbox greyed out, and its progress shown under it.
 Item {
     id: root
 
@@ -84,7 +84,7 @@ Item {
                 horizontalOffset: Math.floor((grid.width - grid.columns * grid.cellWidth) / 2)
                 // Like the checkbox, the author waits for the install to finish.
                 showAuthor: !cell.installing
-                dimmed: cell.installing
+                dimmed: cell.installing || !cell.modEnabled
                 cornerRightMargin: check.width + 6
                 onClicked: if (!cell.installing) root.enabledToggled(cell.key, !cell.modEnabled)
                 onMenuRequested: root.menuRequested(cell.key, cell.status, cell.variants)
