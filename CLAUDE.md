@@ -4,6 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Lockdeader is a desktop mod manager for the game Deadlock (still a work in progress: it browses mods on GameBanana and downloads them into its own store, but doesn't put them in the game folder yet). It is written in Go with a Qt 6 Quick/QML UI, using the [miqt](https://github.com/mappu/miqt) bindings.
 
+Windows matters as much as Linux.
+- Anything platform-specific needs a Windows side as well as a Linux one, e.g. files with `_linux.go` and `_windows.go` suffixes, as in `notification/`. A stub that does nothing is only for other platforms.
+- Prefer Qt or pure Go where they work on both, e.g. `QLocalServer`, which is a socket on Linux and a named pipe on Windows.
+- Check that new non-cgo packages build for Windows: `GOOS=windows go vet ./<package>`.
+
 ## Commands
 
 ```sh
@@ -33,6 +38,8 @@ go vet ./... && gofmt -l .
 - If the file fails to load and there are backups that would load, `qml/RestoreDialog.qml` asks before the main window opens whether to restore one (keeping the broken file as `Settings.toml.broken`), carry on with the defaults, or quit. It runs in its own engine and event loop (`restoredialog.go`), so `useNativeTextRendering` is called before settings are loaded.
 - New settings go in `appdata.Settings` with a default in `DefaultSettings`, then get a key on the `settings` bridge and a row in `qml/SettingsPage.qml` (`SettingToggle` for on/off, `SettingRow` with any control). The page's search matches each row's text, description and `keywords`. A new `SettingsSection` shows up in the sidebar's list of sections (`SettingsNav`) by itself.
 
+**Running and quitting.** Only one copy runs per data directory (`singleinstance.go`). Starting another asks the running one to show its window (`app.showRequests`), then exits. Closing the window while mods are installing only hides it: the installs finish, then the app quits (`main.go`, `installedMods.onIdle`). A desktop notification tells of any install that fails meanwhile (`onFailed`, `notification/`).
+
 **Threading.** All Qt objects must be touched on the Qt main thread. Network work runs in a goroutine and hands its result back with `mainthread.Start(...)`. Because a response can arrive after the user has moved on, callbacks check that the result is still wanted (see `modDetails.Select`).
 
 **Mod list model** (`modmodel.go`): a `QStandardItemModel` with custom role names, paged lazily through `canFetchMore`/`fetchMore` as the grid scrolls. It isn't a `QAbstractListModel` subclass because miqt v0.14.0's `roleNames` override frees its return value before Qt reads it.
@@ -48,6 +55,7 @@ go vet ./... && gofmt -l .
   - Tests use `audio.NewEngineWithoutDevice`, which mixes only when `Read` is called, so they need no sound card. The `soundPreview` bridge (`soundpreview.go`) takes one in its tests too.
 - `install/`: downloads mods (`Fetch`), takes the VPKs out of zip, 7z and rar archives (`Extract`), and keeps them in the store, `Cache/Mods`, named by SHA-256 (`Store`). `SpeedMeter` sorts a download's speed into a pace for its progress bar: slow under ~17 Mbps, fast over ~60 Mbps. No Qt dependency; `install/testdata/mod.7z` is a test fixture, and the rar tests build their archive in code.
 - `appdata/`: locates the per-platform data directory and its layout (`Lockdeader.db`, `Settings/Settings.toml`, `Cache/Images`, `Cache/Mods`), and loads TOML settings, falling back to defaults for missing keys.
+- `notification/`: desktop notifications, through D-Bus (`godbus/dbus`) on Linux and Windows toasts (`go-toast`) on Windows. On Windows, the first one registers the app under the user's registry key, as Windows requires.
 - `appdb/`: the SQLite database, through the pure-Go `modernc.org/sqlite`. It holds app state (`app_state`, a key/value table, with typed accessors like `AudioState`) and installed mods (`mods`, `mod_files`, `mod_vpks`).
   - **Schema versions:** the version is SQLite's `user_version`. To change the schema, append to `migrations` in `appdb/schema.go`; never edit a released migration. Each migration runs in a transaction along with its version bump.
   - **Never written over:** a database from a newer version (`ErrNewerSchema`) or one that won't open is left alone, and the session runs on `OpenMemory` instead.

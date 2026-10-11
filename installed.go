@@ -116,6 +116,11 @@ type installedMods struct {
 	// An uninstall that can still be undone. The mod stays in the database
 	// until it can't.
 	uninstalling *pendingUninstall
+
+	// Called when an install fails, and when the last install still going
+	// finishes. Either may be nil.
+	onFailed func(name string)
+	onIdle   func()
 }
 
 type pendingUninstall struct {
@@ -383,8 +388,17 @@ func (m *installedMods) start(row *installedRow) {
 			m.running--
 			m.finish(row, job, files, err)
 			m.startNext()
+
+			if m.Idle() && m.onIdle != nil {
+				m.onIdle()
+			}
 		})
 	}()
+}
+
+// Idle is true when nothing is installing or waiting to.
+func (m *installedMods) Idle() bool {
+	return m.running == 0 && len(m.queue) == 0
 }
 
 // A job that's been cancelled has been dealt with already.
@@ -405,6 +419,10 @@ func (m *installedMods) finish(row *installedRow, job *installJob, files []appdb
 		job.failed = true
 		row.item.SetData(qt.NewQVariant14(statusFailed), roleInstalledStatus)
 		row.item.SetData(qt.NewQVariant14(err.Error()), roleInstalledError)
+
+		if m.onFailed != nil {
+			m.onFailed(job.info.name)
+		}
 
 		return
 	}

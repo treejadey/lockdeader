@@ -5,7 +5,9 @@ go 1.26.8
 require github.com/mappu/miqt v0.14.0
 
 require (
+	git.sr.ht/~jackmordaunt/go-toast/v2 v2.0.3
 	github.com/bodgit/sevenzip v1.6.5
+	github.com/godbus/dbus/v5 v5.1.0
 	github.com/nwaples/rardecode/v2 v2.4.3
 	github.com/pelletier/go-toml/v2 v2.4.3
 	modernc.org/sqlite v1.60.1
@@ -16,6 +18,7 @@ require (
 	github.com/bodgit/plumbing v1.3.0 // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/klauspost/compress v1.19.0 // indirect

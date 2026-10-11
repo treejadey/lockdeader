@@ -296,6 +296,44 @@ func TestInstallFailsAndRetries(t *testing.T) {
 	}
 }
 
+func TestIdleAndFailedCallbacks(t *testing.T) {
+	it := newInstallTest(t)
+
+	var failed []string
+	idle := 0
+
+	mainthread.Wait(func() {
+		it.onFailed = func(name string) { failed = append(failed, name) }
+		it.onIdle = func() { idle++ }
+	})
+
+	missing := banana.File{ID: 9, Name: "x.vpk", DownloadURL: it.srv.URL + "/dl/missing"}
+	info := testInfo(2)
+	info.name = "Abrams Blue"
+
+	mainthread.Wait(func() {
+		it.Install(testInfo(1), []banana.File{it.file(t, 1, "one")})
+		it.Install(info, []banana.File{missing})
+
+		if it.Idle() {
+			t.Error("Idle while mods are installing")
+		}
+	})
+
+	it.waitForStatus(t, installedKey(banana.SectionMods, 1), statusInstalled)
+	it.waitForStatus(t, installedKey(banana.SectionMods, 2), statusFailed)
+
+	mainthread.Wait(func() {
+		if !it.Idle() || idle != 1 {
+			t.Errorf("once both are done, Idle() = %v and onIdle was called %d times, want once", it.Idle(), idle)
+		}
+
+		if len(failed) != 1 || failed[0] != "Abrams Blue" {
+			t.Errorf("onFailed was called for %q, want the failed install only", failed)
+		}
+	})
+}
+
 func TestCancelInstall(t *testing.T) {
 	it := newInstallTest(t)
 	red := it.file(t, 1, "red")

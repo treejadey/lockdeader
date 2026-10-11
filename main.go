@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -12,10 +13,11 @@ import (
 	"github.com/treejadey/lockdeader/appdb"
 	"github.com/treejadey/lockdeader/banana"
 	"github.com/treejadey/lockdeader/install"
+	"github.com/treejadey/lockdeader/notification"
 )
 
 func main() {
-	qt.NewQGuiApplication(os.Args)
+	guiApp := qt.NewQGuiApplication(os.Args)
 
 	if err := loadFonts(); err != nil {
 		slog.Error("failed to load the bundled fonts", "err", err)
@@ -29,6 +31,18 @@ func main() {
 	}
 
 	slog.Info("using data directory", "path", dirs.Root)
+
+	// Set once the window is up.
+	var showWindow func()
+
+	if !claimInstance(dirs.Root, func() {
+		if showWindow != nil {
+			showWindow()
+		}
+	}) {
+		slog.Info("the app is already running, so it was asked to show its window instead")
+		os.Exit(0)
+	}
 
 	// Before any QML is loaded, including the restore dialog's.
 	useNativeTextRendering()
@@ -125,6 +139,8 @@ func main() {
 	app := qml.NewQQmlPropertyMap()
 	// For numbers that shouldn't shift as they change.
 	app.Insert("monospaceFont", qt.NewQVariant14(monospaceFontFamily))
+	// Goes up by one each time another copy of the app asks to show the window.
+	app.Insert("showRequests", qt.NewQVariant4(0))
 
 	client := banana.NewClient()
 	mods := newModListModel(client, app)
@@ -199,6 +215,53 @@ func main() {
 	if len(engine.RootObjects()) == 0 {
 		slog.Error("failed to load qml/Main.qml")
 		os.Exit(1)
+	}
+
+	// Closing the window while mods are installing only hides it, so they can
+	// finish; then the app quits. A notification tells of any that fail in
+	// the meantime.
+	qt.QGuiApplication_SetQuitOnLastWindowClosed(false)
+	windowOpen := true
+
+	quitIfDone := func() {
+		if !windowOpen && installed.Idle() {
+			qt.QCoreApplication_Quit()
+		}
+	}
+
+	guiApp.OnLastWindowClosed(func() {
+		windowOpen = false
+
+		// Nothing plays from a closed window.
+		soundPreview.Load("")
+
+		quitIfDone()
+	})
+
+	installed.onIdle = quitIfDone
+
+	installed.onFailed = func(name string) {
+		if windowOpen {
+			return
+		}
+
+		title := fmt.Sprintf(tr("Couldn’t install %s"), name)
+		body := tr("Try installing it again in Lockdeader")
+
+		go func() {
+			if err := notification.Send(title, body); err != nil {
+				slog.Warn("failed to show a notification", "err", err)
+			}
+		}()
+	}
+
+	showRequests := 0
+
+	showWindow = func() {
+		windowOpen = true
+
+		showRequests++
+		app.Insert("showRequests", qt.NewQVariant4(showRequests))
 	}
 
 	// Load the first page; the grid requests the rest as it scrolls.

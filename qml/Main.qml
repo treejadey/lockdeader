@@ -69,6 +69,20 @@ AppWindow {
         }
     }
 
+    // Another copy of the app was started, which asks this one to show its
+    // window, closed or not.
+    readonly property int showRequests: app.showRequests
+
+    onShowRequestsChanged: {
+        if (visibility === Window.Minimized)
+            showNormal()
+        else
+            show()
+
+        raise()
+        requestActivate()
+    }
+
     // Each message from the installer bumps messageId, so the same message
     // twice still shows.
     readonly property int installMessageId: installed.messageId

@@ -205,16 +205,18 @@ If a design doesn't fit these guidelines, decide whether it's a real exception, 
 
 ## Desktop integration
 
-- The `.desktop` file:
+Windows matters as much as Linux, so each of these needs both.
+
+- **Linux:** the `.desktop` file:
   - `Name` is just "Lockdeader".
   - `Comment` starts with a verb, is in sentence case and has no full stop: "Install and manage Deadlock mods".
   - `Keywords` adds words people might search for, such as `Deadlock;Mods;GameBanana;`.
-- **Taskbar progress (optional):** KDE's task manager can show install progress on the app's taskbar entry through the Unity `LauncherEntry` D-Bus API. Like any progress bar, it shows one task: the installs as a whole.
+- **Windows:** the installer adds a Start menu shortcut named "Lockdeader", with the AppUserModelID "Lockdeader" that `notification/` uses, so notifications and the taskbar group under the app.
+- **Taskbar progress (optional):** the app's taskbar entry can show install progress, through the Unity `LauncherEntry` D-Bus API on KDE and `ITaskbarList3` on Windows. Like any progress bar, it shows one task: the installs as a whole.
 
 ## Where the app doesn't follow these yet
 
 - Errors from Go (GameBanana, downloads, sounds) are shown as Go wrote them, after a plain "Couldn’t …" line. They should be turned into plain words with a next step, and the raw error logged.
-- Closing the window during installs drops them. There's no single-instance check or system notifications.
 - The app doesn't remember the page, category, view or scroll position between launches.
 - The empty Installed page has no button to go and find mods.
-- There's no `.desktop` file yet.
+- There's no `.desktop` file or Windows installer yet.
