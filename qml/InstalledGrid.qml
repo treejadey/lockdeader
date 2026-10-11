@@ -7,8 +7,15 @@ Item {
     id: root
 
     property alias model: grid.model
+    property alias footer: grid.footer
     readonly property alias contentY: grid.contentY
     readonly property alias count: grid.count
+    // Mods that can only be looked at, e.g. other tools': the checkbox
+    // shows their state but does nothing.
+    property bool readOnly: false
+    // Laid out inside something else that scrolls, e.g. a footer: as tall
+    // as its contents, without a scrollbar.
+    property bool embedded: false
     property int cardSize: 150
     // The edges of the grid get at least half of it.
     property int cardSpacing: 12
@@ -40,10 +47,11 @@ Item {
             top: parent.top
             bottom: parent.bottom
             left: parent.left
-            right: scrollBar.left
+            right: root.embedded ? parent.right : scrollBar.left
         }
         topMargin: root.cardSpacing / 2
-        clip: true
+        clip: !root.embedded
+        interactive: !root.embedded
         boundsBehavior: Flickable.StopAtBounds
 
         cellWidth: root.cardSize + root.cardSpacing
@@ -94,7 +102,7 @@ Item {
                 showAuthor: !cell.installing
                 dimmed: cell.installing || !cell.modEnabled
                 cornerRightMargin: check.width + 6
-                onClicked: if (!cell.installing) root.enabledToggled(cell.key, !cell.modEnabled)
+                onClicked: if (!cell.installing && !root.readOnly) root.enabledToggled(cell.key, !cell.modEnabled)
                 onMenuRequested: root.menuRequested(cell.key, cell.status, cell.variants)
 
                 TickBox {
@@ -106,8 +114,8 @@ Item {
                         margins: 8
                     }
                     checked: cell.modEnabled
-                    enabled: !cell.installing
-                    labelHovered: card.hovered
+                    enabled: !cell.installing && !root.readOnly
+                    labelHovered: card.hovered && !root.readOnly
                     onClicked: root.enabledToggled(cell.key, !cell.modEnabled)
                 }
             }
@@ -125,13 +133,17 @@ Item {
             }
         }
 
-        ScrollBar.vertical: scrollBar
+        ScrollBar.vertical: root.embedded ? null : scrollBar
     }
+
+    // Embedded, the grid is as tall as its rows, and the parent scrolls.
+    implicitHeight: root.embedded ? grid.contentHeight + grid.topMargin : 0
 
     SmoothWheel {
         id: wheel
 
         anchors.fill: grid
+        enabled: !root.embedded
         flickable: grid
         step: root.wheelStep
     }
@@ -144,6 +156,7 @@ Item {
             bottom: parent.bottom
             right: parent.right
         }
+        visible: !root.embedded
         policy: ScrollBar.AlwaysOn
         onPressedChanged: if (pressed) wheel.stop()
     }

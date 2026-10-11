@@ -649,3 +649,38 @@ func TestUIStateOutOfRange(t *testing.T) {
 		t.Errorf("UIState() = %+v, %v; want defaults", s, err)
 	}
 }
+
+// Mods and files that aren't from GameBanana get ids of their own.
+func TestAddLocalMod(t *testing.T) {
+	d, _ := openTemp(t)
+	ctx := context.Background()
+
+	var ids []int
+
+	for _, name := range []string{"one.vpk", "two.vpk"} {
+		m, err := d.AddMod(ctx, Mod{Section: "Local", Name: name, Enabled: true, InstalledAt: time.Now(),
+			Files: []ModFile{{Name: name, VPKs: []VPK{{Path: name, SHA256: name, Size: 1, Enabled: true}}}}})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if m.GameBananaID != -int(m.ID) || m.Files[0].GameBananaID != -int(m.Files[0].ID) {
+			t.Errorf("ids: mod %d/%d, file %d/%d", m.GameBananaID, m.ID, m.Files[0].GameBananaID, m.Files[0].ID)
+		}
+
+		ids = append(ids, m.GameBananaID)
+	}
+
+	if ids[0] == ids[1] {
+		t.Errorf("two local mods share the id %d", ids[0])
+	}
+
+	mods, err := d.Mods(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(mods) != 2 || mods[0].GameBananaID != ids[0] || mods[1].Files[0].GameBananaID >= 0 {
+		t.Errorf("Mods() = %+v", mods)
+	}
+}

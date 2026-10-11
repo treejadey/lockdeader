@@ -44,7 +44,7 @@ SearchPaths
 }
 ```
 
-- **Only the position matters.** The addons line must come before `Game citadel`. The extra `Mod`/`Write` lines are carried over from older community guides.
+- **The addons line must come before `Game citadel`.** The `Mod` and `Write` lines matter too: without them, the engine takes the first `Game` path as its mod and write directory, reads `cfg/user_keys_default.vcfg` from there (and fails to start: "Unable to read default keybinding configuration") and writes its shader cache and reports there. `Mod citadel` and `Write citadel` keep those at `citadel`.
 - **Game updates and Steam's "Verify integrity" overwrite the file,** which silently turns mods off. Managers have to check the file and re-apply their edit before every launch.
 - **Valve has no official route for mods.** There is no `-addon` launch flag, no Workshop, and no stock addons search path. The engine binaries do contain CS2's generic addon code (`ADDONROOT`, "untrusted addon" strings), but Deadlock doesn't expose any of it.
 

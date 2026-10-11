@@ -11,6 +11,7 @@ import (
 
 	"github.com/treejadey/lockdeader/audio"
 	"github.com/treejadey/lockdeader/banana"
+	"github.com/treejadey/lockdeader/deploy"
 	"github.com/treejadey/lockdeader/install"
 )
 
@@ -36,6 +37,12 @@ func TestErrorMessage(t *testing.T) {
 		{"not a VPK", fmt.Errorf("install: %s: %w", "a.vpk", install.ErrNotVPK), "The mod has no files the game can use."},
 		{"chunked", fmt.Errorf("%w (%s)", install.ErrChunkedVPK, "pak01_000.vpk"), "The mod is split into parts, which isn’t supported yet."},
 		{"permission", fmt.Errorf("install: %w", &fs.PathError{Op: "open", Path: "/x", Err: os.ErrPermission}), "Lockdeader isn’t allowed to save files in its data folder."},
+		{"too large", fmt.Errorf("%s: %w", "mod.zip", install.ErrTooLarge), "The mod is too big to pack."},
+		{"game running", deploy.ErrGameRunning, "Deadlock is running. Close it and try again."},
+		{"too many", fmt.Errorf("%w: %w", errGameFolder, deploy.ErrTooMany), "Too many of the mods that are on change the same files. Turn some off."},
+		{"missing", fmt.Errorf("%w: %w", errGameFolder, fmt.Errorf("%w: abc", deploy.ErrMissing)), "Some mods’ files are missing. Reinstall them."},
+		{"gameinfo", fmt.Errorf("%w: %w", errGameFolder, deploy.ErrNoSearchPaths), "Deadlock’s gameinfo.gi isn’t one Lockdeader understands. Verify the game files in Steam."},
+		{"game folder permission", fmt.Errorf("%w: %w", errGameFolder, fmt.Errorf("deploy: %w", &fs.PathError{Op: "open", Path: "/g", Err: os.ErrPermission})), "Lockdeader isn’t allowed to change files in Deadlock’s folder."},
 		{"no output", &audio.Error{Op: "opening the output device", Kind: audio.ErrDevice, Reason: "no backend"}, "No sound output is available."},
 		{"bad sound", &audio.Error{Op: "decoding", Kind: audio.ErrDecode, Reason: "invalid data"}, "This sound can’t be played."},
 		{"other", errors.New("something odd"), "Something went wrong."},

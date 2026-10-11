@@ -156,6 +156,13 @@ func (m *installedMods) lookUp(row *installedRow) {
 		return
 	}
 
+	// A mod that isn't from GameBanana has no files there.
+	if row.mod.GameBananaID <= 0 {
+		m.available[row.key] = []banana.File{}
+
+		return
+	}
+
 	key, section, id := row.key, banana.Section(row.mod.Section), row.mod.GameBananaID
 	m.lookingUp[key] = true
 
@@ -284,6 +291,8 @@ func (m *installedMods) change(row *installedRow, change configChange) error {
 
 	slog.Info("changed a mod's configuration", "mod", row.key,
 		"removed", len(change.remove), "enabled", len(change.enable))
+
+	m.changed()
 
 	return nil
 }

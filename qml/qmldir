@@ -14,6 +14,7 @@ FilePickerList 1.0 FilePickerList.qml
 GalleryCarousel 1.0 GalleryCarousel.qml
 GalleryStrip 1.0 GalleryStrip.qml
 ImageViewer 1.0 ImageViewer.qml
+InfoBar 1.0 InfoBar.qml
 InstallDialog 1.0 InstallDialog.qml
 InstallStatus 1.0 InstallStatus.qml
 InstalledGrid 1.0 InstalledGrid.qml
@@ -41,6 +42,7 @@ Sidebar 1.0 Sidebar.qml
 SidebarItem 1.0 SidebarItem.qml
 SmoothWheel 1.0 SmoothWheel.qml
 SoundPlayer 1.0 SoundPlayer.qml
+TakeOverDialog 1.0 TakeOverDialog.qml
 TextBox 1.0 TextBox.qml
 TextShadow 1.0 TextShadow.qml
 TickBox 1.0 TickBox.qml

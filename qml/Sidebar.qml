@@ -94,19 +94,33 @@ Rectangle {
             }
         }
 
-        ActionButton {
+        Item {
             Layout.fillWidth: true
             Layout.topMargin: 4
 
             implicitHeight: 38
-            text: qsTr("Play With Mods")
-            baseColor: Theme.accent
-            textColor: Theme.textOnAccent
-            sheen: true
-            // Disabled rather than hidden, so it's clear there's a way to
-            // play with mods once some are installed.
-            enabled: installed.installedCount > 0
-            onClicked: launcher.play = "mods"
+
+            ActionButton {
+                anchors.fill: parent
+                text: qsTr("Play With Mods")
+                baseColor: Theme.accent
+                textColor: Theme.textOnAccent
+                sheen: true
+                // Disabled rather than hidden, so it's clear there's a way to
+                // play with mods once some are installed and the game is
+                // known.
+                enabled: installed.installedCount > 0 && settings.gameFolder !== ""
+                onClicked: launcher.play = "mods"
+            }
+
+            // Pressing it without a game folder still gets an answer: Go
+            // says to choose one, with a way to the settings. A disabled
+            // button takes no clicks, so this sits over it.
+            MouseArea {
+                anchors.fill: parent
+                enabled: settings.gameFolder === ""
+                onClicked: launcher.play = "mods"
+            }
         }
 
         ActionButton {

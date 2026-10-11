@@ -4,7 +4,9 @@ import QtQuick.Controls.Fusion
 // Not named Dialog: Qt Quick Controls has a type of that name already.
 //
 // Items declared in an AppDialog are its content, stacked top to bottom;
-// put its buttons in buttons, from left to right.
+// put its buttons in buttons, from left to right. The card is as tall as
+// its content wants: when that's more than the window, the card itself
+// scrolls over the backdrop, which stays put, rather than scrolling inside.
 //
 // Motion is the install dialog's: opening a modal is an expressive moment, so
 // the card rises from low down towards the middle of the window as it fades
@@ -97,141 +99,163 @@ Popup {
 
         anchors.fill: parent
         color: Theme.backdrop
-
-        // A MouseArea rather than a TapHandler: pointer handlers see every
-        // press under them, even ones the dialog above has already taken.
-        MouseArea {
-            anchors.fill: parent
-            onClicked: root.close()
-        }
     }
 
-    Rectangle {
-        id: card
+    Flickable {
+        id: scroller
 
-        anchors.centerIn: parent
-        width: Math.min(root.cardWidth, parent.width - 48)
-        height: body.y + body.implicitHeight
-              + (buttonRow.children.length > 0 ? 36 + buttonRow.height + 14 : 28)
-        radius: 22
-        color: Theme.overlay
-        // Keeps text from wobbling on fractionally scaled displays. The dialog
-        // is a popup, so the nudge on the main window's content doesn't reach it.
-        transform: [
-            Translate {
-                id: cardShift
-            },
-            PixelNudge {}
-        ]
+        anchors.fill: parent
+        contentWidth: width
+        contentHeight: Math.max(height, card.height + 48)
+        boundsBehavior: Flickable.StopAtBounds
+        clip: true
 
-        // Clicks on the dialog stay on it, rather than closing it.
+        // Clicks beside the card close the dialog. A MouseArea rather than a
+        // TapHandler: pointer handlers see every press under them, even ones
+        // the card above has already taken.
         MouseArea {
-            anchors.fill: parent
-        }
-
-        // The title, with its dimmer start cut short first when it's long.
-        Row {
-            id: titleRow
-
-            anchors {
-                left: parent.left
-                leftMargin: 24
-                verticalCenter: closeButton.verticalCenter
-            }
-            spacing: prefixLabel.visible ? 5 : 0
-
-            Label {
-                id: prefixLabel
-
-                width: Math.min(implicitWidth, Math.max(0,
-                    card.width - titleRow.anchors.leftMargin - titleLabel.implicitWidth
-                    - titleRow.spacing - closeButton.width - 2 * closeButton.anchors.rightMargin))
-                visible: root.titlePrefix !== ""
-                text: root.titlePrefix
-                color: Theme.subtle
-                font.pixelSize: 15
-                font.weight: Font.DemiBold
-                elide: Text.ElideRight
-            }
-
-            Label {
-                id: titleLabel
-
-                text: root.title
-                color: Theme.text
-                font.pixelSize: 15
-                font.weight: Font.DemiBold
-            }
-        }
-
-        Column {
-            id: body
-
-            anchors {
-                top: parent.top
-                topMargin: 62
-                left: parent.left
-                right: parent.right
-                leftMargin: 30
-                rightMargin: 30
-            }
-            spacing: 14
-        }
-
-        Row {
-            id: buttonRow
-
-            anchors {
-                right: parent.right
-                bottom: parent.bottom
-                margins: 14
-            }
-            spacing: 8
-        }
-
-        AbstractButton {
-            id: closeButton
-
-            anchors {
-                top: parent.top
-                right: parent.right
-                topMargin: 14
-                rightMargin: 16
-            }
-            width: 32
-            height: 32
-            padding: 7
-            hoverEnabled: true
-            focusPolicy: Qt.TabFocus
+            width: scroller.contentWidth
+            height: scroller.contentHeight
             onClicked: root.close()
+        }
 
-            HoverHandler {
-                cursorShape: Qt.PointingHandCursor
+        Rectangle {
+            id: card
+
+            x: Math.round((scroller.width - width) / 2)
+            // Centred while it fits, else at the top, with the scroll reaching the rest.
+            y: Math.max(24, Math.round((scroller.height - height) / 2))
+            width: Math.min(root.cardWidth, scroller.width - 48)
+            height: body.y + body.implicitHeight
+                  + (buttonRow.children.length > 0 ? 36 + buttonRow.height + 14 : 28)
+            radius: 22
+            color: Theme.overlay
+            // Keeps text from wobbling on fractionally scaled displays. The dialog
+            // is a popup, so the nudge on the main window's content doesn't reach it.
+            transform: [
+                Translate {
+                    id: cardShift
+                },
+                PixelNudge {}
+            ]
+
+            // Clicks on the dialog stay on it, rather than closing it.
+            MouseArea {
+                anchors.fill: parent
             }
 
-            ToolTip.visible: hovered
-            ToolTip.delay: 500
-            ToolTip.text: qsTr("Close (Esc)")
+            // The title, with its dimmer start cut short first when it's long.
+            Row {
+                id: titleRow
 
-            background: Rectangle {
-                radius: 6
-                color: closeButton.hovered ? Theme.highlightMed : "transparent"
-                border.width: closeButton.visualFocus ? 1 : 0
-                border.color: Theme.iris
+                anchors {
+                    left: parent.left
+                    leftMargin: 24
+                    verticalCenter: closeButton.verticalCenter
+                }
+                spacing: prefixLabel.visible ? 5 : 0
 
-                Behavior on color {
-                    ColorAnimation {
-                        duration: Motion.fast01
-                        easing.type: Easing.BezierSpline
-                        easing.bezierCurve: Motion.productiveStandard
-                    }
+                Label {
+                    id: prefixLabel
+
+                    width: Math.min(implicitWidth, Math.max(0,
+                        card.width - titleRow.anchors.leftMargin - titleLabel.implicitWidth
+                        - titleRow.spacing - closeButton.width - 2 * closeButton.anchors.rightMargin))
+                    visible: root.titlePrefix !== ""
+                    text: root.titlePrefix
+                    color: Theme.subtle
+                    font.pixelSize: 15
+                    font.weight: Font.DemiBold
+                    elide: Text.ElideRight
+                }
+
+                Label {
+                    id: titleLabel
+
+                    text: root.title
+                    color: Theme.text
+                    font.pixelSize: 15
+                    font.weight: Font.DemiBold
                 }
             }
 
-            contentItem: TintedIcon {
-                source: "icons/dismiss_24_regular.svg"
-                opacity: closeButton.hovered ? 1 : 0.8
+            Column {
+                id: body
+
+                anchors {
+                    top: parent.top
+                    topMargin: 62
+                    left: parent.left
+                    right: parent.right
+                    leftMargin: 30
+                    rightMargin: 30
+                }
+                spacing: 14
+            }
+
+            Row {
+                id: buttonRow
+
+                anchors {
+                    right: parent.right
+                    bottom: parent.bottom
+                    margins: 14
+                }
+                spacing: 8
+            }
+
+            AbstractButton {
+                id: closeButton
+
+                anchors {
+                    top: parent.top
+                    right: parent.right
+                    topMargin: 14
+                    rightMargin: 16
+                }
+                width: 32
+                height: 32
+                padding: 7
+                hoverEnabled: true
+                focusPolicy: Qt.TabFocus
+                onClicked: root.close()
+
+                HoverHandler {
+                    cursorShape: Qt.PointingHandCursor
+                }
+
+                ToolTip.visible: hovered
+                ToolTip.delay: 500
+                ToolTip.text: qsTr("Close (Esc)")
+
+                background: Rectangle {
+                    radius: 6
+                    color: closeButton.hovered ? Theme.highlightMed : "transparent"
+                    border.width: closeButton.visualFocus ? 1 : 0
+                    border.color: Theme.iris
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: Motion.fast01
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: Motion.productiveStandard
+                        }
+                    }
+                }
+
+                contentItem: TintedIcon {
+                    source: "icons/dismiss_24_regular.svg"
+                    opacity: closeButton.hovered ? 1 : 0.8
+                }
             }
         }
+    }
+
+    // Only while there's something to scroll to, so wheeling over a list
+    // inside the card still scrolls the list.
+    SmoothWheel {
+        anchors.fill: scroller
+        enabled: scroller.contentHeight > scroller.height
+        flickable: scroller
     }
 }

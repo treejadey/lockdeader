@@ -49,12 +49,19 @@ AppWindow {
 
             InstalledPage {
                 onBrowseModsRequested: sidebar.currentIndex = 0
+                onTakeOverRequested: takeOverDialog.open()
             }
 
             SettingsPage {
                 id: settingsPage
+
+                onTakeOverRequested: takeOverDialog.open()
             }
         }
+    }
+
+    TakeOverDialog {
+        id: takeOverDialog
     }
 
     // In the overlay, over any dialog, so a dialog closing as a toast appears
@@ -103,9 +110,12 @@ AppWindow {
     }
 
     readonly property int launcherMessageId: launcher.messageId
+    // The launcher's message offers to open the settings.
+    property bool toastOpensSettings: false
 
     onLauncherMessageIdChanged: {
-        toast.show(launcher.message, "")
+        toastOpensSettings = launcher.messageAction === "settings"
+        toast.show(launcher.message, toastOpensSettings ? qsTr("Settings") : "")
         toastMessageId = 0
     }
 
@@ -115,6 +125,8 @@ AppWindow {
         function onActionTriggered() {
             if (window.toastMessageId !== 0)
                 installed.undo = window.toastMessageId
+            else if (window.toastOpensSettings)
+                sidebar.currentIndex = 2
         }
 
         function onDismissed() {
@@ -123,10 +135,11 @@ AppWindow {
         }
     }
 
-    // A focused text field takes Ctrl+Z for itself first.
+    // A focused text field takes Ctrl+Z for itself first. Only Undo is
+    // undoing; the toast's other actions aren't.
     Shortcut {
         sequences: [StandardKey.Undo]
-        enabled: toast.shown && toast.hasAction
+        enabled: toast.shown && toast.hasAction && window.toastMessageId !== 0
         onActivated: toast.trigger()
     }
 }

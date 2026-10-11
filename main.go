@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"github.com/treejadey/lockdeader/appdata"
 	"github.com/treejadey/lockdeader/appdb"
 	"github.com/treejadey/lockdeader/banana"
+	"github.com/treejadey/lockdeader/deploy"
 	"github.com/treejadey/lockdeader/filedialog"
 	"github.com/treejadey/lockdeader/game"
 	"github.com/treejadey/lockdeader/install"
@@ -182,6 +184,14 @@ func main() {
 
 	installed := newInstalledMods(client, db, store)
 	details := newModDetails(client, mods.Section, mods.Lookup, installed.Install)
+
+	// Puts the mods that are on into the game after each change to them.
+	deployer := newDeployer(db, store, func() string { return settings.Game.Path },
+		func() bool { return settings.Game.LoadOtherMods }, dirs.GameInfoBackup())
+	installed.onChange = deployer.ApplySoon
+
+	// Mods other tools put in the game, shown until they're taken over.
+	otherMods := newOtherMods(client, store, installed, func() string { return settings.Game.Path })
 	clipboard := newClipboardBridge(dirs.ImageCache, client)
 
 	soundPreview := newSoundPreview(client, audioState, func(volume float64, muted bool) {
@@ -224,13 +234,20 @@ func main() {
 			listingChanged()
 		}
 	}, func(gameSettings appdata.GameSettings) {
+		changedFolder := gameSettings.Path != settings.Game.Path
 		settings.Game = gameSettings
 		settingsChanged()
+
+		if changedFolder {
+			deployer.ApplySoon()
+			otherMods.Scan()
+		}
 	})
 
 	settingsPage.FindGame()
 
-	launcher := newGameLauncher(func() string { return settings.Game.LaunchOptions })
+	launcher := newGameLauncher(func() string { return settings.Game.LaunchOptions },
+		func() string { return settings.Game.Path }, deployer.Prepare)
 
 	retryAction := qt.NewQAction()
 	retryAction.OnTriggered(mods.Retry)
@@ -247,6 +264,8 @@ func main() {
 	engine.RootContext().SetContextProperty("details", details.QObject)
 	engine.RootContext().SetContextProperty("installed", installed.QObject)
 	engine.RootContext().SetContextProperty("installedMods", installed.Filtered.QObject)
+	engine.RootContext().SetContextProperty("otherMods", otherMods.QObject)
+	engine.RootContext().SetContextProperty("otherModsModel", otherMods.Model.QObject)
 	engine.RootContext().SetContextProperty("categories", categories.QObject)
 	engine.RootContext().SetContextProperty("search", search.QObject)
 	engine.RootContext().SetContextProperty("clipboard", clipboard.QObject)
@@ -280,7 +299,7 @@ func main() {
 	windowOpen := true
 
 	quitIfDone := func() {
-		if !windowOpen && installed.Idle() {
+		if !windowOpen && installed.Idle() && deployer.Idle() {
 			qt.QCoreApplication_Quit()
 		}
 	}
@@ -291,10 +310,23 @@ func main() {
 		// Nothing plays from a closed window.
 		soundPreview.Load("")
 
+		// A change still waiting to reach the game does so before quitting.
+		deployer.Flush()
 		quitIfDone()
 	})
 
 	installed.onIdle = quitIfDone
+
+	// Why the mods couldn't be put into the game shows on the installed
+	// page, until they can. A running game isn't a problem: the change
+	// waits for the next apply.
+	deployer.onDone = func(err error) {
+		if !errors.Is(err, deploy.ErrGameRunning) {
+			installed.SetApplyError(err)
+		}
+
+		quitIfDone()
+	}
 
 	installed.onFailed = func(name string) {
 		if windowOpen {
@@ -350,6 +382,20 @@ func main() {
 	})
 
 	categories.Load()
+
+	// Lockdeader's lines in gameinfo.gi are only for its own launches, so
+	// they come out on startup; and the mods go into the game again, in
+	// case a previous session left that unfinished.
+	if gameDir := settings.Game.Path; gameDir != "" {
+		go func() {
+			if _, err := deploy.DisableMods(gameDir, dirs.GameInfoBackup()); err != nil {
+				slog.Error("failed to take Lockdeader's lines out of gameinfo.gi", "err", err)
+			}
+		}()
+
+		deployer.ApplySoon()
+		otherMods.Scan()
+	}
 
 	code := qt.QGuiApplication_Exec()
 

@@ -51,6 +51,12 @@ func (d Dirs) SettingsFile() string {
 	return filepath.Join(d.Settings, "Settings.toml")
 }
 
+// GameInfoBackup is where the game's gameinfo.gi is copied before
+// Lockdeader first writes to it.
+func (d Dirs) GameInfoBackup() string {
+	return filepath.Join(d.Root, "gameinfo.gi.bak")
+}
+
 func (d Dirs) Create() error {
 	for _, dir := range []string{d.Root, d.Settings, d.Cache, d.ImageCache, d.ModCache} {
 		if err := os.MkdirAll(dir, 0o755); err != nil {

@@ -17,6 +17,7 @@ import (
 //
 //	showNsfw: whether mods GameBanana marks as NSFW are listed
 //	launchOptions: what's added to Deadlock's command line
+//	loadOtherMods: whether mods installed outside Lockdeader load too
 //	chooseGameFolder: true: asks the user for Deadlock's folder with the
 //	                  system's dialog. The folder is only taken if it is
 //	                  Deadlock's (see game.Check); if not, "gameFolderError"
@@ -60,6 +61,7 @@ func newSettingsPage(browse appdata.BrowseSettings, gameSettings appdata.GameSet
 
 	p.Insert("showNsfw", qt.NewQVariant8(browse.ShowNSFW))
 	p.Insert("launchOptions", qt.NewQVariant14(gameSettings.LaunchOptions))
+	p.Insert("loadOtherMods", qt.NewQVariant8(gameSettings.LoadOtherMods))
 	p.Insert("chooseGameFolder", qt.NewQVariant8(false))
 	p.Insert("choosingGameFolder", qt.NewQVariant8(false))
 	p.Insert("findGame", qt.NewQVariant8(false))
@@ -75,6 +77,8 @@ func newSettingsPage(browse appdata.BrowseSettings, gameSettings appdata.GameSet
 			p.SetShowNSFW(value.ToBool())
 		case "launchOptions":
 			p.SetLaunchOptions(value.ToString())
+		case "loadOtherMods":
+			p.SetLoadOtherMods(value.ToBool())
 		case "chooseGameFolder":
 			if value.ToBool() {
 				p.Insert(key, qt.NewQVariant8(false))
@@ -113,6 +117,17 @@ func (p *settingsPage) SetLaunchOptions(options string) {
 	}
 
 	p.game.LaunchOptions = options
+	p.gameChanged()
+}
+
+func (p *settingsPage) SetLoadOtherMods(load bool) {
+	p.Insert("loadOtherMods", qt.NewQVariant8(load))
+
+	if load == p.game.LoadOtherMods {
+		return
+	}
+
+	p.game.LoadOtherMods = load
 	p.gameChanged()
 }
 

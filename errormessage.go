@@ -12,6 +12,7 @@ import (
 
 	"github.com/treejadey/lockdeader/audio"
 	"github.com/treejadey/lockdeader/banana"
+	"github.com/treejadey/lockdeader/deploy"
 	"github.com/treejadey/lockdeader/install"
 )
 
@@ -72,8 +73,20 @@ func errorMessage(err error) string {
 		return tr("The mod has no files the game can use.")
 	case errors.Is(err, install.ErrChunkedVPK):
 		return tr("The mod is split into parts, which isn’t supported yet.")
+	case errors.Is(err, install.ErrTooLarge):
+		return tr("The mod is too big to pack.")
+	case errors.Is(err, deploy.ErrGameRunning):
+		return tr("Deadlock is running. Close it and try again.")
+	case errors.Is(err, deploy.ErrTooMany):
+		return tr("Too many of the mods that are on change the same files. Turn some off.")
+	case errors.Is(err, deploy.ErrMissing):
+		return tr("Some mods’ files are missing. Reinstall them.")
+	case errors.Is(err, deploy.ErrNoSearchPaths):
+		return tr("Deadlock’s gameinfo.gi isn’t one Lockdeader understands. Verify the game files in Steam.")
 	case isDiskFull(err):
 		return tr("There isn’t enough disk space.")
+	case errors.Is(err, errGameFolder) && errors.Is(err, fs.ErrPermission):
+		return tr("Lockdeader isn’t allowed to change files in Deadlock’s folder.")
 	case errors.Is(err, fs.ErrPermission):
 		return tr("Lockdeader isn’t allowed to save files in its data folder.")
 	case errors.Is(err, audio.ErrDevice):

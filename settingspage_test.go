@@ -50,6 +50,26 @@ func TestSettingsPageShowNSFW(t *testing.T) {
 	})
 }
 
+func TestSettingsPageLoadOtherMods(t *testing.T) {
+	mainthread.Wait(func() {
+		var changes []appdata.GameSettings
+		p := newSettingsPage(appdata.BrowseSettings{}, appdata.GameSettings{LoadOtherMods: true}, "/data",
+			nil, func(s appdata.GameSettings) { changes = append(changes, s) })
+
+		if !p.Value("loadOtherMods").ToBool() {
+			t.Error("loadOtherMods = false, want true")
+		}
+
+		p.SetLoadOtherMods(false)
+		p.SetLoadOtherMods(false)
+		p.SetLoadOtherMods(true)
+
+		if len(changes) != 2 || changes[0].LoadOtherMods || !changes[1].LoadOtherMods {
+			t.Errorf("changes = %+v", changes)
+		}
+	})
+}
+
 // newPagedServer serves a listing whose pages hold mods with the given
 // visibilities (see banana.Mod.InitialVisibility), numbered from 1 in order.
 func newPagedServer(t *testing.T, pages [][]string) *banana.Client {

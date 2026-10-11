@@ -10,16 +10,19 @@ import (
 	"encoding/hex"
 	"errors"
 	"hash/crc32"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/treejadey/lockdeader/banana"
+	"github.com/treejadey/lockdeader/vpk"
 )
 
 // vpkBytes returns a version 2 VPK header followed by body.
@@ -298,21 +301,136 @@ func TestExtractErrors(t *testing.T) {
 		name    string
 		archive string
 		want    error
+		// VPKs added before the error turned up stay for the startup sweep:
+		// another mod could have the same one.
+		leftovers int
 	}{
-		{"no VPKs", zipFile(t, [2]string{"readme.txt", "hi"}), ErrNoVPKs},
+		{"no VPKs", zipFile(t, [2]string{"readme.txt", "hi"}), ErrNoVPKs, 0},
 		{"chunked", zipFile(t,
 			[2]string{"pak01_dir.vpk", string(vpkBytes("dir"))},
-			[2]string{"pak01_000.vpk", "chunk"}), ErrChunkedVPK},
-		{"not a VPK inside", zipFile(t, [2]string{"pak01_dir.vpk", "text"}), ErrNotVPK},
-		{"unknown format", notArchive, ErrUnknownFormat},
+			[2]string{"pak01_000.vpk", "chunk"}), ErrChunkedVPK, 1},
+		{"not a VPK inside", zipFile(t, [2]string{"pak01_dir.vpk", "text"}), ErrNotVPK, 0},
+		{"damaged VPK inside", zipFile(t, [2]string{"pak01_dir.vpk", string(damagedVPK())}), ErrNotVPK, 0},
+		{"chunked by its contents", zipFile(t, [2]string{"mymod.vpk", string(chunkedVPK())}), ErrChunkedVPK, 0},
+		{"unknown format", notArchive, ErrUnknownFormat, 0},
+		{"loose files too big", zipFile(t, [2]string{"sounds/big.vsnd_c", strings.Repeat("x", 100)}), ErrTooLarge, 0},
 	}
+
+	maxLooseSize = 99
+	t.Cleanup(func() { maxLooseSize = 256 << 20 })
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if _, err := Extract(tt.archive, "mod", newStore(t)); !errors.Is(err, tt.want) {
+			s := newStore(t)
+
+			if _, err := Extract(tt.archive, "mod", s); !errors.Is(err, tt.want) {
 				t.Errorf("Extract() error = %v, want %v", err, tt.want)
 			}
+
+			// Nothing the game can't load stays in the store.
+			if files := storeFiles(t, s); len(files) != tt.leftovers {
+				t.Errorf("store has %v after a failed extract, want %d files", files, tt.leftovers)
+			}
 		})
+	}
+}
+
+// damagedVPK has the magic and version, but says its tree is longer than
+// the file.
+func damagedVPK() []byte {
+	var b bytes.Buffer
+	binary.Write(&b, binary.LittleEndian, [7]uint32{vpkMagic, 2, 100})
+	b.WriteString("short")
+
+	return b.Bytes()
+}
+
+// chunkedVPK is a _dir.vpk whose one file's data is in a pak01_000.vpk
+// chunk, which isn't in the archive.
+func chunkedVPK() []byte {
+	tree := []byte("vtex_c\x00materials\x00tex\x00")
+	tree = binary.LittleEndian.AppendUint32(tree, 0x12345678) // CRC
+	tree = binary.LittleEndian.AppendUint16(tree, 0)          // no preload bytes
+	tree = binary.LittleEndian.AppendUint16(tree, 0)          // in chunk 0
+	tree = binary.LittleEndian.AppendUint32(tree, 0)          // offset
+	tree = binary.LittleEndian.AppendUint32(tree, 10)         // length
+	tree = binary.LittleEndian.AppendUint16(tree, 0xFFFF)
+	tree = append(tree, 0, 0, 0)
+
+	var b bytes.Buffer
+	binary.Write(&b, binary.LittleEndian, [7]uint32{vpkMagic, 2, uint32(len(tree))})
+	b.Write(tree)
+
+	return b.Bytes()
+}
+
+func TestExtractLooseFiles(t *testing.T) {
+	s := newStore(t)
+
+	archive := zipFile(t,
+		[2]string{"README.md", "drop the folders into the game"},
+		[2]string{"My Mod/sounds/music/intro.vsnd_c", "intro"},
+		[2]string{"My Mod/soundevents/music.vsndevts_c", "events"},
+		[2]string{"My Mod/preview.png", "not a game file"},
+		[2]string{"My Mod/sounds/notes.txt", "not compiled"},
+		[2]string{"__MACOSX/My Mod/sounds/._intro.vsnd_c", "resource fork"},
+	)
+
+	vpks, err := Extract(archive, "mod.zip", s)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(vpks) != 1 || vpks[0].Path != "" {
+		t.Fatalf("Extract() = %+v, want one packed VPK", vpks)
+	}
+
+	f, err := os.Open(s.Path(vpks[0].SHA256))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer f.Close()
+
+	d, err := vpk.ReadDir(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]string{"sounds/music/intro.vsnd_c": "intro", "soundevents/music.vsndevts_c": "events"}
+
+	if len(d.Entries) != len(want) {
+		t.Fatalf("packed %d files, want %d", len(d.Entries), len(want))
+	}
+
+	for _, e := range d.Entries {
+		data, _ := io.ReadAll(d.Open(e))
+
+		if string(data) != want[e.Path] || e.CRC32 != crc32.ChecksumIEEE(data) {
+			t.Errorf("%s: %q, CRC %x", e.Path, data, e.CRC32)
+		}
+	}
+}
+
+// Loose files beside a VPK are the VPK's sources or leftovers, not a mod.
+func TestExtractLooseFilesBesideVPK(t *testing.T) {
+	s := newStore(t)
+	data := vpkBytes("real")
+
+	archive := zipFile(t,
+		[2]string{"sounds/a.vsnd_c", "loose"},
+		[2]string{"pak01_dir.vpk", string(data)},
+		[2]string{"sounds/b.vsnd_c", "loose"},
+	)
+
+	vpks, err := Extract(archive, "mod.zip", s)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []VPK{{Path: "pak01_dir.vpk", SHA256: sha(data), Size: int64(len(data))}}
+	if !reflect.DeepEqual(vpks, want) {
+		t.Errorf("Extract() = %+v\nwant %+v", vpks, want)
 	}
 }
 

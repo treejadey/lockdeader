@@ -86,6 +86,7 @@ const maxRunningInstalls = 2
 //	            by id (see Configure)
 //	refresh:    true: looks up which files the installed mods have on
 //	            GameBanana, for those it isn't known for yet
+//	applyNow:   true: puts the mods into the game again, after that failed
 //
 // A key is a mod's section and id, e.g. "Mod/123", as in its "key" role. Go
 // keeps "total" up to date: how many mods there are, whatever the query;
@@ -93,7 +94,10 @@ const maxRunningInstalls = 2
 // how many have finished installing. As in the clipboard bridge, "message"
 // says what just happened, e.g. a download starting, and "messageId" goes up
 // by one with each, so QML can tell a repeated message is new.
-// "messageUndoable" says whether the message offers Undo.
+// "messageUndoable" says whether the message offers Undo. "applyError" and
+// "applyErrorDetail" say why the mods couldn't be put into the game, as
+// "error" keys do (see SetApplyError); "" while they could.
+//
 // All methods must be called on the Qt main thread.
 type installedMods struct {
 	*qml.QQmlPropertyMap
@@ -124,6 +128,10 @@ type installedMods struct {
 	// finishes. Either may be nil.
 	onFailed func(name string)
 	onIdle   func()
+	// Called after a change to which mods the game should load: one turned
+	// on or off, installed, uninstalled or reconfigured; and on applyNow.
+	// May be nil.
+	onChange func()
 }
 
 type pendingUninstall struct {
@@ -147,6 +155,9 @@ type installJob struct {
 	failed bool
 	// Changes the mod's configuration once the files are in, if not nil.
 	then *configChange
+	// Called once the install has succeeded or failed, if not nil. Not
+	// called for one that's cancelled.
+	after func(err error)
 }
 
 // modInfo is what's shown of a mod while it installs, and stored once it has.
@@ -205,6 +216,8 @@ func newInstalledMods(client *banana.Client, db *appdb.DB, store install.Store) 
 	m.Insert("messageId", qt.NewQVariant4(0))
 	m.Insert("undo", qt.NewQVariant4(0))
 	m.Insert("messageGone", qt.NewQVariant4(0))
+	m.Insert("applyNow", qt.NewQVariant8(false))
+	m.SetApplyError(nil)
 
 	mods, err := db.Mods(context.Background())
 	if err != nil {
@@ -253,6 +266,13 @@ func newInstalledMods(client *banana.Client, db *appdb.DB, store install.Store) 
 			}
 
 			return
+		case "applyNow":
+			if value.ToBool() {
+				m.Insert(key, qt.NewQVariant8(false))
+				m.changed()
+			}
+
+			return
 		case "undo":
 			m.Undo(value.ToInt())
 
@@ -289,6 +309,12 @@ func newInstalledMods(client *banana.Client, db *appdb.DB, store install.Store) 
 // Install queues behind any installs already waiting. Files that are already
 // installed are skipped, and so is a mod that's already installing.
 func (m *installedMods) Install(info modInfo, files []banana.File) {
+	m.InstallThen(info, files, nil)
+}
+
+// InstallThen is Install with after called once the install is over (see
+// installJob.after). It returns false if there was nothing to install.
+func (m *installedMods) InstallThen(info modInfo, files []banana.File, after func(err error)) bool {
 	// Reinstalling a mod while its uninstall can still be undone starts from
 	// it being gone.
 	if m.uninstalling != nil && m.uninstalling.row.key == info.key() {
@@ -304,7 +330,7 @@ func (m *installedMods) Install(info modInfo, files []banana.File) {
 		slog.Info("already installing this mod", "mod", row.key)
 		m.notify(fmt.Sprintf(tr("%s is already downloading"), info.name))
 
-		return
+		return false
 	}
 
 	if row != nil && row.mod != nil {
@@ -315,14 +341,16 @@ func (m *installedMods) Install(info modInfo, files []banana.File) {
 		slog.Info("nothing to install: the files are installed already", "mod", info.key())
 		m.notify(fmt.Sprintf(tr("%s is already installed"), info.name))
 
-		return
+		return false
 	}
 
 	if row == nil {
 		row = m.addRow(info.key())
 	}
 
-	m.enqueue(row, &installJob{info: info, files: files})
+	m.enqueue(row, &installJob{info: info, files: files, after: after})
+
+	return true
 }
 
 func notInstalled(mod *appdb.Mod, files []banana.File) []banana.File {
@@ -429,6 +457,10 @@ func (m *installedMods) finish(row *installedRow, job *installJob, files []appdb
 			m.onFailed(job.info.name)
 		}
 
+		if job.after != nil {
+			job.after(err)
+		}
+
 		return
 	}
 
@@ -437,6 +469,11 @@ func (m *installedMods) finish(row *installedRow, job *installJob, files []appdb
 	row.job = nil
 	m.show(row)
 	m.lookUp(row)
+	m.changed()
+
+	if job.after != nil {
+		job.after(nil)
+	}
 }
 
 func (m *installedMods) record(row *installedRow, info modInfo, files []appdb.ModFile) error {
@@ -483,6 +520,29 @@ func (m *installedMods) record(row *installedRow, info modInfo, files []appdb.Mo
 	}
 
 	row.mod = &mod
+
+	return nil
+}
+
+// AddInstalled adds a mod whose files are in the store already, e.g. one
+// taken over from another tool, to the database and the list, last in the
+// load order. It fails if the mod is installed already.
+func (m *installedMods) AddInstalled(mod appdb.Mod) error {
+	mod.LoadOrder = m.nextLoadOrder()
+
+	mod, err := m.db.AddMod(context.Background(), mod)
+	if err != nil {
+		return err
+	}
+
+	row := m.addRow(installedKey(banana.Section(mod.Section), mod.GameBananaID))
+	row.mod = &mod
+	m.show(row)
+	m.updateCounts()
+	m.lookUp(row)
+	m.changed()
+
+	slog.Info("added an installed mod", "mod", row.key)
 
 	return nil
 }
@@ -538,7 +598,7 @@ func (m *installedMods) Retry(key string) {
 		return
 	}
 
-	m.enqueue(row, &installJob{info: row.job.info, files: row.job.files, then: row.job.then})
+	m.enqueue(row, &installJob{info: row.job.info, files: row.job.files, then: row.job.then, after: row.job.after})
 }
 
 func (m *installedMods) SetEnabled(key string, enabled bool) {
@@ -555,6 +615,7 @@ func (m *installedMods) SetEnabled(key string, enabled bool) {
 
 	row.mod.Enabled = enabled
 	row.item.SetData(qt.NewQVariant8(enabled), roleInstalledEnabled)
+	m.changed()
 }
 
 // Uninstall takes the mod off the list straight away, but only removes it
@@ -621,6 +682,22 @@ func (m *installedMods) FinishUninstall() {
 	p.row.item.Delete()
 
 	m.deleteUnusedVPKs(p.row.mod.Files)
+	m.changed()
+}
+
+func (m *installedMods) changed() {
+	if m.onChange != nil {
+		m.onChange()
+	}
+}
+
+// SetApplyError says why the mods couldn't be put into the game, or that
+// they could, with nil.
+func (m *installedMods) SetApplyError(err error) {
+	message, detail := errorTexts(err)
+
+	m.Insert("applyError", qt.NewQVariant14(message))
+	m.Insert("applyErrorDetail", qt.NewQVariant14(detail))
 }
 
 func (m *installedMods) putBack(p *pendingUninstall) {

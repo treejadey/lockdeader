@@ -10,6 +10,9 @@ Item {
     readonly property var sectionItems: Array.from(sections.children)
     readonly property bool anyMatches: sectionItems.some(section => section.hasMatches)
     // {title, shown} for each section; shown is false while a search hides it.
+    // Asks to take the mods from other tools over (see TakeOverDialog).
+    signal takeOverRequested()
+
     readonly property var sectionList: sectionItems.map(section => ({
         title: section.title,
         shown: section.hasMatches,
@@ -204,6 +207,31 @@ Item {
                         text: settings.launchOptions
                         onTextEdited: settings.launchOptions = text
                     }
+                }
+
+                SettingRow {
+                    text: qsTr("Mods from other tools")
+                    description: otherMods.count === 0
+                        ? qsTr("None found in the game’s addons folder")
+                        : otherMods.count === 1
+                        ? qsTr("One mod in the game’s addons folder, from Deadlock Mod Manager or put there by hand. Lockdeader can take it over, and then turn it on and off, update and uninstall it.")
+                        : qsTr("%1 mods in the game’s addons folder, from Deadlock Mod Manager or put there by hand. Lockdeader can take them over, and then turn them on and off, update and uninstall them.").arg(otherMods.count)
+                    keywords: qsTr("deadlock mod manager dmm addons folder import take over migrate port third party")
+
+                    ActionButton {
+                        text: qsTr("Take Over…")
+                        baseColor: Theme.highlightMed
+                        enabled: otherMods.count > 0 && !otherMods.takingOver
+                        onClicked: root.takeOverRequested()
+                    }
+                }
+
+                SettingToggle {
+                    text: qsTr("Also load mods installed by other tools")
+                    description: qsTr("Mods put in the game’s addons folder by hand or by another mod manager load after Lockdeader’s when it starts Deadlock with mods")
+                    keywords: qsTr("addons folder deadlock mod manager dmm manual external other")
+                    checked: settings.loadOtherMods
+                    onToggled: settings.loadOtherMods = checked
                 }
             }
 

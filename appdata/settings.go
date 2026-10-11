@@ -23,6 +23,7 @@ type GameSettings struct {
 	// Deadlock's, e.g. once it's uninstalled, is dropped when the app starts.
 	Path          string `toml:"path" comment:"The folder Deadlock is installed in. Left empty, Lockdeader looks for it in Steam's libraries."`
 	LaunchOptions string `toml:"launch_options" comment:"Added to Deadlock's command line when Lockdeader starts it, e.g. \"-novid -high\"."`
+	LoadOtherMods bool   `toml:"load_other_mods" comment:"Whether mods put in the game's addons folder by hand or by another mod manager load too, after Lockdeader's, when it starts Deadlock with mods."`
 }
 
 type BrowseSettings struct {
@@ -35,6 +36,9 @@ type CacheSettings struct {
 
 func DefaultSettings() Settings {
 	return Settings{
+		Game: GameSettings{
+			LoadOtherMods: true,
+		},
 		Cache: CacheSettings{
 			ImagesMaxSizeMB: 512,
 		},

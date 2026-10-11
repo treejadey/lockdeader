@@ -11,6 +11,8 @@ Item {
     property bool scrollRestored: false
 
     signal browseModsRequested()
+    // Asks to take the mods from other tools over (see TakeOverDialog).
+    signal takeOverRequested()
 
     function restoreScroll() {
         if (scrollRestored || !visible)
@@ -42,10 +44,13 @@ Item {
     }
 
     // Looks up which files the mods have on GameBanana, so their menus know
-    // whether there are other versions to pick from.
+    // whether there are other versions to pick from; and looks through the
+    // game's addons folders again, in case another tool changed them.
     onVisibleChanged: {
-        if (visible)
+        if (visible) {
             installed.refresh = true
+            otherMods.scan = true
+        }
 
         restoreScroll()
     }
@@ -61,6 +66,59 @@ Item {
         menu.status = status
         menu.variants = variants
         menu.popup()
+    }
+
+    // Mods from other tools, under the installed ones: a heading and the
+    // same cards or rows, which only show their state. It takes no room
+    // while there are none.
+    Component {
+        id: otherSectionGrid
+
+        Column {
+            width: GridView.view ? GridView.view.width : 0
+            visible: otherMods.count > 0
+            height: visible ? implicitHeight : 0
+
+            OtherModsHeading {}
+
+            InstalledGrid {
+                width: parent.width
+                embedded: true
+                readOnly: true
+                model: otherModsModel
+                onMenuRequested: otherMenu.popup()
+            }
+        }
+    }
+
+    Component {
+        id: otherSectionList
+
+        Column {
+            width: ListView.view ? ListView.view.width : 0
+            visible: otherMods.count > 0
+            height: visible ? implicitHeight : 0
+
+            OtherModsHeading {}
+
+            InstalledList {
+                width: parent.width
+                embedded: true
+                readOnly: true
+                model: otherModsModel
+                onMenuRequested: otherMenu.popup()
+            }
+        }
+    }
+
+    component OtherModsHeading: Label {
+        width: parent.width
+        topPadding: 18
+        bottomPadding: 4
+        leftPadding: 12
+        text: qsTr("From Other Tools")
+        color: Theme.subtle
+        font.weight: Font.DemiBold
     }
 
     TopBar {
@@ -80,9 +138,44 @@ Item {
         onSearchAccepted: installed.query = topBar.searchText
     }
 
-    Item {
+    // Why the mods aren't reaching the game, until they do.
+    InfoBar {
+        id: applyBar
+
         anchors {
             top: topBar.bottom
+            left: parent.left
+            right: parent.right
+        }
+        shown: installed.applyError !== ""
+        severity: "error"
+        text: qsTr("Couldn’t put the mods into the game. ") + installed.applyError
+        detail: installed.applyErrorDetail
+        action: qsTr("Retry")
+        onActionTriggered: installed.applyNow = true
+    }
+
+    // Mods other tools put in the game can be taken over (see TakeOverDialog).
+    InfoBar {
+        id: otherBar
+
+        anchors {
+            top: applyBar.bottom
+            left: parent.left
+            right: parent.right
+        }
+        shown: otherMods.count > 0
+        severity: "information"
+        text: otherMods.count === 1
+            ? qsTr("A mod from another tool was found in the game’s addons folder. Lockdeader can take it over.")
+            : qsTr("%1 mods from other tools were found in the game’s addons folder. Lockdeader can take them over.").arg(otherMods.count)
+        action: qsTr("Take Over…")
+        onActionTriggered: root.takeOverRequested()
+    }
+
+    Item {
+        anchors {
+            top: otherBar.bottom
             left: parent.left
             right: parent.right
             bottom: parent.bottom
@@ -94,6 +187,7 @@ Item {
             anchors.fill: parent
             visible: !root.listed
             model: root.listed ? null : installedMods
+            footer: otherSectionGrid
             onEnabledToggled: (key, enabled) => root.setEnabled(key, enabled)
             onMenuRequested: (key, status, variants) => root.showMenu(key, status, variants)
         }
@@ -104,6 +198,7 @@ Item {
             anchors.fill: parent
             visible: root.listed
             model: root.listed ? installedMods : null
+            footer: otherSectionList
             onEnabledToggled: (key, enabled) => root.setEnabled(key, enabled)
             onMenuRequested: (key, status, variants) => root.showMenu(key, status, variants)
         }
@@ -111,7 +206,7 @@ Item {
         Column {
             anchors.centerIn: parent
             spacing: 6
-            visible: installed.total === 0
+            visible: installed.total === 0 && otherMods.count === 0
 
             Label {
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -186,6 +281,17 @@ Item {
             icon.source: "icons/delete_24_regular.svg"
             shown: menu.status === ""
             onTriggered: installed.uninstall = menu.key
+        }
+    }
+
+    // Other tools' mods can only be looked at where they are.
+    PopupMenu {
+        id: otherMenu
+
+        PopupMenuItem {
+            text: qsTr("Open Folder")
+            icon.source: "icons/folder_24_regular.svg"
+            onTriggered: Qt.openUrlExternally(otherMods.folderUrl)
         }
     }
 

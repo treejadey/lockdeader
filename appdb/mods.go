@@ -9,9 +9,11 @@ import (
 )
 
 type Mod struct {
-	ID           int64  // set by AddMod
-	Section      string // GameBanana section: "Mod" or "Sound"
-	GameBananaID int    // its id in that section
+	ID      int64  // set by AddMod
+	Section string // GameBanana section: "Mod" or "Sound"; "Local" for one that isn't from there
+	// Its id in that section. A mod that isn't from GameBanana is added with
+	// 0 and gets a negative id of its own, minus its ID, so it's still unique.
+	GameBananaID int
 	Name         string
 	Author       string
 	Enabled      bool // the game loads it
@@ -26,8 +28,11 @@ type Mod struct {
 // A ModFile is an archive downloaded from GameBanana: enough to download it
 // again, and to check that the download is intact.
 type ModFile struct {
-	ID           int64 // set by AddMod or AddModFiles
-	GameBananaID int   // the file's id: gamebanana.com/dl/<id>
+	ID int64 // set by AddMod or AddModFiles
+	// The file's id: gamebanana.com/dl/<id>. A file that isn't from there,
+	// e.g. taken over from another tool, is added with 0 and gets minus its
+	// ID, as a mod does.
+	GameBananaID int
 	Name         string
 	Size         int64  // in bytes
 	MD5          string // GameBanana's checksum of the archive, in hex
@@ -68,6 +73,14 @@ func (d *DB) AddMod(ctx context.Context, m Mod) (Mod, error) {
 
 	if m.ID, err = res.LastInsertId(); err != nil {
 		return Mod{}, fmt.Errorf("appdb: %w", err)
+	}
+
+	if m.GameBananaID == 0 {
+		m.GameBananaID = -int(m.ID)
+
+		if _, err := tx.ExecContext(ctx, "UPDATE mods SET gamebanana_id = ? WHERE id = ?", m.GameBananaID, m.ID); err != nil {
+			return Mod{}, fmt.Errorf("appdb: %w", err)
+		}
 	}
 
 	if m.Files, err = addFiles(ctx, tx, m.ID, m.Files); err != nil {
@@ -120,6 +133,14 @@ func addFiles(ctx context.Context, tx *sql.Tx, modID int64, files []ModFile) ([]
 
 		if f.ID, err = res.LastInsertId(); err != nil {
 			return nil, fmt.Errorf("appdb: %w", err)
+		}
+
+		if f.GameBananaID == 0 {
+			f.GameBananaID = -int(f.ID)
+
+			if _, err := tx.ExecContext(ctx, "UPDATE mod_files SET gamebanana_id = ? WHERE id = ?", f.GameBananaID, f.ID); err != nil {
+				return nil, fmt.Errorf("appdb: %w", err)
+			}
 		}
 
 		f.VPKs = append([]VPK(nil), f.VPKs...)

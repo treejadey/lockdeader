@@ -9,8 +9,12 @@ Item {
     id: root
 
     property alias model: list.model
+    property alias footer: list.footer
     readonly property alias contentY: list.contentY
     readonly property alias count: list.count
+    // As InstalledGrid's.
+    property bool readOnly: false
+    property bool embedded: false
 
     // The columns, from the right: the checkbox, when it was updated, the
     // author, and the progress of an install. Each column's width includes
@@ -47,12 +51,13 @@ Item {
             bottom: parent.bottom
             left: parent.left
             leftMargin: 12
-            right: scrollBar.left
-            rightMargin: 6
+            right: root.embedded ? parent.right : scrollBar.left
+            rightMargin: root.embedded ? 12 : 6
         }
         topMargin: 2
         spacing: 6
-        clip: true
+        clip: !root.embedded
+        interactive: !root.embedded
         boundsBehavior: Flickable.StopAtBounds
 
         delegate: Rectangle {
@@ -93,11 +98,11 @@ Item {
                 anchors.fill: parent
                 hoverEnabled: true
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
-                cursorShape: row.installing ? Qt.ArrowCursor : Qt.PointingHandCursor
+                cursorShape: row.installing || root.readOnly ? Qt.ArrowCursor : Qt.PointingHandCursor
                 onClicked: (mouse) => {
                     if (mouse.button === Qt.RightButton)
                         root.menuRequested(row.key, row.status, row.variants)
-                    else if (!row.installing)
+                    else if (!row.installing && !root.readOnly)
                         root.enabledToggled(row.key, !row.modEnabled)
                 }
             }
@@ -203,19 +208,23 @@ Item {
                     verticalCenter: parent.verticalCenter
                 }
                 checked: row.modEnabled
-                enabled: !row.installing
-                labelHovered: rowArea.containsMouse
+                enabled: !row.installing && !root.readOnly
+                labelHovered: rowArea.containsMouse && !root.readOnly
                 onClicked: root.enabledToggled(row.key, !row.modEnabled)
             }
         }
 
-        ScrollBar.vertical: scrollBar
+        ScrollBar.vertical: root.embedded ? null : scrollBar
     }
+
+    // Embedded, the list is as tall as its rows, and the parent scrolls.
+    implicitHeight: root.embedded ? list.contentHeight + list.topMargin : 0
 
     SmoothWheel {
         id: wheel
 
         anchors.fill: list
+        enabled: !root.embedded
         flickable: list
     }
 
@@ -227,6 +236,7 @@ Item {
             bottom: parent.bottom
             right: parent.right
         }
+        visible: !root.embedded
         policy: ScrollBar.AlwaysOn
         onPressedChanged: if (pressed) wheel.stop()
     }
