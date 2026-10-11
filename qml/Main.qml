@@ -93,7 +93,7 @@ AppWindow {
     // twice still shows.
     readonly property int installMessageId: installed.messageId
     // The installer message the toast shows, so its Undo or its going away can
-    // be passed back.
+    // be passed back; 0 while it shows another bridge's.
     property int toastMessageId: 0
 
     // Showing a message dismisses the one before, which still has the old id.
@@ -102,15 +102,24 @@ AppWindow {
         toastMessageId = installed.messageId
     }
 
+    readonly property int launcherMessageId: launcher.messageId
+
+    onLauncherMessageIdChanged: {
+        toast.show(launcher.message, "")
+        toastMessageId = 0
+    }
+
     Connections {
         target: toast
 
         function onActionTriggered() {
-            installed.undo = window.toastMessageId
+            if (window.toastMessageId !== 0)
+                installed.undo = window.toastMessageId
         }
 
         function onDismissed() {
-            installed.messageGone = window.toastMessageId
+            if (window.toastMessageId !== 0)
+                installed.messageGone = window.toastMessageId
         }
     }
 

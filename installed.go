@@ -88,11 +88,12 @@ const maxRunningInstalls = 2
 //	            GameBanana, for those it isn't known for yet
 //
 // A key is a mod's section and id, e.g. "Mod/123", as in its "key" role. Go
-// keeps "total" up to date: how many mods there are, whatever the query; and
-// "installing": how many are installing or waiting to. As in the clipboard
-// bridge, "message" says what just happened, e.g. a download starting, and
-// "messageId" goes up by one with each, so QML can tell a repeated message is
-// new. "messageUndoable" says whether the message offers Undo.
+// keeps "total" up to date: how many mods there are, whatever the query;
+// "installing": how many are installing or waiting to; and "installedCount":
+// how many have finished installing. As in the clipboard bridge, "message"
+// says what just happened, e.g. a download starting, and "messageId" goes up
+// by one with each, so QML can tell a repeated message is new.
+// "messageUndoable" says whether the message offers Undo.
 // All methods must be called on the Qt main thread.
 type installedMods struct {
 	*qml.QQmlPropertyMap
@@ -686,16 +687,21 @@ func (m *installedMods) removeRow(row *installedRow) {
 }
 
 func (m *installedMods) updateCounts() {
-	installing := 0
+	installing, installedCount := 0, 0
 
 	for _, row := range m.rows {
 		if row.job != nil && !row.job.failed {
 			installing++
 		}
+
+		if row.mod != nil {
+			installedCount++
+		}
 	}
 
 	m.Insert("total", qt.NewQVariant4(len(m.rows)))
 	m.Insert("installing", qt.NewQVariant4(installing))
+	m.Insert("installedCount", qt.NewQVariant4(installedCount))
 }
 
 // show fills in a row from the database once the mod is installed, and from

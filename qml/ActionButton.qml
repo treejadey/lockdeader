@@ -12,6 +12,9 @@ AbstractButton {
     property color baseColor: Theme.overlay
     // E.g. Theme.base on a light baseColor such as foam.
     property color textColor: Theme.text
+    // Shades the button from nearly white at the top down to baseColor, for
+    // an action that should stand out from everything around it.
+    property bool sheen: false
 
     implicitWidth: implicitContentWidth + leftPadding + rightPadding
     implicitHeight: 34
@@ -40,6 +43,8 @@ AbstractButton {
     }
 
     background: Rectangle {
+        id: background
+
         radius: 6
         // Clear while disabled, so its antialiased edge doesn't show around
         // the disabled look's.
@@ -47,8 +52,24 @@ AbstractButton {
              : root.down ? Qt.darker(root.baseColor, 1.15)
              : root.hovered ? Qt.lighter(root.baseColor, 1.25)
              : root.baseColor
+        // Follows color, so it lightens and darkens with hovering and pressing.
+        gradient: root.sheen && root.enabled ? sheenGradient : null
         border.width: root.visualFocus ? 1 : 0
         border.color: Theme.iris
+
+        Gradient {
+            id: sheenGradient
+
+            GradientStop {
+                position: 0
+                color: Qt.tint(background.color, Qt.rgba(1, 1, 1, 0.45))
+            }
+
+            GradientStop {
+                position: 1
+                color: background.color
+            }
+        }
 
         Behavior on color {
             ColorAnimation {

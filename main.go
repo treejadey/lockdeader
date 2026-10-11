@@ -226,6 +226,8 @@ func main() {
 
 	settingsPage.FindGame()
 
+	launcher := newGameLauncher(func() string { return settings.Game.LaunchOptions })
+
 	retryAction := qt.NewQAction()
 	retryAction.OnTriggered(mods.Retry)
 	retryCategoriesAction := qt.NewQAction()
@@ -247,6 +249,7 @@ func main() {
 	engine.RootContext().SetContextProperty("soundPreview", soundPreview.QObject)
 	engine.RootContext().SetContextProperty("settings", settingsPage.QObject)
 	engine.RootContext().SetContextProperty("uiState", ui.QObject)
+	engine.RootContext().SetContextProperty("launcher", launcher.QObject)
 	engine.RootContext().SetContextProperty("retryAction", retryAction.QObject)
 	engine.RootContext().SetContextProperty("retryCategoriesAction", retryCategoriesAction.QObject)
 

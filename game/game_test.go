@@ -2,6 +2,7 @@ package game
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -98,5 +99,31 @@ func TestVDFValues(t *testing.T) {
 
 	if len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
 		t.Errorf("vdfValues() = %q, want %q", got, want)
+	}
+}
+
+func TestSplitOptions(t *testing.T) {
+	for options, want := range map[string]string{
+		"":                            "[]",
+		"   ":                         "[]",
+		"-novid -high":                "[-novid -high]",
+		`+exec "my config.cfg"  -dev`: "[+exec my config.cfg -dev]",
+		`-name 'it''s'`:               "[-name its]",
+		`-empty "" -last`:             `[-empty  -last]`,
+		"-a\t-b\n-c":                  "[-a -b -c]",
+	} {
+		if got := fmt.Sprint(SplitOptions(options)); got != want {
+			t.Errorf("SplitOptions(%q) = %s, want %s", options, got, want)
+		}
+	}
+}
+
+func TestSteamURL(t *testing.T) {
+	if got, want := SteamURL([]string{"-novid", "-high"}), "steam://run/1422450//-novid%20-high/"; got != want {
+		t.Errorf("SteamURL() = %q, want %q", got, want)
+	}
+
+	if got, want := SteamURL(nil), "steam://run/1422450///"; got != want {
+		t.Errorf("SteamURL(nil) = %q, want %q", got, want)
 	}
 }

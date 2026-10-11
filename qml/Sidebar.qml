@@ -94,6 +94,30 @@ Rectangle {
             }
         }
 
+        ActionButton {
+            Layout.fillWidth: true
+            Layout.topMargin: 4
+
+            implicitHeight: 38
+            text: qsTr("Play With Mods")
+            baseColor: Theme.foam
+            textColor: Theme.base
+            sheen: true
+            // Disabled rather than hidden, so it's clear there's a way to
+            // play with mods once some are installed.
+            enabled: installed.installedCount > 0
+            onClicked: launcher.play = "mods"
+        }
+
+        ActionButton {
+            Layout.fillWidth: true
+            Layout.bottomMargin: 4
+
+            implicitHeight: 38
+            text: qsTr("Play Without Mods")
+            onClicked: launcher.play = "vanilla"
+        }
+
         SidebarItem {
             Layout.fillWidth: true
 
