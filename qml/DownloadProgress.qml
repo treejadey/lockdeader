@@ -2,8 +2,9 @@ import QtQuick
 import QtQuick.Effects
 
 // A download's progress bar, in the style of elementary OS's: a rounded
-// track, filled from the left with rounded ends, and a brighter slanted band
-// (the shine) sweeping through the filled part, then pausing before the next.
+// track, filled from the left with rounded ends, and a few brighter slanted
+// bands (the shine) sweeping through the filled part together, then pausing
+// before the next sweep.
 // (Not named ProgressBar: Qt Quick Controls has a type of that name already.)
 //
 // How the shine moves follows how fast the download is going (pace):
@@ -30,10 +31,15 @@ Item {
 
     // Sweep and pause times, in milliseconds, for each pace.
     readonly property var timings: ({
-        slow: { sweep: 1800, pause: 1000 },
-        normal: { sweep: 1100, pause: 1000 },
-        fast: { sweep: 750, pause: 0 },
+        slow: { sweep: 3200, pause: 1000 },
+        normal: { sweep: 2100, pause: 1000 },
+        fast: { sweep: 1400, pause: 0 },
     })
+    // The shine's bands: how many, how wide each is and the gap between
+    // them, both as parts of the bar's width.
+    readonly property int bands: 3
+    readonly property real bandWidth: 0.26
+    readonly property real bandGap: 0.14
     readonly property var timing: timings[pace] ?? timings.normal
     // How far the shine's bottom edge is ahead of its top, per pixel of height.
     readonly property real slant: 0.75
@@ -81,27 +87,44 @@ Item {
                            Theme.pine.b + (Theme.foam.b - Theme.pine.b) * 0.35, 1)
         }
 
-        Rectangle {
+        // The bands, one after another, moving as one.
+        Item {
             id: shine
 
-            // How far through its sweep it is, from 0 (just before the start
-            // of the fill) to 1 (just past its end).
+            // How far through its sweep it is, from 0 (all of it just before
+            // the start of the fill) to 1 (all of it just past its end).
             property real travel: 0
-            readonly property real lean: height * root.slant
-
+            readonly property real bandWidth: Math.max(2 * root.height, root.width * root.bandWidth)
+            readonly property real gap: Math.max(root.height, root.width * root.bandGap)
+            readonly property real lean: bandHeight * root.slant
             // A little in from the top and bottom of the bar.
-            y: Math.max(1, Math.round(root.height * 0.2))
-            height: root.height - 2 * y
-            width: Math.max(2 * root.height, root.width * 0.17)
-            x: -width - lean + travel * (fill.width + width + lean)
-            color: Theme.foam
+            readonly property real inset: Math.max(1, Math.round(root.height * 0.2))
+            readonly property real bandHeight: root.height - 2 * inset
+
+            width: root.bands * bandWidth + (root.bands - 1) * gap + lean
+            height: root.height
+            x: -width + travel * (fill.width + width)
             visible: travel > 0 && travel < 1
-            // Slants it: the bottom edge is ahead of the top, as if moving.
-            transform: Matrix4x4 {
-                matrix: Qt.matrix4x4(1, root.slant, 0, 0,
-                                     0, 1, 0, 0,
-                                     0, 0, 1, 0,
-                                     0, 0, 0, 1)
+
+            Repeater {
+                model: root.bands
+
+                Rectangle {
+                    required property int index
+
+                    x: index * (shine.bandWidth + shine.gap)
+                    y: shine.inset
+                    width: shine.bandWidth
+                    height: shine.bandHeight
+                    color: Theme.foam
+                    // Slants it: the bottom edge is ahead of the top, as if moving.
+                    transform: Matrix4x4 {
+                        matrix: Qt.matrix4x4(1, root.slant, 0, 0,
+                                             0, 1, 0, 0,
+                                             0, 0, 1, 0,
+                                             0, 0, 0, 1)
+                    }
+                }
             }
         }
     }
