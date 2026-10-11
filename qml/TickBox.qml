@@ -90,7 +90,7 @@ AbstractButton {
             height: width
             source: "icons/checkmark_24_filled.svg"
             // Kept while disabled, so it still shows what it will be.
-            color: root.enabled ? Theme.onAccent : Theme.highlightMed
+            color: root.enabled ? Theme.textOnAccent : Theme.highlightMed
             opacity: grown > 0 ? 1 : 0
             // Grows from the corner of the tick, as Carbon's does.
             transform: Scale {

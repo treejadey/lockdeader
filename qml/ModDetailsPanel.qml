@@ -139,7 +139,7 @@ Rectangle {
                         Label {
                             width: parent.width
                             text: root.name
-                            color: Theme.onPicture
+                            color: Theme.textOnPicture
                             font.pixelSize: 20
                             font.weight: Font.Medium
                             wrapMode: Text.Wrap

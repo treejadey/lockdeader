@@ -265,7 +265,7 @@ Popup {
                     implicitHeight: 42
                     text: root.single ? qsTr("Install") : qsTr("Install Selected")
                     baseColor: Theme.accent
-                    textColor: Theme.onAccent
+                    textColor: Theme.textOnAccent
                     enabled: root.selectedIds.length > 0
                     onClicked: root.installRequested(root.selectedIds)
                 }

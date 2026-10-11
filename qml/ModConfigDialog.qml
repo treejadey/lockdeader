@@ -110,7 +110,7 @@ AppDialog {
         implicitHeight: 44
         text: qsTr("Change Configuration")
         baseColor: Theme.accent
-        textColor: Theme.onAccent
+        textColor: Theme.textOnAccent
         enabled: root.changed
         onClicked: {
             root.changeRequested(root.configuration.key, root.selectedIds)

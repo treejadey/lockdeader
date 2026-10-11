@@ -76,10 +76,11 @@ AbstractButton {
 
     background: Rectangle {
         radius: height / 2
-        // Foam, darkened to sit behind a foam knob.
-        color: root.checked
-            ? Qt.hsva(Theme.foam.hsvHue, Math.min(1, Theme.foam.hsvSaturation * 1.45), Theme.foam.hsvValue * 0.5, 1)
-            : root.hovered ? Theme.highlightHigh : Theme.highlightMed
+        // In the dark style, foam darkened to sit behind a foam knob; in the
+        // light one, where that's nearly black, foam behind a light knob.
+        color: !root.checked ? (root.hovered ? Theme.highlightHigh : Theme.highlightMed)
+             : Theme.dark ? Qt.hsva(Theme.foam.hsvHue, Math.min(1, Theme.foam.hsvSaturation * 1.45), Theme.foam.hsvValue * 0.5, 1)
+             : Theme.accent
 
         Behavior on color {
             ColorAnimation {
@@ -108,7 +109,7 @@ AbstractButton {
             width: root.knobSize
             height: root.knobSize
             radius: width / 2
-            color: root.mix(root.hovered ? Theme.text : Theme.subtle, Theme.foam, knob.position)
+            color: root.mix(root.hovered ? Theme.text : Theme.subtle, Theme.dark ? Theme.foam : Theme.surface, knob.position)
             scale: root.down ? 0.92 : 1
 
             Behavior on scale {

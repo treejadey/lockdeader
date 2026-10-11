@@ -193,7 +193,7 @@ Item {
                     right: parent.right
                 }
                 text: card.name
-                color: Theme.onPicture
+                color: Theme.textOnPicture
                 font.pixelSize: 13
                 wrapMode: Text.Wrap
                 maximumLineCount: 2
@@ -235,7 +235,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     width: parent.width - 14 - parent.spacing
                     text: RelativeTime.format(card.updated, RelativeTime.now)
-                    color: Theme.onPicture
+                    color: Theme.textOnPicture
                     font.pixelSize: 12
                     font.weight: Font.DemiBold
                     elide: Text.ElideRight

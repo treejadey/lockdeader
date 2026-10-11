@@ -137,7 +137,7 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: qsTr("Browse Mods")
                 baseColor: Theme.accent
-                textColor: Theme.onAccent
+                textColor: Theme.textOnAccent
                 onClicked: root.browseModsRequested()
             }
         }
