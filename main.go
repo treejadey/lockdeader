@@ -12,6 +12,7 @@ import (
 	"github.com/treejadey/lockdeader/appdata"
 	"github.com/treejadey/lockdeader/appdb"
 	"github.com/treejadey/lockdeader/banana"
+	"github.com/treejadey/lockdeader/filedialog"
 	"github.com/treejadey/lockdeader/game"
 	"github.com/treejadey/lockdeader/install"
 	"github.com/treejadey/lockdeader/notification"
@@ -254,6 +255,15 @@ func main() {
 	if len(engine.RootObjects()) == 0 {
 		slog.Error("failed to load qml/Main.qml")
 		os.Exit(1)
+	}
+
+	// The root object is the window: QObject is QWindow's first base, so the
+	// pointer is the same. Folder dialogs open over it where the platform
+	// allows.
+	mainWindow := qt.UnsafeNewQWindow(engine.RootObjects()[0].UnsafePointer())
+
+	settingsPage.window = func() filedialog.Window {
+		return filedialog.Window{ID: mainWindow.WinId(), X11: qt.QGuiApplication_PlatformName() == "xcb"}
 	}
 
 	// Closing the window while mods are installing only hides it, so they can

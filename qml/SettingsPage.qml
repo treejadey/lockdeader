@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Controls.Fusion
-import QtQuick.Dialogs
 
 // The sidebar lists the sections (see SettingsNav): currentSection is the one
 // being read, and goToSection() scrolls to one.
@@ -184,10 +183,14 @@ Item {
                             onClicked: Qt.openUrlExternally(settings.gameFolderUrl)
                         }
 
+                        // Go opens the system's folder dialog, and checks
+                        // the folder picked: one that isn't Deadlock's is
+                        // turned down, with gameFolderError.
                         ActionButton {
                             text: settings.gameFolder !== "" ? qsTr("Change…") : qsTr("Choose…")
                             baseColor: Theme.highlightMed
-                            onClicked: gameFolderDialog.open()
+                            enabled: !settings.choosingGameFolder
+                            onClicked: settings.chooseGameFolder = true
                         }
                     }
                 }
@@ -270,15 +273,5 @@ Item {
         visible: !root.anyMatches
         text: qsTr("No Settings Found")
         color: Theme.subtle
-    }
-
-    // Starts in the folder Deadlock has, if any. Go checks the folder picked:
-    // one that isn't Deadlock's is turned down, with gameFolderError.
-    FolderDialog {
-        id: gameFolderDialog
-
-        title: qsTr("Choose Deadlock’s Folder")
-        currentFolder: settings.gameFolderUrl
-        onAccepted: settings.chooseGameFolder = selectedFolder.toString()
     }
 }
