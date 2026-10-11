@@ -1,15 +1,6 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// Picks which of an installed mod's options it uses, for mods that have more
-// than one (see configure.go): the files it has on GameBanana, often versions
-// of it, and each VPK of an installed archive that has several. Each is a row
-// with the archive's name, its description (or for a VPK, where in the
-// archive it is), when it was uploaded and its size. Clicking a row picks it
-// or not; its checkbox shows which. At least one has to stay picked, so while
-// only one is, it can't be unpicked: it takes the disabled look, and a hint
-// says why. "Change configuration" applies the picks, once they're different
-// from what the mod has: files that aren't installed are downloaded.
 AppDialog {
     id: root
 
@@ -19,17 +10,15 @@ AppDialog {
     property var configuration: ({})
     readonly property var variants: configuration.options ?? []
 
-    // The ids of the variants picked.
     property var selectedIds: []
     readonly property bool onlyOne: selectedIds.length === 1
-    // The picks are different from what the mod has.
+    // The picks differ from what the mod has.
     readonly property bool changed: {
         const enabled = variants.filter(v => v.picked).map(v => v.id)
+
         return enabled.length !== selectedIds.length || enabled.some(id => !isSelected(id))
     }
 
-    // Emitted by the Change configuration button, with the ids of the
-    // variants picked.
     signal changeRequested(string key, var ids)
 
     function isSelected(id) {
@@ -43,7 +32,6 @@ AppDialog {
             selectedIds = selectedIds.filter(other => other !== id)
     }
 
-    // Starts from what the mod has.
     function reset() {
         selectedIds = variants.filter(v => v.picked).map(v => v.id)
     }
@@ -56,13 +44,12 @@ AppDialog {
         else
             reset()
     }
+
     onAboutToShow: reset()
 
     titlePrefix: configuration.name ?? ""
     title: "configuration"
 
-    // The variants, in a rounded box, with the same space around them on
-    // every side.
     Rectangle {
         width: parent.width
         height: variantList.height + 2 * variantList.anchors.margins
@@ -116,7 +103,6 @@ AppDialog {
                          : variant.picked ? Theme.highlightMed
                          : variant.hovered ? Qt.lighter(Theme.overlay, 1.25)
                          : "transparent"
-                    // Only shown when focused with the keyboard.
                     border.width: variant.visualFocus ? 1 : 0
                     border.color: Theme.iris
 
@@ -136,7 +122,6 @@ AppDialog {
                 }
 
                 contentItem: Item {
-                    // The outline icon while not picked, filled while picked.
                     Item {
                         id: icon
 
@@ -195,8 +180,7 @@ AppDialog {
                         }
 
                         // What it is, e.g. "Flag only", or for a VPK, where
-                        // it is in the archive. Hovering it shows all of it,
-                        // when it's cut short.
+                        // it is in the archive.
                         Label {
                             id: detailLabel
 
@@ -220,7 +204,6 @@ AppDialog {
                         }
                     }
 
-                    // When the archive was uploaded, e.g. "3 days ago".
                     Row {
                         id: addedRow
 
@@ -299,6 +282,7 @@ AppDialog {
 
         SmoothWheel {
             id: variantWheel
+
             anchors.fill: variantList
             flickable: variantList
             enabled: variantList.interactive
@@ -348,8 +332,8 @@ AppDialog {
         }
     }
 
-    // Says why the only variant picked can't be unpicked. It keeps its room
-    // while hidden, so the dialog doesn't change size.
+    // Hidden with opacity, so it keeps its room and the dialog doesn't change
+    // size.
     Label {
         x: 2
         width: parent.width - 2

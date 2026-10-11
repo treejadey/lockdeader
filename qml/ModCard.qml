@@ -2,13 +2,8 @@ import QtQuick
 import QtQuick.Controls.Fusion
 import QtQuick.Effects
 
-// A single tile in the mod grid: a square, rounded preview image with the mod's
-// name in the top-left corner, and when it was last updated and its author in
-// the bottom-left. NSFW mods get a thin red border and a heavily blurred
-// preview; the details panel shows their images as normal.
-// The tile is centred in whatever cell the grid gives it. Items declared in a
-// ModCard go on the tile, over everything else, e.g. a checkbox in a corner;
-// they get their own clicks.
+// Items declared in a ModCard go on the tile, over everything else (e.g. a
+// checkbox in a corner), and get their own clicks.
 Item {
     id: card
 
@@ -25,14 +20,11 @@ Item {
     property int radius: 14
     // Selected cards keep the hover overlay, so the open mod stays marked.
     property bool selected: false
-    // Moves the tile sideways from the centre of its cell.
     property real horizontalOffset: 0
     property bool showUpdated: true
     property bool showAuthor: true
-    // Darkens the image, e.g. while the mod is turned off or installing.
     property bool dimmed: false
-    // Keeps the bottom line clear of whatever is in the tile's bottom-right
-    // corner.
+    // Keeps the bottom line clear of whatever is in the tile's bottom-right corner.
     property real cornerRightMargin: 0
     readonly property alias hovered: hover.hovered
 
@@ -52,6 +44,7 @@ Item {
 
         HoverHandler {
             id: hover
+
             cursorShape: Qt.PointingHandCursor
         }
 
@@ -66,6 +59,7 @@ Item {
         // Image and hover overlay, clipped to rounded corners by the mask below.
         Item {
             anchors.fill: parent
+
             layer.enabled: true
             layer.effect: MultiEffect {
                 maskEnabled: true
@@ -127,6 +121,7 @@ Item {
             Rectangle {
                 anchors.fill: parent
                 opacity: hover.hovered || card.selected ? 1 : 0
+
                 gradient: Gradient {
                     GradientStop { position: 0.0; color: Qt.rgba(0, 0, 0, 0.35) }
                     GradientStop { position: 0.5; color: Qt.rgba(0, 0, 0, 0) }
@@ -203,7 +198,6 @@ Item {
                 elide: Text.ElideRight
             }
 
-            // When the mod was last updated, e.g. "3 hours ago".
             Row {
                 anchors {
                     bottom: author.visible ? author.top : parent.bottom

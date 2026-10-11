@@ -46,15 +46,19 @@ func TestLocate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			getenv := func(key string) string { return tt.env[key] }
 			got, err := locate(tt.goos, getenv, tt.homeDir)
+
 			if tt.wantErr {
 				if err == nil {
 					t.Fatalf("locate() = %q, want an error", got)
 				}
+
 				return
 			}
+
 			if err != nil {
 				t.Fatal(err)
 			}
+
 			if got != tt.want {
 				t.Errorf("locate() = %q, want %q", got, tt.want)
 			}
@@ -70,12 +74,14 @@ func TestSetupCreatesLayout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	for _, rel := range []string{"Settings", "Cache", filepath.Join("Cache", "Images"), filepath.Join("Cache", "Mods")} {
 		info, err := os.Stat(filepath.Join(root, rel))
 		if err != nil || !info.IsDir() {
 			t.Errorf("%s: not created (%v)", rel, err)
 		}
 	}
+
 	if got, want := dirs.SettingsFile(), filepath.Join(root, "Settings", "Settings.toml"); got != want {
 		t.Errorf("SettingsFile() = %q, want %q", got, want)
 	}
@@ -93,6 +99,7 @@ func TestLoadSettingsCreatesDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if s != DefaultSettings() {
 		t.Errorf("settings = %+v, want defaults", s)
 	}
@@ -101,7 +108,9 @@ func TestLoadSettingsCreatesDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal("file not created:", err)
 	}
+
 	text := string(data)
+
 	for _, want := range []string{"# lockdeader settings.", "[browse]", "show_nsfw = false", "[cache]", "# How much disk space", "images_max_size_mb = 512"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("file is missing %q:\n%s", want, text)
@@ -128,6 +137,7 @@ func TestLoadSettingsReadsFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if s.Cache.ImagesMaxSizeMB != 2048 {
 		t.Errorf("ImagesMaxSizeMB = %d, want 2048", s.Cache.ImagesMaxSizeMB)
 	}
@@ -141,6 +151,7 @@ func TestLoadSettingsKeepsDefaultsForMissingKeys(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if s != DefaultSettings() {
 		t.Errorf("settings = %+v, want defaults", s)
 	}
@@ -153,6 +164,7 @@ func TestLoadSettingsInvalidFile(t *testing.T) {
 		"out of range": "[cache]\nimages_max_size_mb = 0\n",
 		"negative":     "[cache]\nimages_max_size_mb = -5\n",
 	}
+
 	for name, content := range tests {
 		t.Run(name, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "Settings.toml")
@@ -162,9 +174,11 @@ func TestLoadSettingsInvalidFile(t *testing.T) {
 			if err == nil {
 				t.Fatal("want an error")
 			}
+
 			if s != DefaultSettings() {
 				t.Errorf("settings = %+v, want defaults", s)
 			}
+
 			if data, _ := os.ReadFile(path); string(data) != content {
 				t.Errorf("the user's file was changed to:\n%s", data)
 			}
@@ -174,6 +188,7 @@ func TestLoadSettingsInvalidFile(t *testing.T) {
 
 func TestSaveSettings(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "Settings.toml")
+
 	s := DefaultSettings()
 	s.Browse.ShowNSFW = true
 	s.Cache.ImagesMaxSizeMB = 2048
@@ -181,15 +196,18 @@ func TestSaveSettings(t *testing.T) {
 	if err := SaveSettings(path, s); err != nil {
 		t.Fatal(err)
 	}
+
 	got, err := LoadSettings(path)
 	if err != nil || got != s {
 		t.Errorf("reloaded = %+v, %v; want %+v", got, err, s)
 	}
 
 	s.Cache.ImagesMaxSizeMB = 0
+
 	if err := SaveSettings(path, s); err == nil {
 		t.Error("saving an out-of-range cache size: want an error")
 	}
+
 	if got, _ := LoadSettings(path); got.Cache.ImagesMaxSizeMB != 2048 {
 		t.Errorf("cache size = %d after a failed save, want 2048", got.Cache.ImagesMaxSizeMB)
 	}
@@ -197,6 +215,7 @@ func TestSaveSettings(t *testing.T) {
 
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
+
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -216,9 +235,11 @@ func TestReadLegacyAudio(t *testing.T) {
 	if err != nil || !s.Browse.ShowNSFW {
 		t.Fatalf("LoadSettings() = %+v, %v", s, err)
 	}
+
 	if err := SaveSettings(path, s); err != nil {
 		t.Fatal(err)
 	}
+
 	if _, ok, _ := ReadLegacyAudio(path); ok {
 		t.Error("[audio] still there after saving")
 	}
@@ -228,6 +249,7 @@ func TestReadLegacyAudio(t *testing.T) {
 		"out of range": "[audio]\nvolume = 3\n",
 	} {
 		writeFile(t, path, content)
+
 		if got, ok, err := ReadLegacyAudio(path); err != nil || ok {
 			t.Errorf("%s: ReadLegacyAudio() = %+v, %v, %v; want nothing", name, got, ok, err)
 		}

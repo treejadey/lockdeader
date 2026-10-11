@@ -1,25 +1,18 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// Installed mods as a grid of cards, like ModGrid's: each with a checkbox in
-// its bottom-right corner that turns it on or off, as does clicking the card.
-// A mod that's turned off has its image dimmed. So does one that's
-// installing, with its checkbox greyed out, and its progress shown under it.
 Item {
     id: root
 
     property alias model: grid.model
     readonly property alias count: grid.count
     property int cardSize: 150
-    // Gap between cards; the edges of the grid get at least half of it.
+    // The edges of the grid get at least half of it.
     property int cardSpacing: 12
-    // How far one mouse wheel notch scrolls, in pixels.
+    // In pixels per mouse wheel notch.
     property real wheelStep: 100
 
-    // Emitted when the user turns a mod on or off.
     signal enabledToggled(string key, bool enabled)
-    // Emitted on a right click on a mod, with its status and how many
-    // variants it has.
     signal menuRequested(string key, string status, int variants)
 
     GridView {
@@ -27,8 +20,8 @@ Item {
 
         // Same as GridView's own column count, which ignores the margins.
         readonly property int columns: Math.max(1, Math.floor(width / cellWidth))
-        // Room under each card for the progress of an install. Every cell has
-        // it, so cards don't move as installs start and finish.
+        // Room under each card for an install's progress. Every cell has it, so
+        // cards don't move as installs start and finish.
         readonly property int statusHeight: 28
 
         anchors {
@@ -121,6 +114,7 @@ Item {
 
     SmoothWheel {
         id: wheel
+
         anchors.fill: grid
         flickable: grid
         step: root.wheelStep
@@ -128,6 +122,7 @@ Item {
 
     ScrollBar {
         id: scrollBar
+
         anchors {
             top: parent.top
             bottom: parent.bottom

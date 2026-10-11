@@ -2,8 +2,6 @@ pragma Singleton
 
 import QtQuick
 
-// Formats timestamps relative to the current time, e.g. "3 hours ago".
-//
 // Pass `now` into format() from a binding, e.g.
 //     text: RelativeTime.format(timestamp, RelativeTime.now)
 // so the text updates as `now` ticks over, every minute.
@@ -27,6 +25,7 @@ QtObject {
 
         const day = 24 * 60 * 60
         const elapsed = Math.max(0, now / 1000 - seconds)
+
         // A month is a twelfth of a year, so 11 months never rounds to 12.
         const units = [
             ["year", 365 * day],
@@ -36,11 +35,14 @@ QtObject {
             ["hour", 60 * 60],
             ["minute", 60],
         ]
+
         for (const [name, length] of units) {
             const count = Math.floor(elapsed / length)
+
             if (count >= 1)
                 return count + " " + name + (count === 1 ? "" : "s") + " ago"
         }
+
         return "just now"
     }
 }

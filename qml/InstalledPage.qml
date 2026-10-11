@@ -1,12 +1,6 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// The mods the user has installed, in a grid or a list (picked in the bar
-// along the top, as on the mods page), including those still installing,
-// which show their progress. Each has a checkbox that turns it on or off.
-// Right-clicking a mod offers to uninstall it, or to cancel or retry its
-// install, and for a mod with more than one variant, to pick which it uses.
-// The search field narrows the mods down by name as the user types.
 Item {
     id: root
 
@@ -15,6 +9,7 @@ Item {
     // Looks up which files the mods have on GameBanana, so their menus know
     // whether there are other versions to pick from.
     onVisibleChanged: if (visible) installed.refresh = true
+
     readonly property int count: listed ? list.count : grid.count
 
     function setEnabled(key, enabled) {
@@ -91,7 +86,6 @@ Item {
             }
         }
 
-        // A search that found nothing.
         Label {
             anchors.centerIn: parent
             visible: installed.total > 0 && root.count === 0
@@ -103,12 +97,11 @@ Item {
     PopupMenu {
         id: menu
 
-        // The mod it's for, its status (see InstallStatus), and how many
-        // variants it has.
         property string key
         property string status
         property int variants
 
+        // A hidden item would still take up its height in the menu.
         PopupMenuItem {
             text: "Retry"
             icon.source: "icons/arrow_clockwise_24_regular.svg"

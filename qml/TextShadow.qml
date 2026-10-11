@@ -1,9 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 
-// A soft drop shadow for text over images: a darkened, blurred copy of source,
-// drawn 1px lower. Declare it just before the text so it sits underneath, as a
-// sibling of it:
+// Declare it just before the text so it sits underneath, as a sibling of it:
 //
 //     TextShadow { source: title }
 //     Label { id: title; ... }

@@ -1,8 +1,7 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// Stand-in for pages that haven't been built yet, under the bar every page
-// has. Its search field doesn't search anything yet.
+// Its search field doesn't search anything yet.
 Item {
     id: root
 

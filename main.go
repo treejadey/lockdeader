@@ -23,7 +23,6 @@ func main() {
 	}
 
 	dirs, err := appdata.Setup()
-
 	if err != nil {
 		slog.Error("failed to set up the data directory", "err", err)
 		os.Exit(1)
@@ -35,20 +34,25 @@ func main() {
 	useNativeTextRendering()
 
 	settings, err := appdata.LoadSettings(dirs.SettingsFile())
-	// Offers to restore a backup until the file loads, or the user would
+
+	// Offer to restore a backup until the file loads, or the user would
 	// rather carry on without it.
 	for err != nil {
 		slog.Warn("failed to load the settings", "err", err)
+
 		choice := askToRestoreSettings(err, appdata.FindSettingsBackups(dirs.SettingsFile()), dirs.Settings)
 		if choice == restoreQuit {
 			os.Exit(0)
 		}
+
 		if choice == restoreIgnore {
 			break
 		}
+
 		if err = appdata.RestoreSettingsBackup(dirs.SettingsFile(), choice); err != nil {
 			continue
 		}
+
 		slog.Info("restored a backup of the settings", "slot", choice)
 		settings, err = appdata.LoadSettings(dirs.SettingsFile())
 	}
@@ -59,9 +63,11 @@ func main() {
 	if err != nil {
 		slog.Warn("using default settings", "err", err)
 	}
+
 	// What the settings file held before this session, which is backed up
 	// on quit if the session changed it.
 	var startupSettings []byte
+
 	if canSave {
 		if startupSettings, err = os.ReadFile(dirs.SettingsFile()); err != nil {
 			slog.Warn("settings won't be backed up", "err", err)
@@ -73,20 +79,22 @@ func main() {
 			slog.Error("failed to save the settings", "err", err)
 		}
 	})
+
 	settingsChanged := func() {
 		if canSave {
 			saveSettingsSoon()
 		}
 	}
 
-	ctx := context.Background()
-	db, err := appdb.Open(dirs.DatabaseFile())
 	// Like the settings, a database that can't be opened is never written
 	// over, e.g. one a newer version has upgraded: this session carries on
 	// with one in memory, and forgets it all on quit.
+	ctx := context.Background()
+	db, err := appdb.Open(dirs.DatabaseFile())
 	dbIsSaved := err == nil
 	if err != nil {
 		slog.Error("failed to open the database; nothing will be remembered this session", "err", err)
+
 		if db, err = appdb.OpenMemory(); err != nil {
 			slog.Error("failed to create a database in memory", "err", err)
 			os.Exit(1)
@@ -107,16 +115,17 @@ func main() {
 	if err != nil {
 		slog.Error("failed to read the volume", "err", err)
 	}
+
 	saveAudioSoon, flushAudio := debounced(func() {
 		if err := db.SetAudioState(ctx, audioState); err != nil {
 			slog.Error("failed to save the volume", "err", err)
 		}
 	})
 
-	// app holds UI state that QML binds to.
 	app := qml.NewQQmlPropertyMap()
 	// For numbers that shouldn't shift as they change.
 	app.Insert("monospaceFont", qt.NewQVariant14(monospaceFontFamily))
+
 	client := banana.NewClient()
 	mods := newModListModel(client, app)
 	mods.SetHideNSFW(!settings.Browse.ShowNSFW)
@@ -126,30 +135,37 @@ func main() {
 	if err := store.CleanUp(); err != nil {
 		slog.Warn("failed to clean up after unfinished installs", "err", err)
 	}
+
 	// Only the real database says which VPKs are still needed.
 	if dbIsSaved {
 		if err := removeUnusedVPKs(ctx, db, store); err != nil {
 			slog.Warn("failed to delete VPKs that are no longer needed", "err", err)
 		}
 	}
+
 	installed := newInstalledMods(client, db, store)
 	details := newModDetails(client, mods.Section, mods.Lookup, installed.Install)
 	clipboard := newClipboardBridge(dirs.ImageCache, client)
+
 	soundPreview := newSoundPreview(client, audioState, func(volume float64, muted bool) {
 		audioState = appdb.AudioState{Volume: volume, Muted: muted}
 		saveAudioSoon()
 	})
+
 	// Switching category or searching closes the open mod, back to the
 	// "select a mod" hint, and stops the sound being played: its row is gone.
 	listingChanged := func() {
 		details.Select(0)
 		soundPreview.Load("")
 	}
+
 	categories := newCategoryBrowser(client, mods, listingChanged)
 	search := newModSearch(mods, details.Select, listingChanged)
+
 	settingsPage := newSettingsPage(settings.Browse, dirs.Root, func(show bool) {
 		settings.Browse.ShowNSFW = show
 		settingsChanged()
+
 		if mods.SetHideNSFW(!show) {
 			listingChanged()
 		}
@@ -190,33 +206,39 @@ func main() {
 	categories.Load()
 
 	code := qt.QGuiApplication_Exec()
+
+	// Save anything still pending, and back up the settings if they changed.
 	flushSettings()
 	flushAudio()
+
 	if err := db.Close(); err != nil {
 		slog.Error("failed to close the database", "err", err)
 	}
+
 	if startupSettings != nil {
 		if err := appdata.BackUpSettings(dirs.SettingsFile(), startupSettings); err != nil {
 			slog.Error("failed to back up the settings", "err", err)
 		}
 	}
+
 	os.Exit(code)
 }
 
-// debounced returns save, which calls f half a second after save was last
-// called, rather than for every step of e.g. dragging a slider; and flush,
-// which calls f straight away if a call is due, e.g. on quit.
 func debounced(f func()) (save, flush func()) {
 	timer := qt.NewQTimer()
 	timer.SetSingleShot(true)
 	timer.SetInterval(500)
 	timer.OnTimeout(f)
+
 	save = func() { timer.Start2() }
+
 	flush = func() {
 		if timer.IsActive() {
 			timer.Stop()
+
 			f()
 		}
 	}
+
 	return save, flush
 }

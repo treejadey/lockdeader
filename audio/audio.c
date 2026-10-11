@@ -11,6 +11,7 @@
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio/miniaudio.h"
 
+// Including it again without the define adds stb_vorbis's implementation.
 #undef STB_VORBIS_HEADER_ONLY
 #include "miniaudio/stb_vorbis.c"
 
@@ -34,6 +35,7 @@ int ld_engine_new(int noDevice, ld_engine **out) {
         return MA_OUT_OF_MEMORY;
 
     ma_engine_config config = ma_engine_config_init();
+
     if (noDevice) {
         config.noDevice = MA_TRUE;
         config.channels = 2;
@@ -46,9 +48,12 @@ int ld_engine_new(int noDevice, ld_engine **out) {
     ma_result result = ma_engine_init(&config, &e->engine);
     if (result != MA_SUCCESS) {
         ma_free(e, NULL);
+
         return result;
     }
+
     *out = e;
+
     return MA_SUCCESS;
 }
 
@@ -73,11 +78,16 @@ int ld_sound_new(ld_engine *engine, const void *data, size_t size, ld_sound **ou
     ld_sound *s = ma_malloc(sizeof(ld_sound), NULL);
     if (s == NULL)
         return MA_OUT_OF_MEMORY;
+
+    // The decoder keeps reading data after this returns, and Go's memory can't
+    // be held on to past the call, so it reads from a copy.
     s->data = ma_malloc(size, NULL);
     if (s->data == NULL) {
         ma_free(s, NULL);
+
         return MA_OUT_OF_MEMORY;
     }
+
     memcpy(s->data, data, size);
 
     // The engine converts to its own format, so decode to whatever's native.
@@ -92,13 +102,16 @@ int ld_sound_new(ld_engine *engine, const void *data, size_t size, ld_sound **ou
         goto fail_decoder;
 
     *out = s;
+
     return MA_SUCCESS;
 
+// Undo what was set up, in reverse order.
 fail_decoder:
     ma_decoder_uninit(&s->decoder);
 fail_data:
     ma_free(s->data, NULL);
     ma_free(s, NULL);
+
     return result;
 }
 
@@ -124,12 +137,14 @@ int ld_sound_seek(ld_sound *sound, double seconds) {
 double ld_sound_position(ld_sound *sound) {
     float seconds = 0;
     ma_sound_get_cursor_in_seconds(&sound->sound, &seconds);
+
     return seconds;
 }
 
 double ld_sound_length(ld_sound *sound) {
     float seconds = 0;
     ma_sound_get_length_in_seconds(&sound->sound, &seconds);
+
     return seconds;
 }
 

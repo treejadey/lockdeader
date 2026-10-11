@@ -11,12 +11,16 @@ import (
 
 func TestDownload(t *testing.T) {
 	var gotUA string
+
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		gotUA = r.UserAgent()
+
 		if r.URL.Path == "/missing.mp3" {
 			http.NotFound(w, r)
+
 			return
 		}
+
 		w.Write([]byte("sound"))
 	})
 
@@ -24,9 +28,11 @@ func TestDownload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if string(data) != "sound" {
 		t.Errorf("data = %q", data)
 	}
+
 	if gotUA != defaultUserAgent {
 		t.Errorf("User-Agent = %q, want %q", gotUA, defaultUserAgent)
 	}
@@ -55,14 +61,17 @@ func TestOpenDownload(t *testing.T) {
 			http.NotFound(w, r)
 		}
 	})
+
 	c.HTTPClient.Timeout = 50 * time.Millisecond
 
 	body, size, err := c.OpenDownload(context.Background(), c.BaseURL+"/dl/1")
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	data, _ := io.ReadAll(body)
 	body.Close()
+
 	if string(data) != "archive" || size != 7 {
 		t.Errorf("got %q, size %d; want \"archive\", size 7", data, size)
 	}
@@ -71,8 +80,10 @@ func TestOpenDownload(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	data, err = io.ReadAll(body)
 	body.Close()
+
 	if err != nil || string(data) != "slowly" {
 		t.Errorf("slow download: got %q, %v; want \"slowly\"", data, err)
 	}

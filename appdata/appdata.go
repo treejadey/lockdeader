@@ -1,6 +1,5 @@
 // Package appdata manages lockdeader's data directory, which holds its
-// settings and caches, in the usual place for application data on each
-// platform.
+// settings and caches.
 package appdata
 
 import (
@@ -11,13 +10,11 @@ import (
 	"runtime"
 )
 
-// EnvDataDir overrides the data directory's location when set, e.g. for
-// development or testing.
 const EnvDataDir = "LOCKDEADER_DATA_DIR"
 
 const appName = "Lockdeader"
 
-// Dirs is the layout of the data directory:
+// The data directory's layout:
 //
 //	Lockdeader/
 //	    Lockdeader.db  the database: app state and installed mods (see appdb)
@@ -34,9 +31,9 @@ type Dirs struct {
 	ModCache   string
 }
 
-// Layout returns the layout of a data directory rooted at root.
 func Layout(root string) Dirs {
 	cache := filepath.Join(root, "Cache")
+
 	return Dirs{
 		Root:       root,
 		Settings:   filepath.Join(root, "Settings"),
@@ -46,37 +43,36 @@ func Layout(root string) Dirs {
 	}
 }
 
-// DatabaseFile is the path of the database.
 func (d Dirs) DatabaseFile() string {
 	return filepath.Join(d.Root, "Lockdeader.db")
 }
 
-// SettingsFile is the path of the settings file.
 func (d Dirs) SettingsFile() string {
 	return filepath.Join(d.Settings, "Settings.toml")
 }
 
-// Create makes sure every directory in the layout exists.
 func (d Dirs) Create() error {
 	for _, dir := range []string{d.Root, d.Settings, d.Cache, d.ImageCache, d.ModCache} {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return fmt.Errorf("appdata: creating %s: %w", dir, err)
 		}
 	}
+
 	return nil
 }
 
-// Setup locates the data directory and makes sure it and its layout exist.
 func Setup() (Dirs, error) {
 	root, err := Locate()
 	if err != nil {
 		return Dirs{}, err
 	}
+
 	dirs := Layout(root)
+
 	return dirs, dirs.Create()
 }
 
-// Locate returns where the data directory belongs on this platform:
+// The data directory goes in:
 //
 //   - Linux and other Unix-likes: $XDG_DATA_HOME/Lockdeader, which is
 //     ~/.local/share/Lockdeader by default
@@ -100,6 +96,7 @@ func locate(goos string, getenv func(string) string, homeDir func() (string, err
 		if dir == "" {
 			return "", errors.New("appdata: %LOCALAPPDATA% is not set")
 		}
+
 		return filepath.Join(dir, appName), nil
 
 	case "darwin", "ios":
@@ -107,6 +104,7 @@ func locate(goos string, getenv func(string) string, homeDir func() (string, err
 		if err != nil {
 			return "", fmt.Errorf("appdata: %w", err)
 		}
+
 		return filepath.Join(home, "Library", "Application Support", appName), nil
 
 	default:
@@ -114,10 +112,12 @@ func locate(goos string, getenv func(string) string, homeDir func() (string, err
 		if dir := getenv("XDG_DATA_HOME"); filepath.IsAbs(dir) {
 			return filepath.Join(dir, appName), nil
 		}
+
 		home, err := homeDir()
 		if err != nil {
 			return "", fmt.Errorf("appdata: %w", err)
 		}
+
 		return filepath.Join(home, ".local", "share", appName), nil
 	}
 }

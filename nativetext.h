@@ -5,7 +5,6 @@
 extern "C" {
 #endif
 
-// Makes Qt Quick draw text with the platform's own font rasterizer.
 void lockdeader_use_native_text_rendering(void);
 
 #ifdef __cplusplus

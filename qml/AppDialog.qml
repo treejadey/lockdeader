@@ -1,12 +1,7 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// The app's dialog: a rounded card over the dimmed window, with a title along
-// the top, a close button at its right, the dialog's content under it, and
-// its buttons in the bottom-right corner. The title can start with a part in
-// a dimmer colour, e.g. the name of the mod it's about: "Yamato configuration".
-// Escape, the close button or clicking outside closes it.
-// (Not named Dialog: Qt Quick Controls has a type of that name already.)
+// Not named Dialog: Qt Quick Controls has a type of that name already.
 //
 // Items declared in an AppDialog are its content, stacked top to bottom;
 // put its buttons in buttons, from left to right.
@@ -20,7 +15,7 @@ Popup {
     id: root
 
     property string title
-    // Shown before the title, in a dimmer colour; "" for none.
+    // Dimmer, e.g. the mod's name in "Yamato configuration".
     property string titlePrefix
     property int cardWidth: 560
 
@@ -33,6 +28,7 @@ Popup {
     width: parent ? parent.width : 0
     height: parent ? parent.height : 0
     padding: 0
+
     modal: true
     dim: false
     focus: true
@@ -50,6 +46,7 @@ Popup {
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: Motion.productiveStandard
             }
+
             NumberAnimation {
                 target: card
                 property: "opacity"
@@ -59,6 +56,7 @@ Popup {
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: Motion.expressiveEntrance
             }
+
             // From most of the way down to the bottom of the window.
             NumberAnimation {
                 target: cardShift
@@ -82,6 +80,7 @@ Popup {
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: Motion.productiveExit
             }
+
             NumberAnimation {
                 target: cardShift
                 property: "y"

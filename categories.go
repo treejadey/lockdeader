@@ -15,7 +15,6 @@ import (
 	"github.com/treejadey/lockdeader/banana"
 )
 
-// categoryNode is a category to browse mods by, with the subcategories under it.
 type categoryNode struct {
 	Section  banana.Section
 	ID       int // 0 for a whole section
@@ -26,15 +25,15 @@ type categoryNode struct {
 	itemCount int
 }
 
-// loadCategories fetches the categories to browse mods by: the mod
-// categories, most popular first, then sounds as one more category with the
-// sound categories under it. Every level of subcategories is fetched up front,
-// so the sidebar can open them without waiting. Empty categories are left out.
+// Sounds go last, as one more category with the sound categories under it.
+// Every level of subcategories is fetched up front, so the sidebar can open
+// them without waiting.
 func loadCategories(ctx context.Context, client *banana.Client) ([]categoryNode, error) {
 	mods, err := loadSubcategories(ctx, client, banana.SectionMods, 0)
 	if err != nil {
 		return nil, err
 	}
+
 	slices.SortStableFunc(mods, func(a, b categoryNode) int {
 		return cmp.Compare(b.itemCount, a.itemCount)
 	})
@@ -43,6 +42,7 @@ func loadCategories(ctx context.Context, client *banana.Client) ([]categoryNode,
 	if err != nil {
 		return nil, err
 	}
+
 	return append(mods, categoryNode{
 		Section:  banana.SectionSounds,
 		Name:     "Sounds",
@@ -50,8 +50,8 @@ func loadCategories(ctx context.Context, client *banana.Client) ([]categoryNode,
 	}), nil
 }
 
-// loadSubcategories fetches a category's subcategories, alphabetically, and
-// theirs in turn. A parentID of 0 fetches the section's top-level categories.
+// Subcategories come alphabetically. A parentID of 0 fetches the section's
+// top-level categories.
 func loadSubcategories(ctx context.Context, client *banana.Client, section banana.Section, parentID int) ([]categoryNode, error) {
 	entries, err := client.ListCategories(ctx, banana.ListCategoriesOptions{Section: section, ParentID: parentID})
 	if err != nil {
@@ -60,13 +60,16 @@ func loadSubcategories(ctx context.Context, client *banana.Client, section banan
 
 	var nodes []categoryNode
 	var parents []int // indexes into nodes of the categories with subcategories
+
 	for _, e := range entries {
 		if e.ItemCount == 0 || e.IsObsolete {
 			continue
 		}
+
 		if e.CategoryCount > 0 {
 			parents = append(parents, len(nodes))
 		}
+
 		nodes = append(nodes, categoryNode{
 			Section:   section,
 			ID:        e.ID,
@@ -79,22 +82,25 @@ func loadSubcategories(ctx context.Context, client *banana.Client, section banan
 	// Fetch every category's subcategories at once.
 	var wg sync.WaitGroup
 	errs := make([]error, len(parents))
+
 	for i, n := range parents {
 		wg.Go(func() {
 			nodes[n].Children, errs[i] = loadSubcategories(ctx, client, section, nodes[n].ID)
 		})
 	}
+
 	wg.Wait()
+
 	if err := errors.Join(errs...); err != nil {
 		return nil, err
 	}
+
 	return nodes, nil
 }
 
-// categoryList converts categories for QML, as a list of {section, id, name,
-// icon, children} objects.
 func categoryList(nodes []categoryNode) *qt.QVariant {
 	list := make([]qt.QVariant, 0, len(nodes))
+
 	for _, n := range nodes {
 		list = append(list, *qt.NewQVariant20(map[string]qt.QVariant{
 			"section":  *qt.NewQVariant14(string(n.Section)),
@@ -104,6 +110,7 @@ func categoryList(nodes []categoryNode) *qt.QVariant {
 			"children": *categoryList(n.Children),
 		}))
 	}
+
 	return qt.NewQVariant43(list)
 }
 
@@ -111,19 +118,17 @@ func categoryList(nodes []categoryNode) *qt.QVariant {
 // with the categories (see categoryList), and "loading" and "error" while
 // fetching them. QML picks what the mod grid shows by writing {section, id}
 // to "selected", where an id of 0 means the whole section.
+//
 // All methods must be called on the Qt main thread.
 type categoryBrowser struct {
 	*qml.QQmlPropertyMap
 
 	client   *banana.Client
 	mods     *modListModel
-	onChange func() // called after switching to a different category
+	onChange func() // called after switching to a different category; may be nil
 	loading  bool
 }
 
-// newCategoryBrowser returns a category browser that shows the chosen
-// category in mods, and calls onChange (if not nil) whenever that switches to
-// a different category.
 func newCategoryBrowser(client *banana.Client, mods *modListModel, onChange func()) *categoryBrowser {
 	b := &categoryBrowser{
 		QQmlPropertyMap: qml.NewQQmlPropertyMap(),
@@ -131,6 +136,7 @@ func newCategoryBrowser(client *banana.Client, mods *modListModel, onChange func
 		mods:            mods,
 		onChange:        onChange,
 	}
+
 	b.Insert("tree", categoryList(nil))
 	b.setStatus(false, "")
 	b.Insert("selected", qt.NewQVariant20(map[string]qt.QVariant{
@@ -143,29 +149,32 @@ func newCategoryBrowser(client *banana.Client, mods *modListModel, onChange func
 		if key != "selected" {
 			return
 		}
+
 		selected := value.ToMap()
 		sectionValue, idValue := selected["section"], selected["id"]
 		b.Select(banana.Section(sectionValue.ToString()), idValue.ToInt())
 	})
+
 	return b
 }
 
-// Select shows a category's mods, or a whole section's for an id of 0.
 func (b *categoryBrowser) Select(section banana.Section, id int) {
 	if section != banana.SectionMods && section != banana.SectionSounds {
 		slog.Error("unknown section selected", "section", section)
+
 		return
 	}
+
 	if b.mods.SetCategory(section, id) && b.onChange != nil {
 		b.onChange()
 	}
 }
 
-// Load fetches the categories in the background, unless they're already loading.
 func (b *categoryBrowser) Load() {
 	if b.loading {
 		return
 	}
+
 	b.setStatus(true, "")
 
 	go func() {
@@ -175,8 +184,10 @@ func (b *categoryBrowser) Load() {
 			if err != nil {
 				slog.Error("failed to fetch categories", "err", err)
 				b.setStatus(false, err.Error())
+
 				return
 			}
+
 			b.setStatus(false, "")
 			b.Insert("tree", categoryList(categories))
 		})

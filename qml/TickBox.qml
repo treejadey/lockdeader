@@ -1,21 +1,10 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// A checkbox that behaves like Carbon's: a small rounded square that fills in
-// foam, with a dark tick, while it's checked. While it's disabled it takes
-// the app's disabled look (see DisabledFill), in light grey, keeping its tick
-// if it has one, so it still shows what it will be.
-// Like Carbon's, it shows a ring just outside the box while focused with the
-// keyboard, and Space toggles it. (Not named CheckBox: Qt Quick Controls has
-// a type of that name already.)
+// Not named CheckBox: Qt Quick Controls has a type of that name already.
 //
 // Clicking it doesn't change checked by itself: it emits clicked(), and
 // whatever checked is bound to decides, e.g. a mod being turned on.
-//
-// Motion is productive, as for Carbon's checkbox: the box changes colour over
-// fast-01. The tick grows from its corner over fast-02 with an entrance
-// curve, and shrinks back into it over fast-01 with an exit curve, as
-// leaving should be quicker than arriving.
 AbstractButton {
     id: root
 
@@ -27,6 +16,7 @@ AbstractButton {
     implicitWidth: 22
     implicitHeight: 22
     padding: 0
+
     hoverEnabled: true
     focusPolicy: Qt.TabFocus
 
@@ -35,7 +25,7 @@ AbstractButton {
     }
 
     background: Item {
-        // Carbon's focus ring: 2px, a little outside the box.
+        // Carbon's focus ring, a little outside the box.
         Rectangle {
             anchors {
                 fill: parent
@@ -89,17 +79,17 @@ AbstractButton {
     }
 
     contentItem: Item {
-        // Fluent's checkmark, in whatever colour the box needs.
         TintedIcon {
             id: tick
 
-            // How far the tick has grown, from 0 to 1.
+            // From 0 to 1.
             property real grown: 0
 
             anchors.centerIn: parent
             width: Math.round(parent.width * 0.75)
             height: width
             source: "icons/checkmark_24_filled.svg"
+            // Kept while disabled, so it still shows what it will be.
             color: root.enabled ? Theme.base : Theme.highlightMed
             opacity: grown > 0 ? 1 : 0
             // Grows from the corner of the tick, as Carbon's does.
@@ -120,6 +110,7 @@ AbstractButton {
             }
         }
 
+        // Leaving is quicker than arriving.
         transitions: [
             Transition {
                 to: "checked"
@@ -131,6 +122,7 @@ AbstractButton {
                     easing.bezierCurve: Motion.productiveEntrance
                 }
             },
+
             Transition {
                 from: "checked"
 

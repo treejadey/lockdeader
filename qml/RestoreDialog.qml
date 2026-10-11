@@ -3,13 +3,10 @@ import QtQuick.Controls.Fusion
 import QtQuick.Layouts
 
 // Shown instead of the app when the settings file fails to load and there are
-// backups of it, like Chatterino's: offers to restore one, newest first, or to
-// carry on without the file, or to quit. Closing the window quits too. The
-// answer goes to the restore bridge (restoredialog.go).
+// backups of it. The answer goes to the restore bridge (restoredialog.go).
 AppWindow {
     id: window
 
-    // The backup to restore, by slot.
     property int selectedSlot: restore.backups.length > 0 ? restore.backups[0].slot : 0
     property bool answered: false
 
@@ -121,7 +118,6 @@ AppWindow {
                         color: backup.selected ? Theme.highlightMed
                              : backup.hovered ? Qt.lighter(Theme.overlay, 1.25)
                              : Theme.overlay
-                        // Only shown when focused with the keyboard.
                         border.width: backup.visualFocus ? 1 : 0
                         border.color: Theme.iris
 

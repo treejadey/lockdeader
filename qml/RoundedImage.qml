@@ -1,10 +1,8 @@
 import QtQuick
 import QtQuick.Effects
 
-// An image cropped to fill its size and clipped to rounded corners. Shows a
-// placeholder colour until the image has loaded, then fades it in. Make the
-// placeholder transparent to show something else underneath while loading.
-// A blurred image is blurred heavily, like an NSFW mod's card.
+// Make the placeholder transparent to show something else underneath while
+// the image loads.
 Item {
     id: root
 
@@ -16,6 +14,7 @@ Item {
 
     Item {
         anchors.fill: parent
+
         layer.enabled: true
         layer.effect: MultiEffect {
             maskEnabled: true

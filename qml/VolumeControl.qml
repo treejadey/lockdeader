@@ -2,18 +2,14 @@ import QtQuick
 import QtQuick.Controls.Fusion
 import QtQuick.Effects
 
-// The app's volume for sound previews: a speaker button and a horizontal
-// slider in a pill. Clicking the speaker mutes and unmutes; clicking or
-// dragging the slider sets the volume, and scrolling over either, or the arrow
-// keys while the speaker has focus, change it. The volume belongs to the
-// soundPreview bridge, which saves it in the settings.
+// The volume belongs to the soundPreview bridge, which saves it.
 Rectangle {
     id: root
 
     // The volume as heard, from 0 to 1.
     readonly property real level: soundPreview.muted ? 0 : soundPreview.volume
 
-    // Sets the volume, which also unmutes.
+    // Also unmutes.
     function setVolume(volume) {
         soundPreview.volume = Math.round(Math.max(0, Math.min(1, volume)) * 100) / 100
         soundPreview.muted = false
@@ -24,6 +20,7 @@ Rectangle {
             // Unmuting at no volume would still be silent.
             if (soundPreview.volume === 0)
                 soundPreview.volume = soundPreview.defaultVolume
+
             soundPreview.muted = false
         } else {
             soundPreview.muted = true
@@ -75,7 +72,6 @@ Rectangle {
         background: Rectangle {
             radius: height / 2
             color: speaker.hovered ? Theme.highlightMed : "transparent"
-            // Only shown when focused with the keyboard.
             border.width: speaker.visualFocus ? 1 : 0
             border.color: Theme.iris
 
@@ -88,7 +84,6 @@ Rectangle {
             }
         }
 
-        // The speaker's waves show the volume. Filled while it's being set.
         contentItem: Image {
             readonly property string icon: root.level === 0 ? "speaker_mute"
                 : root.level < 0.34 ? "speaker_0"
@@ -143,7 +138,6 @@ Rectangle {
             }
         }
 
-        // The handle, with a soft shadow under it, like the playhead.
         Rectangle {
             x: root.level * slider.width - width / 2
             anchors.verticalCenter: parent.verticalCenter
@@ -166,6 +160,7 @@ Rectangle {
         MouseArea {
             id: sliderArea
 
+            // mouseX is from the area's left edge, which is past the slider's.
             function setFromPointer() {
                 root.setVolume((mouseX + anchors.leftMargin) / slider.width)
             }

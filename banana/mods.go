@@ -7,7 +7,6 @@ import (
 	"strconv"
 )
 
-// Sort controls the ordering of a mod listing.
 type Sort string
 
 const (
@@ -19,7 +18,7 @@ const (
 	SortMostDownloaded Sort = "Generic_MostDownloaded"
 )
 
-// Section is a part of GameBanana with its own kind of submissions and its own
+// A part of GameBanana with its own kind of submissions and its own
 // categories. The API calls it a model, as in "Mod/Index".
 type Section string
 
@@ -28,7 +27,7 @@ const (
 	SectionSounds Section = "Sound"
 )
 
-// ListModsOptions configures ListMods. Zero values select sensible defaults.
+// Zero values select defaults.
 type ListModsOptions struct {
 	GameID     int     // defaults to DeadlockGameID
 	Section    Section // defaults to SectionMods
@@ -43,32 +42,35 @@ func (o ListModsOptions) withDefaults() ListModsOptions {
 	if o.GameID == 0 {
 		o.GameID = DeadlockGameID
 	}
+
 	if o.Section == "" {
 		o.Section = SectionMods
 	}
+
 	if o.Page < 1 {
 		o.Page = 1
 	}
+
 	if o.PerPage < 1 || o.PerPage > MaxPerPage {
 		o.PerPage = MaxPerPage
 	}
+
 	return o
 }
 
-// ModPage is one page of a mod listing.
 type ModPage struct {
 	Mods    []Mod
-	Page    int  // 1-based page number this result is for
-	PerPage int  // page size used for the request
-	Total   int  // total number of mods across all pages
-	IsLast  bool // true if there are no further pages
+	Page    int // 1-based
+	PerPage int
+	Total   int // across all pages
+	IsLast  bool
 }
 
-// TotalPages returns the number of pages in the listing at this page size.
 func (p ModPage) TotalPages() int {
 	if p.PerPage <= 0 {
 		return 0
 	}
+
 	return (p.Total + p.PerPage - 1) / p.PerPage
 }
 
@@ -81,33 +83,39 @@ type indexResponse struct {
 	Records []Mod `json:"_aRecords"`
 }
 
-// ListMods fetches a single page of mods for a game.
 func (c *Client) ListMods(ctx context.Context, opts ListModsOptions) (*ModPage, error) {
 	opts = opts.withDefaults()
 
 	q := url.Values{}
 	q.Set("_aFilters[Generic_Game]", strconv.Itoa(opts.GameID))
+
 	if opts.CategoryID != 0 {
 		q.Set("_aFilters[Generic_Category]", strconv.Itoa(opts.CategoryID))
 	}
+
 	if opts.Name != "" {
 		q.Set("_aFilters[Generic_Name]", "contains,"+opts.Name)
 	}
+
 	q.Set("_nPage", strconv.Itoa(opts.Page))
 	q.Set("_nPerpage", strconv.Itoa(opts.PerPage))
+
 	if opts.Sort != SortDefault {
 		q.Set("_sSort", string(opts.Sort))
 	}
 
 	var resp indexResponse
+
 	if err := c.get(ctx, string(opts.Section)+"/Index", q, &resp); err != nil {
 		return nil, err
 	}
 
+	// Fall back to the page size asked for if the response doesn't give one.
 	perPage := resp.Metadata.PerPage
 	if perPage == 0 {
 		perPage = opts.PerPage
 	}
+
 	return &ModPage{
 		Mods:    resp.Records,
 		Page:    opts.Page,
@@ -117,25 +125,30 @@ func (c *Client) ListMods(ctx context.Context, opts ListModsOptions) (*ModPage, 
 	}, nil
 }
 
-// AllMods iterates over every mod starting at opts.Page, fetching pages as needed.
-// Iteration stops after the last page, or after yielding the first error.
+// Starts at opts.Page, fetching pages as needed. Iteration stops after the
+// last page, or after yielding the first error.
 func (c *Client) AllMods(ctx context.Context, opts ListModsOptions) iter.Seq2[Mod, error] {
 	return func(yield func(Mod, error) bool) {
 		opts := opts.withDefaults()
+
 		for {
 			page, err := c.ListMods(ctx, opts)
 			if err != nil {
 				yield(Mod{}, err)
+
 				return
 			}
+
 			for _, m := range page.Mods {
 				if !yield(m, nil) {
 					return
 				}
 			}
+
 			if page.IsLast {
 				return
 			}
+
 			opts.Page++
 		}
 	}

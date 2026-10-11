@@ -1,15 +1,6 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// A full-window image viewer, much like Discord's. The image is shown as large
-// as fits, but never larger than its own size, over a dimmed backdrop. Below it
-// is its caption and, for galleries, a strip of all the images.
-//
-// Left/Right or the arrow buttons step through the images, wrapping around from
-// the last to the first and back, so they can cycle forever. Escape, the close
-// button or clicking the backdrop closes it. Right-clicking the image offers to
-// copy it or its link. Use show() to open it, and notify() to confirm a copy.
-//
 // Motion: opening a big image is a moment worth noticing, so the image comes
 // in with Carbon's expressive entrance, growing slightly into place, while the
 // backdrop dims over Carbon's background dimming duration. Closing is a quick
@@ -24,11 +15,9 @@ Popup {
         ? images[Math.max(0, Math.min(index, images.length - 1))]
         : ({ full: "", thumbnail: "", caption: "" })
 
-    // Emitted from the image's right-click menu, with the full-size image's URL.
     signal copyImageRequested(string url)
     signal copyLinkRequested(string url)
 
-    // Briefly shows a short message, e.g. "Image copied".
     function notify(message) {
         toast.show(message)
     }
@@ -39,7 +28,6 @@ Popup {
         open()
     }
 
-    // Moves delta images on, wrapping around at either end.
     function step(delta) {
         if (images.length > 0)
             index = (index + delta + images.length) % images.length
@@ -51,6 +39,7 @@ Popup {
     width: parent ? parent.width : 0
     height: parent ? parent.height : 0
     padding: 0
+
     modal: true
     dim: false
     focus: true
@@ -68,6 +57,7 @@ Popup {
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: Motion.productiveStandard
             }
+
             NumberAnimation {
                 target: stage
                 property: "opacity"
@@ -77,6 +67,7 @@ Popup {
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: Motion.expressiveEntrance
             }
+
             NumberAnimation {
                 target: stage
                 property: "scale"
@@ -168,6 +159,7 @@ Popup {
 
             Image {
                 id: placeholder
+
                 anchors.fill: parent
                 source: root.current.thumbnail
                 asynchronous: true
@@ -195,8 +187,8 @@ Popup {
                 running: full.status === Image.Loading
             }
 
-            // Clicking the image itself doesn't close the viewer; right-clicking
-            // it opens the copy menu.
+            // Also stops a click on the image from reaching the backdrop and
+            // closing the viewer.
             MouseArea {
                 anchors.fill: parent
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
@@ -303,7 +295,6 @@ Popup {
             ToolTip.text: "Close (Esc)"
         }
 
-        // Confirms a copy.
         Toast {
             id: toast
 

@@ -1,28 +1,24 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// A vertically scrolling grid of fixed-size mod cards, centred horizontally.
 Item {
     id: root
 
     property alias model: grid.model
     readonly property alias count: grid.count
-    // Shown at the bottom of the grid while the next page is on its way.
     property bool loading: false
     property string error: ""
     property int cardSize: 150
-    // Gap between cards; the edges of the grid get at least half of it.
+    // The edges of the grid get at least half of it.
     property int cardSpacing: 12
-    // How far one mouse wheel notch scrolls, in pixels.
+    // In pixels per mouse wheel notch.
     property real wheelStep: 100
-    // The card with this mod id is drawn as selected; 0 for none.
+    // 0 means none is selected.
     property int selectedModId: 0
 
-    // Emitted when the user asks to retry after a failed page load.
     signal retry()
     signal modClicked(int modId)
 
-    // Scrolls just far enough to show the card in row (of the model).
     function showRow(row) {
         wheel.stop()
         grid.positionViewAtIndex(row, GridView.Contain)
@@ -43,6 +39,7 @@ Item {
         topMargin: root.cardSpacing / 2
         clip: true
         boundsBehavior: Flickable.StopAtBounds
+
         // Build cards (and start their image downloads) a screen ahead of the
         // viewport. This also makes the view ask the model for the next page
         // about a screen before reaching the end, so scrolling never stalls.
@@ -84,6 +81,7 @@ Item {
 
     SmoothWheel {
         id: wheel
+
         anchors.fill: grid
         flickable: grid
         step: root.wheelStep
@@ -91,6 +89,7 @@ Item {
 
     ScrollBar {
         id: scrollBar
+
         anchors {
             top: parent.top
             bottom: parent.bottom

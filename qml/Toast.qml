@@ -1,21 +1,14 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// A short message that pops in, e.g. "Image copied", and goes again after a
-// couple of seconds. Use show() to show one; showing another while one is up
-// replaces it and starts the time again. Where it goes is up to its parent,
-// e.g. near the top of the window, in the middle.
-//
-// Carbon counts notifications as expressive moments, so it pops in with
-// expressive entrance, then leaves with a quick productive exit.
+// Where it goes is up to its parent.
 Rectangle {
     id: root
 
     property alias text: label.text
     property bool shown: false
-    // How long it stays up, in milliseconds.
+    // In milliseconds.
     property int duration: 2000
-    // Longer messages are cut short with "…".
     property real maximumWidth: 420
 
     function show(message) {
@@ -31,8 +24,10 @@ Rectangle {
     border.color: Theme.highlightMed
     opacity: 0
     visible: opacity > 0
+
     transform: Translate {
         id: shift
+
         y: -8
     }
 
@@ -49,15 +44,19 @@ Rectangle {
     states: State {
         name: "shown"
         when: root.shown
+
         PropertyChanges {
             root.opacity: 1
             shift.y: 0
         }
     }
 
+    // Carbon counts notifications as expressive moments, so it pops in with
+    // an expressive entrance, then leaves with a quick productive exit.
     transitions: [
         Transition {
             to: "shown"
+
             NumberAnimation {
                 targets: [root, shift]
                 properties: "opacity,y"
@@ -66,8 +65,10 @@ Rectangle {
                 easing.bezierCurve: Motion.expressiveEntrance
             }
         },
+
         Transition {
             from: "shown"
+
             NumberAnimation {
                 targets: [root, shift]
                 properties: "opacity,y"
@@ -80,6 +81,7 @@ Rectangle {
 
     Timer {
         id: timer
+
         interval: root.duration
         onTriggered: root.shown = false
     }

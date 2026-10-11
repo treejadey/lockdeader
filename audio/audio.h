@@ -21,6 +21,7 @@ int ld_engine_new(int noDevice, ld_engine **out);
 void ld_engine_free(ld_engine *engine);
 int ld_engine_start(ld_engine *engine);
 int ld_engine_stop(ld_engine *engine);
+
 // Mixes frameCount stereo frames into out, for engines without a device.
 int ld_engine_read(ld_engine *engine, float *out, unsigned long long frameCount);
 
@@ -28,8 +29,10 @@ int ld_engine_read(ld_engine *engine, float *out, unsigned long long frameCount)
 int ld_sound_new(ld_engine *engine, const void *data, size_t size, ld_sound **out);
 void ld_sound_free(ld_sound *sound);
 int ld_sound_play(ld_sound *sound);
+
 // Stops playing, keeping the position.
 int ld_sound_pause(ld_sound *sound);
+
 int ld_sound_seek(ld_sound *sound, double seconds);
 double ld_sound_position(ld_sound *sound);
 double ld_sound_length(ld_sound *sound);

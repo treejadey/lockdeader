@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// ModProfile is everything on a single mod's page, as returned by GetModProfile.
 type ModProfile struct {
 	ID            int          `json:"_idRow"`
 	Name          string       `json:"_sName"`
@@ -31,16 +30,15 @@ type ModProfile struct {
 	IsObsolete    bool         `json:"_bIsObsolete"`
 }
 
-// LastUpdated returns when the mod last received an update, or when it was
-// added if it has never been updated.
+// Falls back to when the mod was added if it has never been updated.
 func (p ModProfile) LastUpdated() time.Time {
 	if p.DateUpdated == 0 {
 		return time.Unix(p.DateAdded, 0)
 	}
+
 	return time.Unix(p.DateUpdated, 0)
 }
 
-// File is a downloadable file attached to a mod.
 type File struct {
 	ID            int    `json:"_idRow"`
 	Name          string `json:"_sFile"`
@@ -52,11 +50,12 @@ type File struct {
 	MD5           string `json:"_sMd5Checksum"`
 }
 
-// GetModProfile fetches the full page for the mod with the given id in section.
 func (c *Client) GetModProfile(ctx context.Context, section Section, id int) (*ModProfile, error) {
 	var p ModProfile
+
 	if err := c.get(ctx, fmt.Sprintf("%s/%d/ProfilePage", section, id), nil, &p); err != nil {
 		return nil, err
 	}
+
 	return &p, nil
 }

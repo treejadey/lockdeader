@@ -1,11 +1,6 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// Where the user is, e.g. "Skins > Abrams": the current place stands out in
-// the text colour, and the places above it are subtle, and can be clicked to
-// go back up to them. The arrows between them are dim and can't be clicked.
-// When they don't all fit, the names above the current place are cut short
-// with "…" first.
 Item {
     id: root
 
@@ -18,11 +13,14 @@ Item {
     readonly property int spacing: 6
     readonly property int arrowSize: 14
 
-    // How wide each crumb's name gets to be.
+    // When the names don't all fit, the ones above the current place are cut
+    // short first.
     readonly property var widths: {
         const count = crumbs.length
+
         if (count === 0)
             return []
+
         const natural = crumbs.map((crumb, i) => Math.ceil(
             (i === count - 1 ? currentMetrics : otherMetrics).advanceWidth(crumb.name)))
         let room = Math.max(0, width - (count - 1) * (2 * spacing + arrowSize))
@@ -30,12 +28,15 @@ Item {
         const widths = natural.slice()
         widths[count - 1] = Math.min(natural[count - 1], room)
         room -= widths[count - 1]
+
         // Share what's left between the others, in proportion to their names.
         const others = natural.slice(0, -1).reduce((sum, w) => sum + w, 0)
+
         if (others > room) {
             for (let i = 0; i < count - 1; i++)
                 widths[i] = Math.floor(natural[i] * room / others)
         }
+
         return widths
     }
 
@@ -48,6 +49,7 @@ Item {
 
     FontMetrics {
         id: currentMetrics
+
         font.weight: Font.Medium
     }
 
@@ -97,6 +99,7 @@ Item {
 
                     HoverHandler {
                         id: crumbHover
+
                         enabled: !crumb.current
                         cursorShape: Qt.PointingHandCursor
                     }

@@ -2,25 +2,17 @@ import QtQuick
 import QtQuick.Controls.Fusion
 import QtQuick.Layouts
 
-// A navigation button in the sidebar: a label, optionally with an icon or an
-// image before it, and a chevron (for "leads to more options") after it. A
-// count after the label, if it has one, says how many things on its page are
-// under way, e.g. installs.
-//
 // Hover and press feedback is Carbon's productive motion for button
-// micro-interactions: fast-01 (70 ms) with standard easing. Hovering lightens
-// the background and brightens the icon and label; pressing darkens the
-// background and shrinks the button slightly, as if pushed in.
+// micro-interactions: fast-01 (70 ms) with standard easing.
 AbstractButton {
     id: root
 
     // The page this button leads to is the one being shown.
     property bool active: false
-    // A picture shown before the label, e.g. a category's icon from GameBanana.
+    // A picture rather than an icon, e.g. a category's icon from GameBanana.
     property url image
-    // Shows a chevron at the right edge: clicking opens more options.
     property bool chevron: false
-    // The count shown after the label; 0 for none.
+    // How many things on its page are under way, e.g. installs; 0 for none.
     property int badge: 0
     // The last count, kept while the badge fades out.
     property int shownBadge: 0
@@ -53,7 +45,6 @@ AbstractButton {
              : root.down ? Theme.highlightLow
              : root.hovered ? Qt.lighter(Theme.overlay, 1.25)
              : Theme.overlay
-        // Only shown when focused with the keyboard.
         border.width: root.visualFocus ? 1 : 0
         border.color: Theme.iris
 
@@ -98,7 +89,6 @@ AbstractButton {
             sourceSize: Qt.size(width, height)
             fillMode: Image.PreserveAspectFit
             asynchronous: true
-            // Fades in once loaded, rather than popping in.
             opacity: status === Image.Ready ? 1 : 0
 
             Behavior on opacity {
@@ -126,11 +116,9 @@ AbstractButton {
             }
         }
 
-        // Fades and grows in as it appears, and fades and shrinks back out as
-        // it goes. It's a notice of something under way, so it comes in with
-        // Carbon's expressive entrance over moderate-02 (system
-        // communication), and leaves with the exit curve over the same time,
-        // long enough to see it go.
+        // A notice of something under way, so it comes in with Carbon's
+        // expressive entrance over moderate-02 (system communication), and
+        // leaves with the exit curve over the same time, long enough to see it go.
         Rectangle {
             id: badge
 

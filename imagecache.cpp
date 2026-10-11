@@ -24,11 +24,13 @@ protected:
         const bool cached = op == GetOperation
             && immutableHosts.contains(request.url().host())
             && cache() && cache()->metaData(request.url()).isValid();
+
         if (!cached)
             return QNetworkAccessManager::createRequest(op, request, outgoingData);
 
         QNetworkRequest fromCache(request);
         fromCache.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::AlwaysCache);
+
         return QNetworkAccessManager::createRequest(op, fromCache, outgoingData);
     }
 
@@ -46,10 +48,12 @@ public:
 
     QNetworkAccessManager *create(QObject *parent) override {
         auto *manager = new CachingNetworkAccessManager(immutableHosts, parent);
+
         auto *cache = new QNetworkDiskCache(manager);
         cache->setCacheDirectory(dir);
         cache->setMaximumCacheSize(maxBytes);
         manager->setCache(cache);
+
         return manager;
     }
 
@@ -63,6 +67,7 @@ private:
 
 void lockdeader_install_image_cache(void *engine, const char *dir, long long maxBytes, const char *immutableHosts) {
     QStringList hosts = QString::fromUtf8(immutableHosts).split(u',', Qt::SkipEmptyParts);
+
     // The engine doesn't take ownership of its factory, and the factory has to
     // outlive the engine, so it's deliberately never deleted.
     static_cast<QQmlEngine *>(engine)->setNetworkAccessManagerFactory(

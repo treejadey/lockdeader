@@ -21,9 +21,11 @@ AppWindow {
 
         Sidebar {
             id: sidebar
+
             settingsSections: settingsPage.sectionList
             currentSettingsSection: settingsPage.currentSection
             onSettingsSectionClicked: (index) => settingsPage.goToSection(index)
+
             Layout.preferredWidth: 240
             Layout.fillHeight: true
         }
@@ -31,6 +33,7 @@ AppWindow {
         StackLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
+
             currentIndex: sidebar.currentIndex
 
             ModsPage {
@@ -48,9 +51,8 @@ AppWindow {
         }
     }
 
-    // Says what just happened, e.g. that a mod has started downloading, near
-    // the top of the window. It's in the overlay, over any dialog, so it isn't
-    // hidden by one closing as it appears.
+    // In the overlay, over any dialog, so a dialog closing as a toast appears
+    // doesn't hide it.
     Item {
         parent: Overlay.overlay
         anchors.fill: parent
@@ -67,7 +69,8 @@ AppWindow {
         }
     }
 
-    // Each message from the installer bumps messageId; show it.
+    // Each message from the installer bumps messageId, so the same message
+    // twice still shows.
     readonly property int installMessageId: installed.messageId
     onInstallMessageIdChanged: toast.show(installed.message)
 }

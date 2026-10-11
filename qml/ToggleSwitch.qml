@@ -1,26 +1,18 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// An on/off switch: a knob in a pill, at the right and foam while on, at the
-// left and dim while off. Space flips it while it has focus.
-//
-// Motion is the same as ContentSwitcher's, and productive: flipping happens
-// on press. The pill changes colour straight away (fast-01), then the knob
-// slides over (moderate-01, standard easing), taking on its new colour as it
-// goes, so it reads as the knob carrying the change across.
 AbstractButton {
     id: root
 
     readonly property int knobSize: 24
     readonly property int inset: 3
 
-    // Flips the switch, as pressing it does.
     function flip() {
         checked = !checked
         toggled()
     }
 
-    // Blends colour a towards b by amount, from 0 to 1.
+    // amount is from 0 to 1.
     function mix(a, b, amount) {
         return Qt.rgba(a.r + (b.r - a.r) * amount, a.g + (b.g - a.g) * amount,
                        a.b + (b.b - a.b) * amount, a.a + (b.a - a.a) * amount)
@@ -28,9 +20,11 @@ AbstractButton {
 
     implicitWidth: 2 * knobSize + 2 * inset
     implicitHeight: knobSize + 2 * inset
+
     hoverEnabled: true
     // Reachable with Tab, but clicking doesn't take focus from where it was.
     focusPolicy: Qt.TabFocus
+
     // Flipped by hand on press, rather than by AbstractButton on release.
     checkable: false
     onPressed: flip()
@@ -53,18 +47,21 @@ AbstractButton {
         slide.restart()
     }
 
+    // The pill changes colour straight away, then the knob slides over,
+    // taking on its new colour as it goes, so it reads as the knob carrying
+    // the change across.
     SequentialAnimation {
         id: slide
 
         property alias to: travel.to
 
-        // The pill changes first...
         PauseAnimation {
             duration: Motion.fast01
         }
-        // ...then the knob follows.
+
         NumberAnimation {
             id: travel
+
             target: knob
             property: "position"
             duration: Motion.moderate01
@@ -92,7 +89,7 @@ AbstractButton {
             }
         }
 
-        // Only shown when focused with the keyboard.
+        // The keyboard focus ring.
         Rectangle {
             anchors.fill: parent
             anchors.margins: -3

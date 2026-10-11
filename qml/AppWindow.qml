@@ -1,17 +1,12 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// A window of the app's, in its theme: the main window, or a dialog shown
-// before it.
-//
 // Every QML file imports QtQuick.Controls.Fusion rather than plain
-// QtQuick.Controls, so the stock controls look the same on every desktop.
-// Otherwise e.g. KDE Plasma substitutes its own style, which draws with the
-// system palette and ignores the theme below.
+// QtQuick.Controls: otherwise e.g. KDE Plasma substitutes its own style, which
+// draws with the system palette and ignores the one below.
 ApplicationWindow {
     color: Theme.base
 
-    // Dark palette for the stock controls (buttons, scroll bars, spinners, tooltips).
     palette {
         window: Theme.base
         windowText: Theme.text

@@ -5,7 +5,7 @@ import (
 	"database/sql"
 )
 
-// migration brings the schema up one version, inside the transaction it's
+// A migration brings the schema up one version, inside the transaction it's
 // given.
 type migration func(ctx context.Context, tx *sql.Tx) error
 
@@ -22,6 +22,7 @@ var migrations = []migration{
 func execSQL(statements string) migration {
 	return func(ctx context.Context, tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, statements)
+
 		return err
 	}
 }

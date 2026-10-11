@@ -1,18 +1,14 @@
 import QtQuick
 
-// A horizontal, scrollable strip of image thumbnails. images is a list of
-// {full, thumbnail, caption} objects. When selectedIndex is set, that
-// thumbnail gets a gold outline, the others are dimmed, and the strip keeps it
-// in view.
 ListView {
     id: root
 
+    // {full, thumbnail, caption} objects.
     property var images: []
     property int thumbnailWidth: 88
     property int thumbnailHeight: 56
     property int selectedIndex: -1
 
-    // Emitted when a thumbnail is clicked.
     signal activated(int index)
 
     implicitHeight: thumbnailHeight
@@ -47,7 +43,6 @@ ListView {
         RoundedImage {
             anchors.fill: parent
             source: thumb.modelData.thumbnail
-            // Thumbnail hover is a button micro-interaction: productive, fast-01.
             opacity: root.selectedIndex < 0 || thumb.current || hover.hovered ? 1 : 0.55
 
             Behavior on opacity {
@@ -70,6 +65,7 @@ ListView {
 
         HoverHandler {
             id: hover
+
             cursorShape: Qt.PointingHandCursor
         }
 

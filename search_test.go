@@ -27,6 +27,7 @@ func TestMatchRank(t *testing.T) {
 		{"abrams but green", "green abrams", 4},
 		{"ábrams", "abrams", 5},
 	}
+
 	for _, tt := range tests {
 		if got := matchRank(tt.name, tt.query); got != tt.want {
 			t.Errorf("matchRank(%q, %q) = %d, want %d", tt.name, tt.query, got, tt.want)
@@ -34,29 +35,36 @@ func TestMatchRank(t *testing.T) {
 	}
 }
 
-// newSearchServer serves a listing of mods with the given names, whatever is
-// asked for, and returns the queries it was asked for. Requests wait for
-// release to receive a value, if it isn't nil.
+// newSearchServer lists mods with the given names, whatever is asked for, and
+// records the queries. If release isn't nil, each request waits for a value
+// from it.
 func newSearchServer(t *testing.T, names []string, release chan struct{}) (*banana.Client, *[]string) {
 	t.Helper()
+
 	var records []string
+
 	for i, name := range names {
 		records = append(records, fmt.Sprintf(`{"_idRow": %d, "_sName": %q}`, i+1, name))
 	}
+
 	body := fmt.Sprintf(`{"_aMetadata": {"_nRecordCount": %d, "_bIsComplete": true}, "_aRecords": [%s]}`,
 		len(names), strings.Join(records, ","))
 
 	queries := new([]string)
+
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if release != nil {
 			<-release
 		}
+
 		mainthread.Wait(func() { *queries = append(*queries, r.URL.Query().Get("_aFilters[Generic_Name]")) })
 		w.Write([]byte(body))
 	}))
 	t.Cleanup(srv.Close)
+
 	client := banana.NewClient()
 	client.BaseURL = srv.URL
+
 	return client, queries
 }
 
@@ -71,8 +79,10 @@ func TestModSearchPick(t *testing.T) {
 
 	var opened []int
 	var changes int
+
 	s := mainthread.Wait2(func() *modSearch {
 		mods := newModListModel(client, qml.NewQQmlPropertyMap())
+
 		return newModSearch(mods, func(id int) { opened = append(opened, id) }, func() { changes++ })
 	})
 
@@ -81,9 +91,11 @@ func TestModSearchPick(t *testing.T) {
 		s.SetQuery("  green   abrams ")
 		s.Pick()
 	})
+
 	if got := mainthread.Wait2(func() int { return len(opened) }); got != 0 {
 		t.Fatalf("opened %d mods before the results arrived", got)
 	}
+
 	release <- struct{}{}
 	waitFor(t, "the pick", func() bool { return len(opened) > 0 })
 
@@ -91,28 +103,34 @@ func TestModSearchPick(t *testing.T) {
 		if want := []string{"contains,green abrams"}; fmt.Sprint(*queries) != fmt.Sprint(want) {
 			t.Errorf("queries = %q, want %q", *queries, want)
 		}
+
 		if changes != 1 {
 			t.Errorf("onChange called %d times, want 1", changes)
 		}
+
 		// Every name starts with the query but the second; the shortest wins.
 		if len(opened) != 1 || opened[0] != 3 {
 			t.Errorf("opened %v, want [3]", opened)
 		}
+
 		if got := s.Value("pickedRow").ToInt(); got != 2 {
 			t.Errorf("pickedRow = %d, want 2", got)
 		}
+
 		if got := s.Value("pickId").ToInt(); got != 1 {
 			t.Errorf("pickId = %d, want 1", got)
 		}
 
 		// Once the results are in, picking is immediate.
 		s.Pick()
+
 		if len(opened) != 2 || s.Value("pickId").ToInt() != 2 {
 			t.Errorf("picking again: opened %v, pickId %d", opened, s.Value("pickId").ToInt())
 		}
 
 		// The same search, written differently, changes nothing.
 		s.SetQuery("green abrams")
+
 		if changes != 1 {
 			t.Errorf("onChange called %d times after the same search, want 1", changes)
 		}
@@ -121,7 +139,9 @@ func TestModSearchPick(t *testing.T) {
 		s.SetQuery("")
 		s.Pick()
 	})
+
 	release <- struct{}{}
+
 	mainthread.Wait(func() {
 		if len(opened) != 2 {
 			t.Errorf("picking without a search opened %v", opened)

@@ -1,15 +1,12 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// The sections of the settings page, as a list in the sidebar. The section
-// being read on the page is active; clicking one scrolls the page to it.
-// Sections hidden by a search are left out.
 Item {
     id: root
 
     // {title, shown} objects, as SettingsPage.sectionList.
     property var sections: []
-    // The active section, by index; -1 for none.
+    // -1 means none.
     property int currentIndex: -1
 
     signal sectionClicked(int index)
@@ -28,6 +25,7 @@ Item {
         model: root.sections
             .map((section, index) => ({ title: section.title, shown: section.shown, index: index }))
             .filter(section => section.shown)
+
         spacing: 4
         clip: true
         boundsBehavior: Flickable.StopAtBounds
@@ -45,6 +43,7 @@ Item {
 
     SmoothWheel {
         id: wheel
+
         anchors.fill: list
         flickable: list
     }
@@ -52,6 +51,7 @@ Item {
     // Only takes up room when the list doesn't fit.
     ScrollBar {
         id: scrollBar
+
         anchors {
             top: parent.top
             bottom: parent.bottom

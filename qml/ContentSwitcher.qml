@@ -1,9 +1,7 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// Picks one of a few options, shown as icons in a pill, like Carbon's icon-only
-// content switcher. A circle sits behind the picked option. Arrow keys move
-// between the options while one has focus.
+// Carbon's icon-only content switcher.
 //
 // Motion is productive: picking an option happens on press. Its icon fills in
 // and brightens straight away while the old one goes back to its outline
@@ -19,7 +17,7 @@ Rectangle {
     property var options: []
     property int currentIndex: 0
 
-    // Emitted when the user picks an option, after currentIndex has changed.
+    // Only for the user's picks, after currentIndex has changed.
     signal activated(int index)
 
     readonly property int optionSize: 28
@@ -29,11 +27,11 @@ Rectangle {
     function pick(index) {
         if (index < 0 || index >= options.length || index === currentIndex)
             return
+
         currentIndex = index
         activated(index)
     }
 
-    // Blends colour a towards b by amount, from 0 to 1.
     function mix(a, b, amount) {
         return Qt.rgba(a.r + (b.r - a.r) * amount, a.g + (b.g - a.g) * amount,
                        a.b + (b.b - a.b) * amount, a.a + (b.a - a.a) * amount)
@@ -61,6 +59,7 @@ Rectangle {
         indicator.from = indicator.position
         indicator.to = currentIndex
         indicator.travel = 0
+
         move.restart()
     }
 
@@ -71,6 +70,7 @@ Rectangle {
         PauseAnimation {
             duration: Motion.fast01
         }
+
         // ...then the circle follows.
         NumberAnimation {
             target: indicator
@@ -83,8 +83,8 @@ Rectangle {
         }
     }
 
-    // The circle behind the picked option. Declared before the options, so
-    // it's drawn under them.
+    // The circle behind the picked option. Declared before the options, so it's
+    // drawn under them.
     Rectangle {
         x: root.padding + indicator.position * (root.optionSize + root.spacing)
         anchors.verticalCenter: parent.verticalCenter
@@ -122,7 +122,6 @@ Rectangle {
                 focusPolicy: Qt.TabFocus
                 onPressed: root.pick(index)
 
-                // Moves the pick, and the focus, to the next option over.
                 function step(delta) {
                     const next = repeater.itemAt(index + delta)
                     if (next) {

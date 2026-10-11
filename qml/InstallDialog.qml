@@ -2,12 +2,6 @@ import QtQuick
 import QtQuick.Controls.Fusion
 import QtQuick.Effects
 
-// Asks which of a mod's files to install: its name and the start of its
-// description, then its files, any number of which can be picked (the first
-// is, to begin with). A mod with just one file has nothing to pick: that file
-// is always picked, can't be un-picked, and has no checkbox. The window behind is dimmed, as for the image viewer.
-// Escape, the close button or clicking outside closes it.
-//
 // Motion: opening a modal is an expressive moment, so the dialog rises from
 // low down towards the middle of the window as it fades in, with Carbon's
 // expressive entrance, over slow-01, as it moves a long way. The backdrop dims
@@ -17,21 +11,17 @@ Popup {
     id: root
 
     property string name
-    // Plain text; only its start shows, fading out.
+    // Plain text.
     property string description
     // {id, name, size, added, description} objects; size is formatted, e.g.
     // "450 KB", and added is when the file was uploaded, in Unix seconds.
     property var files: []
-    // The files are still on their way, or failed to load.
     property bool loading: false
     property string error: ""
 
-    // The ids of the files picked.
     property var selectedIds: []
-    // There's only one file, so there's no choosing.
     readonly property bool single: files.length === 1
 
-    // Emitted by the Install selected button, with the ids of the files picked.
     signal installRequested(var fileIds)
 
     function isSelected(id) {
@@ -41,12 +31,13 @@ Popup {
     function toggle(id) {
         if (single)
             return
+
         selectedIds = isSelected(id)
             ? selectedIds.filter(other => other !== id)
             : selectedIds.concat([id])
     }
 
-    // Picks the first file, as the one most mods want installed.
+    // The first file is the one most mods want installed.
     function pickDefault() {
         selectedIds = files.length > 0 ? [files[0].id] : []
     }
@@ -60,6 +51,7 @@ Popup {
     width: parent ? parent.width : 0
     height: parent ? parent.height : 0
     padding: 0
+
     modal: true
     dim: false
     focus: true
@@ -77,6 +69,7 @@ Popup {
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: Motion.productiveStandard
             }
+
             NumberAnimation {
                 target: card
                 property: "opacity"
@@ -86,6 +79,7 @@ Popup {
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: Motion.expressiveEntrance
             }
+
             // From most of the way down to the bottom of the window.
             NumberAnimation {
                 target: cardShift
@@ -109,6 +103,7 @@ Popup {
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: Motion.productiveExit
             }
+
             NumberAnimation {
                 target: cardShift
                 property: "y"
@@ -191,6 +186,7 @@ Popup {
 
                 FontMetrics {
                     id: descriptionMetrics
+
                     font: descriptionText.font
                 }
 
@@ -218,8 +214,6 @@ Popup {
                 }
             }
 
-            // The files, in a rounded box, with the same space around them on
-            // every side.
             Rectangle {
                 width: parent.width
                 // Room for the spinner or the message while there are no files.
@@ -270,7 +264,6 @@ Popup {
                             color: file.picked ? (file.hovered ? Qt.lighter(Theme.foam, 1.08) : Theme.foam)
                                  : file.hovered ? Qt.lighter(Theme.overlay, 1.25)
                                  : "transparent"
-                            // Only shown when focused with the keyboard.
                             border.width: file.visualFocus ? 1 : 0
                             border.color: Theme.iris
 
@@ -283,14 +276,13 @@ Popup {
                             }
                         }
 
-                        // Light text on the dialog, dark on a picked file's foam.
                         contentItem: Item {
                             id: fileContent
 
                             readonly property color textColor: file.picked ? Theme.base : Theme.text
 
-                            // The outline (_regular) and filled icons are
-                            // cross-faded. The filled ones are dark, for foam.
+                            // The outline and filled icons are cross-faded. The
+                            // filled ones are dark, for foam.
                             Item {
                                 id: fileIcon
 
@@ -348,8 +340,7 @@ Popup {
                                     elide: Text.ElideMiddle
                                 }
 
-                                // e.g. which variant of the mod the file is. Hovering
-                                // it shows all of it, when it's cut short.
+                                // e.g. which variant of the mod the file is.
                                 Label {
                                     id: fileDescription
 
@@ -375,9 +366,8 @@ Popup {
                                 }
                             }
 
-                            // When the file was uploaded, e.g. "3 days ago", just
-                            // before the size. Files can't be changed once
-                            // uploaded, only replaced.
+                            // When the file was uploaded. Files can't be changed
+                            // once uploaded, only replaced.
                             Row {
                                 id: addedRow
 
@@ -474,6 +464,7 @@ Popup {
 
                 SmoothWheel {
                     id: fileWheel
+
                     anchors.fill: fileList
                     flickable: fileList
                     enabled: fileList.interactive
@@ -496,7 +487,6 @@ Popup {
                     onPressedChanged: if (pressed) fileWheel.stop()
                 }
 
-                // While there are no files to show.
                 BusyIndicator {
                     anchors.centerIn: parent
                     width: 32

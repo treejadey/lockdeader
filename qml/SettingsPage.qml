@@ -1,10 +1,6 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// The app's settings, in sections, under the bar every page has. Searching
-// narrows them down to the settings whose names (or descriptions, or
-// keywords) contain the search. Changes apply and save straight away.
-//
 // The sidebar lists the sections (see SettingsNav): currentSection is the one
 // being read, and goToSection() scrolls to one.
 Item {
@@ -21,29 +17,32 @@ Item {
 
     // The section being read: the last one whose heading has scrolled up to
     // the top of the page (within 64px of it), or the last one once scrolled
-    // to the bottom, which could otherwise never get there. After goToSection(), the section
-    // gone to, until the user scrolls themselves: it may be too near the
-    // bottom to reach the top.
+    // to the bottom, which could otherwise never get there. After
+    // goToSection(), the section gone to, until the user scrolls themselves:
+    // it may be too near the bottom to reach the top.
     readonly property int currentSection: {
         if (goneTo >= 0 && sectionItems[goneTo].hasMatches)
             return goneTo
+
         const top = flickable.contentY + 64
         const atBottom = flickable.contentHeight > flickable.height && flickable.atYEnd
         let current = -1
+
         for (let i = 0; i < sectionItems.length; i++) {
             const section = sectionItems[i]
             if (!section.hasMatches)
                 continue
+
             if (current < 0 || atBottom || sectionTop(section) <= top)
                 current = i
         }
+
         return current
     }
 
     // The section last gone to with goToSection(), until the user scrolls.
     property int goneTo: -1
 
-    // Where a section's heading is, in the flickable's content.
     function sectionTop(section) {
         return sections.y + section.y
     }
@@ -54,10 +53,14 @@ Item {
         const section = sectionItems[index]
         if (!section || !section.hasMatches)
             return
+
         wheel.stop()
+
         const bottom = Math.max(0, flickable.contentHeight - flickable.height)
         const target = Math.min(bottom, sectionTop(section) - sections.anchors.topMargin)
+
         goneTo = index
+
         scroll.stop()
         scroll.from = flickable.contentY
         scroll.to = target
@@ -163,6 +166,7 @@ Item {
 
     SmoothWheel {
         id: wheel
+
         anchors.fill: flickable
         flickable: flickable
         // ...or by wheeling.
@@ -171,6 +175,7 @@ Item {
 
     ScrollBar {
         id: scrollBar
+
         anchors {
             top: topBar.bottom
             bottom: parent.bottom
@@ -182,7 +187,6 @@ Item {
         }
     }
 
-    // A search that found nothing.
     Label {
         anchors.centerIn: flickable
         visible: !root.anyMatches

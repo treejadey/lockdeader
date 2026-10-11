@@ -1,11 +1,6 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// Installed mods as a list, one row each, like ModList's: the name, the
-// author, when it was last updated, and a checkbox at the end that turns it
-// on or off, as does clicking the row. A mod that's installing has its
-// progress in the row, before the author, and its checkbox greyed out.
-//
 // As the list narrows, the progress bar shrinks first, then when it was
 // updated goes.
 Item {
@@ -28,10 +23,8 @@ Item {
     readonly property real statusWidth: Math.max(statusMinWidth, Math.min(statusMaxWidth,
         list.width - 12 - nameMinWidth - authorWidth - (showUpdated ? updatedWidth : 0) - checkWidth - 22))
 
-    // Emitted when the user turns a mod on or off.
     signal enabledToggled(string key, bool enabled)
-    // Emitted on a right click on a mod, with its status and how many
-    // variants it has.
+    // Emitted on a right click.
     signal menuRequested(string key, string status, int variants)
 
     ListView {
@@ -143,7 +136,6 @@ Item {
                 elide: Text.ElideRight
             }
 
-            // When the mod was last updated, e.g. "8 hours ago".
             Row {
                 id: updatedRow
 
@@ -195,12 +187,14 @@ Item {
 
     SmoothWheel {
         id: wheel
+
         anchors.fill: list
         flickable: list
     }
 
     ScrollBar {
         id: scrollBar
+
         anchors {
             top: parent.top
             bottom: parent.bottom

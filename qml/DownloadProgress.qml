@@ -1,17 +1,7 @@
 import QtQuick
 import QtQuick.Effects
 
-// A download's progress bar, in the style of elementary OS's: a rounded
-// track, filled from the left with rounded ends, and a few brighter slanted
-// bands (the shine) sweeping through the filled part together, then pausing
-// before the next sweep.
-// (Not named ProgressBar: Qt Quick Controls has a type of that name already.)
-//
-// How the shine moves follows how fast the download is going (pace):
-//  - normal: sweeps through, then pauses;
-//  - slow: sweeps through more slowly, then pauses as long as at normal;
-//  - fast: sweeps through quicker, and never pauses.
-// A change of pace takes effect from the next sweep, so the shine never jumps.
+// Not named ProgressBar: Qt Quick Controls has a type of that name already.
 //
 // Motion: each sweep accelerates through the bar (Carbon's productive exit
 // curve, which is an ease-in), as the shine leaves the bar at its end. The
@@ -21,15 +11,14 @@ import QtQuick.Effects
 Item {
     id: root
 
-    // How much is done, from 0 to 1.
+    // From 0 to 1.
     property real value: 0
     // "slow", "normal" or "fast".
     property string pace: "normal"
-    // Whether the shine sweeps, e.g. only while something is happening.
     property bool running: true
     property color trackColor: Theme.overlay
 
-    // Sweep and pause times, in milliseconds, for each pace.
+    // In milliseconds.
     readonly property var timings: ({
         slow: { sweep: 3200, pause: 1000 },
         normal: { sweep: 2100, pause: 1000 },
@@ -87,7 +76,6 @@ Item {
                            Theme.pine.b + (Theme.foam.b - Theme.pine.b) * 0.35, 1)
         }
 
-        // The bands, one after another, moving as one.
         Item {
             id: shine
 
@@ -97,7 +85,6 @@ Item {
             readonly property real bandWidth: Math.max(2 * root.height, root.width * root.bandWidth)
             readonly property real gap: Math.max(root.height, root.width * root.bandGap)
             readonly property real lean: bandHeight * root.slant
-            // A little in from the top and bottom of the bar.
             readonly property real inset: Math.max(1, Math.round(root.height * 0.2))
             readonly property real bandHeight: root.height - 2 * inset
 
@@ -166,9 +153,9 @@ Item {
         onFinished: Qt.callLater(root.updateShine)
     }
 
-    // Starts or stops the shine as it's wanted or not; only when it's shown.
     function updateShine() {
         const wanted = running && visible && fill.visible
+
         if (wanted && !cycle.running) {
             cycle.start()
         } else if (!wanted && cycle.running) {
@@ -183,6 +170,7 @@ Item {
 
     Connections {
         target: fill
+
         function onVisibleChanged() { root.updateShine() }
     }
 }

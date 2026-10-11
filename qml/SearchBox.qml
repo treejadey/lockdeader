@@ -1,10 +1,7 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// A search box in the style of Carbon's text input: a filled field with a
-// line along its bottom, which thickens and turns the accent colour (foam)
-// while the field has focus. The search icon at the right end is a button;
-// clicking it, or pressing Enter, emits accepted().
+// In the style of Carbon's text input.
 Rectangle {
     id: root
 
@@ -46,12 +43,14 @@ Rectangle {
         rightPadding: 4
         verticalAlignment: TextInput.AlignVCenter
         background: null
+
         placeholderText: root.placeholderText
         color: Theme.text
         placeholderTextColor: Theme.subtle
         selectionColor: Theme.highlightHigh
         selectedTextColor: Theme.text
         selectByMouse: true
+
         onTextEdited: root.textEdited()
         onAccepted: root.accepted()
     }
@@ -67,6 +66,7 @@ Rectangle {
         width: 28
         height: 28
         padding: 4
+
         hoverEnabled: true
         // Clicking it leaves the focus in the field.
         focusPolicy: Qt.NoFocus
@@ -115,7 +115,7 @@ Rectangle {
         }
     }
 
-    // The line along the bottom: 1px while idle, 2px of foam while focused.
+    // The line along the bottom.
     Rectangle {
         anchors {
             left: parent.left

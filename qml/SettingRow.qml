@@ -1,15 +1,11 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// One setting on the settings page: its name, and optionally a description
-// under it, at the left, and the control that changes it (its children) at
-// the right.
 Rectangle {
     id: root
 
     property string text
     property string description
-    // Sets the description in monospace, e.g. for a path.
     property bool monospaceDescription: false
     // Other words that should find the setting when searched for.
     property string keywords
@@ -18,18 +14,15 @@ Rectangle {
 
     default property alias control: slot.data
 
-    // Emitted when an interactive row is pressed somewhere other than its
-    // control, which handles its own presses.
+    // Not emitted for presses on the control, which handles its own.
     signal rowPressed()
 
-    // Whether the row should show for a search, in lower case; "" matches
-    // every row.
+    // needle must be in lower case; "" matches every row.
     function matches(needle) {
         return needle === ""
             || (text + "\n" + description + "\n" + keywords).toLowerCase().includes(needle)
     }
 
-    // Rows fill their section.
     width: parent ? parent.width : implicitWidth
     implicitHeight: Math.max(44, labels.implicitHeight + 20, slot.childrenRect.height + 16)
     radius: 6
@@ -45,11 +38,12 @@ Rectangle {
 
     HoverHandler {
         id: hover
+
         enabled: root.interactive
         cursorShape: Qt.PointingHandCursor
     }
 
-    // Productive, like the switch: acts on press.
+    // Acts on press, like the switch.
     TapHandler {
         enabled: root.interactive
         onPressedChanged: if (pressed) root.rowPressed()

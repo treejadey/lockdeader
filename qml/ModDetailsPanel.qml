@@ -3,12 +3,8 @@ import QtQuick.Controls.Fusion
 import QtQuick.Effects
 import QtQuick.Layouts
 
-// Shows one mod: a large preview with its name and author over it, the
-// description, and an install button. The author's name links to their
-// GameBanana profile. A sound has no preview image, so it gets
-// just its name and author, and a player for its audio preview. While no mod is
-// open the panel shows a hint instead, so it can stay on screen and the grid
-// beside it never moves.
+// While no mod is open, the panel shows a hint instead, so it can stay on
+// screen and the grid beside it never moves.
 Rectangle {
     id: root
 
@@ -17,24 +13,21 @@ Rectangle {
     property bool open: false
     property string name
     property string author
-    // The author's GameBanana profile.
     property string authorUrl
     property string image
     // All preview images, as {full, thumbnail, caption} objects.
     property var images: []
-    // A sound's audio preview.
     property string audio
     property string profileUrl
     // Rich text (Qt's HTML subset).
     property string description
     property bool loading: false
     property string error: ""
-    // Pauses the sound when the panel closes. Not needed where the sound's
-    // player stays on screen elsewhere, e.g. in the list of sounds.
+    // Not needed where the sound's player stays on screen elsewhere, e.g. in
+    // the list of sounds.
     property bool pauseOnClose: true
 
     signal installClicked()
-    // Emitted when one of the mod's images is clicked, to show it full size.
     signal imageClicked(int index)
 
     color: Theme.surface
@@ -47,7 +40,6 @@ Rectangle {
         gallery.reset()
     }
 
-    // The open mod's details.
     Item {
         id: content
 
@@ -57,6 +49,7 @@ Rectangle {
         enabled: root.open
         transform: Translate {
             id: contentShift
+
             y: 8
         }
 
@@ -64,9 +57,6 @@ Rectangle {
             anchors.fill: parent
             spacing: 0
 
-            // Preview image with the name and author over it. Clicking it
-            // shows the image full size. Without an image, it's just the name
-            // and author.
             Item {
                 id: header
 
@@ -176,6 +166,7 @@ Rectangle {
 
                             MouseArea {
                                 id: authorArea
+
                                 anchors.fill: parent
                                 enabled: root.authorUrl !== ""
                                 hoverEnabled: true
@@ -198,7 +189,6 @@ Rectangle {
                     }
                 }
 
-                // Opens the mod's GameBanana page in the browser.
                 Image {
                     anchors {
                         top: parent.top
@@ -214,6 +204,7 @@ Rectangle {
 
                     MouseArea {
                         id: externalArea
+
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
@@ -328,6 +319,7 @@ Rectangle {
 
                 SmoothWheel {
                     id: descriptionWheel
+
                     anchors.fill: descriptionView
                     flickable: descriptionView
                 }
@@ -344,7 +336,6 @@ Rectangle {
         }
     }
 
-    // Shown while nothing is open.
     Column {
         id: hint
 
@@ -376,6 +367,7 @@ Rectangle {
     states: State {
         name: "open"
         when: root.open
+
         PropertyChanges {
             content.opacity: 1
             contentShift.y: 0
@@ -386,6 +378,7 @@ Rectangle {
     transitions: [
         Transition {
             to: "open"
+
             ParallelAnimation {
                 NumberAnimation {
                     targets: [content, contentShift]
@@ -394,6 +387,7 @@ Rectangle {
                     easing.type: Easing.BezierSpline
                     easing.bezierCurve: Motion.expressiveEntrance
                 }
+
                 NumberAnimation {
                     target: hint
                     property: "opacity"
@@ -405,6 +399,7 @@ Rectangle {
         },
         Transition {
             from: "open"
+
             ParallelAnimation {
                 NumberAnimation {
                     targets: [content, contentShift]
@@ -413,6 +408,7 @@ Rectangle {
                     easing.type: Easing.BezierSpline
                     easing.bezierCurve: Motion.productiveExit
                 }
+
                 NumberAnimation {
                     target: hint
                     property: "opacity"

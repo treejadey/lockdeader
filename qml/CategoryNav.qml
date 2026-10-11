@@ -2,10 +2,6 @@ import QtQuick
 import QtQuick.Controls.Fusion
 import QtQuick.Layouts
 
-// The categories to browse mods by, as a list in the sidebar. Opening a
-// category with subcategories (marked with a chevron) slides the list out to
-// the left and the subcategories in from the right, under a Back button.
-//
 // The mod grid shows the category picked from the list on screen, or if none
 // is, the category the list belongs to: all mods at the top level, or the
 // category whose subcategories these are. Picking the picked category again
@@ -23,44 +19,52 @@ Item {
     // is, so it's never clicked.
     readonly property var path: {
         const crumbs = [{ name: "All mods", depth: -1 }]
+
         for (let i = 1; i < stack.depth; i++) {
             const level = stack.get(i, StackView.ForceLoad)
+
             if (level && level.category)
                 crumbs.push({ name: level.category.name, depth: i - 1 })
         }
+
         const entries = stack.currentItem ? stack.currentItem.entries : []
+
         for (const entry of entries) {
             if (isSelected(entry)) {
                 crumbs.push({ name: entry.name, depth: stack.depth - 1 })
                 break
             }
         }
+
         return crumbs
     }
 
-    // Goes back to a crumb in path, by its depth: back up to the level whose
-    // list has its category in it, with that category picked, so the list
-    // and the breadcrumbs stay in step. -1 goes back to all mods.
+    // Goes back up to the level whose list has the crumb's category in it, and
+    // picks that category, so the list and the breadcrumbs stay in step. -1
+    // goes back to all mods.
     function goTo(depth) {
         if (depth < 0) {
             reset()
+
             return
         }
+
         if (depth >= stack.depth - 1)
             return // the last crumb: already there
+
         // The level above depth is the one opened from this category.
         const category = stack.get(depth + 1, StackView.ForceLoad).category
+
         stack.popToIndex(depth)
         select(category)
     }
 
-    // Back to the top-level categories, showing all mods.
     function reset() {
         stack.popToIndex(0)
         select(null)
     }
 
-    // Shows a category's mods in the grid; null for all mods.
+    // null for all mods.
     function select(category) {
         categories.selected = category
             ? { section: category.section, id: category.id }
@@ -100,6 +104,7 @@ Item {
                 easing.bezierCurve: Motion.productiveStandard
             }
         }
+
         pushExit: Transition {
             XAnimator {
                 from: 0
@@ -109,6 +114,7 @@ Item {
                 easing.bezierCurve: Motion.productiveStandard
             }
         }
+
         popEnter: Transition {
             XAnimator {
                 from: -stack.width
@@ -118,6 +124,7 @@ Item {
                 easing.bezierCurve: Motion.productiveStandard
             }
         }
+
         popExit: Transition {
             XAnimator {
                 from: 0
@@ -129,8 +136,6 @@ Item {
         }
     }
 
-    // One level of the list: the top-level categories, or a category's
-    // subcategories under a Back button.
     Component {
         id: level
 
@@ -218,6 +223,7 @@ Item {
 
                     SmoothWheel {
                         id: wheel
+
                         anchors.fill: list
                         flickable: list
                     }
@@ -225,6 +231,7 @@ Item {
                     // Only takes up room when the list doesn't fit.
                     ScrollBar {
                         id: scrollBar
+
                         anchors {
                             top: parent.top
                             bottom: parent.bottom

@@ -1,21 +1,13 @@
 import QtQuick
 
-// A row of image thumbnails with scroll arrows. When the thumbnails don't all
-// fit, an arrow on the right scrolls onwards while there's more to see, and an
-// arrow on the left appears once scrolled away from the start.
-//
-// Motion: scrolling and the arrows appearing are productive (standard easing);
-// the row glides over moderate-02, the arrows fade over fast-02.
 Item {
     id: root
 
     // {full, thumbnail, caption} objects.
     property var images: []
 
-    // Emitted when a thumbnail is clicked, with its index in images.
     signal activated(int index)
 
-    // Scrolls back to the first thumbnail, without animating.
     function reset() {
         scroll.stop()
         strip.positionViewAtBeginning()
@@ -25,6 +17,8 @@ Item {
     function page(direction) {
         const minX = strip.originX
         const maxX = Math.max(minX, strip.originX + strip.contentWidth - strip.width)
+        // Carry on from where a scroll that's still running is headed, so
+        // quick clicks add up.
         const start = scroll.running ? scroll.to : strip.contentX
         const distance = Math.max(strip.thumbnailWidth, strip.width - strip.thumbnailWidth - strip.spacing)
 
@@ -47,6 +41,7 @@ Item {
 
     NumberAnimation {
         id: scroll
+
         target: strip
         property: "contentX"
         duration: Motion.moderate02

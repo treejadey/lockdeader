@@ -54,6 +54,52 @@ go vet ./... && gofmt -l .
   - Tables are `STRICT`, and times are Unix seconds.
 - `package main` tests (`clipboard_test.go`) need a live Qt app. `TestMain` runs Qt's event loop on the locked main thread with the offscreen platform, and tests hand their Qt calls over through `mainthread.Wait`/`Start`. Reuse that harness for new Qt-dependent tests.
 
+## Code style
+
+Applies to Go, QML (including its JavaScript), C and C++.
+
+**Comments**
+- Don't write a comment that says what a function, type or line does when its name and code already make that clear.
+- Do comment:
+  - code that may look unusual, surprising or wrong;
+  - workarounds, such as for miqt or Qt bugs;
+  - the reason behind a non-obvious choice.
+- Put a short comment above a group of statements to say what it's for, when that isn't obvious from the code.
+
+**Blank lines**
+- Leave a blank line before and after every block (`if`, `for`, `switch`, `func` literal, QML child object, etc.). This doesn't apply at the start or end of the enclosing block: never leave a blank line right after `{` or right before `}`.
+  - Exception: a check stays attached to the line that set what it checks: `err`, `ok`, nil, or the value itself (`dir := getenv(...)` then `if dir == ""`).
+
+    ```go
+    data, err := os.ReadFile(path)
+    if err != nil {
+    	return err
+    }
+    ```
+- Group statements that belong together, and separate the groups with blank lines, e.g. setting up an object, then wiring its callbacks, then using it. Steps that do different things get their own group, even inside a short block:
+
+  ```go
+  func debounced(f func()) (save, flush func()) {
+  	timer := qt.NewQTimer()
+  	timer.SetSingleShot(true)
+  	timer.SetInterval(500)
+  	timer.OnTimeout(f)
+
+  	save = func() { timer.Start2() }
+
+  	flush = func() {
+  		if timer.IsActive() {
+  			timer.Stop()
+
+  			f()
+  		}
+  	}
+
+  	return save, flush
+  }
+  ```
+- Leave a blank line before a `return`, unless it's the first statement in its block (e.g. `if err != nil { return err }`). The same goes for `break` and `continue` that end a longer block.
+
 ## QML conventions
 
 - All QML lives in `qml/`. New components must be registered in `qml/qmldir`; singletons are declared there with `singleton`. Windows (`Main.qml`, `RestoreDialog.qml`) are loaded by path instead, and are `AppWindow`s, which carry the theme's palette.

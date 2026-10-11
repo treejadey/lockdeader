@@ -40,6 +40,7 @@ func TestListCategoriesRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var gotPath string
 			var gotQuery url.Values
+
 			c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 				gotPath = r.URL.Path
 				gotQuery = r.URL.Query()
@@ -49,9 +50,11 @@ func TestListCategoriesRequest(t *testing.T) {
 			if _, err := c.ListCategories(context.Background(), tt.opts); err != nil {
 				t.Fatal(err)
 			}
+
 			if gotPath != tt.wantPath {
 				t.Errorf("path = %q, want %q", gotPath, tt.wantPath)
 			}
+
 			if gotQuery.Encode() != tt.want.Encode() {
 				t.Errorf("query = %s, want %s", gotQuery.Encode(), tt.want.Encode())
 			}
@@ -61,6 +64,7 @@ func TestListCategoriesRequest(t *testing.T) {
 
 func TestListCategoriesDecode(t *testing.T) {
 	fixture := readFixture(t, "mod_categories.json")
+
 	c := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Write(fixture)
 	})
@@ -69,6 +73,7 @@ func TestListCategoriesDecode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if len(categories) != 8 {
 		t.Fatalf("len = %d, want 8", len(categories))
 	}

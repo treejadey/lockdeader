@@ -1,7 +1,7 @@
 import QtQuick
 
-// Smooth, browser-like mouse wheel scrolling for a Flickable. Place it over the
-// flickable (e.g. anchors.fill) so it sees wheel events first.
+// Place it over the flickable (e.g. anchors.fill) so it sees wheel events
+// first.
 //
 // Flickable turns every mouse wheel notch into its own short flick that slows
 // to a stop before the next one, so continuous wheeling stutters. Here each
@@ -13,10 +13,9 @@ MouseArea {
     id: root
 
     required property Flickable flickable
-    // How far one wheel notch scrolls, in pixels.
+    // In pixels per wheel notch.
     property real step: 100
 
-    // Stops any wheel scroll in progress, e.g. when the user grabs a scrollbar.
     function stop() {
         animation.stop()
     }
@@ -43,6 +42,7 @@ MouseArea {
             wheel.accepted = false
             return
         }
+
         root.scrollBy(-wheel.angleDelta.y / 120 * root.step)
     }
 
@@ -50,6 +50,7 @@ MouseArea {
     // while the user keeps wheeling, and was tuned to keep that pace steady.
     NumberAnimation {
         id: animation
+
         target: root.flickable
         property: "contentY"
         duration: 200
@@ -59,6 +60,7 @@ MouseArea {
     // Dragging the content takes over from any wheel scroll in progress.
     Connections {
         target: root.flickable
+
         function onMovementStarted() {
             animation.stop()
         }

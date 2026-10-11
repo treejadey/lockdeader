@@ -1,11 +1,8 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// Mods as a vertically scrolling list, one row each: a small preview image
-// and the name, the category, the author and when it was last updated. Sounds
-// have no preview image, so they're always listed this way, and get a player
-// for their audio preview in place of the image and the category. Clicking a
-// row, anywhere but its player, opens it.
+// Sounds have no preview image, so they're always listed this way, with a
+// player for their audio preview in place of the image and the category.
 //
 // The name always keeps some room. As the list narrows, the category (or the
 // player) shrinks first, then the category goes, then when it was updated.
@@ -17,10 +14,9 @@ Item {
 
     property alias model: list.model
     readonly property alias count: list.count
-    // Shown at the bottom of the list while the next page is on its way.
     property bool loading: false
     property string error: ""
-    // The row with this mod id is drawn as selected; 0 for none.
+    // 0 for none.
     property int selectedModId: 0
 
     // The columns, from the left: the image, the name, the category (or for
@@ -39,16 +35,15 @@ Item {
     readonly property real middleWidth: {
         const room = list.width - leadingWidth - nameMinWidth - middleGap - authorWidth
             - (showUpdated ? updatedWidth : 12)
+
         return sounds ? Math.max(middleMinWidth, Math.min(middleMaxWidth, room))
                       : Math.min(middleMaxWidth, room)
     }
     readonly property bool showCategory: !sounds && middleWidth >= middleMinWidth
 
-    // Emitted when the user asks to retry after a failed page load.
     signal retry()
     signal modClicked(int modId)
 
-    // Scrolls just far enough to show row (of the model).
     function showRow(row) {
         wheel.stop()
         list.positionViewAtIndex(row, ListView.Contain)
@@ -110,6 +105,7 @@ Item {
             // Under everything else, so the player's controls get their own clicks.
             MouseArea {
                 id: rowArea
+
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
@@ -168,7 +164,7 @@ Item {
                 bubbleBelow: row.y - list.contentY < 32
             }
 
-            // Where the player is for sounds, e.g. "Skins - Abrams".
+            // e.g. "Skins - Abrams". Sounds have the player here instead.
             Label {
                 id: categoryLabel
 
@@ -200,7 +196,6 @@ Item {
                 elide: Text.ElideRight
             }
 
-            // When the sound was last updated, e.g. "8 hours ago".
             Row {
                 id: updatedRow
 
@@ -253,12 +248,14 @@ Item {
 
     SmoothWheel {
         id: wheel
+
         anchors.fill: list
         flickable: list
     }
 
     ScrollBar {
         id: scrollBar
+
         anchors {
             top: parent.top
             bottom: parent.bottom

@@ -1,31 +1,23 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// A regular push button: a centred label with an optional icon after it, or
-// just an icon when there's no text.
-// Following Carbon, the icon goes on the right and shows the action the
+// Following Carbon, the icon goes after the label and shows the action the
 // button performs. End the label with "…" when the button opens a dialog to
 // finish the action, rather than doing it straight away.
-//
-// Motion matches SidebarItem: Carbon's productive button micro-interaction,
-// fast-01 (70 ms) with standard easing. Hovering lightens the background;
-// pressing darkens it and shrinks the button slightly, as if pushed in.
-// While disabled it takes the app's disabled look (see DisabledFill), with
-// muted text.
 AbstractButton {
     id: root
 
-    // The background's colour at rest; hovering lightens it. Overlay suits
-    // the panels; on something already overlay, e.g. a settings row, use
-    // highlightMed.
+    // Overlay suits the panels; on something already overlay, e.g. a settings
+    // row, use highlightMed.
     property color baseColor: Theme.overlay
-    // For the label; e.g. Theme.base on a light baseColor such as foam.
+    // E.g. Theme.base on a light baseColor such as foam.
     property color textColor: Theme.text
 
     implicitWidth: implicitContentWidth + leftPadding + rightPadding
     implicitHeight: 34
     leftPadding: 12
     rightPadding: 12
+
     hoverEnabled: true
     // Reachable with Tab, but clicking doesn't take focus from where it was.
     focusPolicy: Qt.TabFocus
@@ -55,7 +47,6 @@ AbstractButton {
              : root.down ? Qt.darker(root.baseColor, 1.15)
              : root.hovered ? Qt.lighter(root.baseColor, 1.25)
              : root.baseColor
-        // Only shown when focused with the keyboard.
         border.width: root.visualFocus ? 1 : 0
         border.color: Theme.iris
 

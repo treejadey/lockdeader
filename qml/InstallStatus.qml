@@ -1,23 +1,17 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// How a mod's install is going: a progress bar, and how far along it is
-// ("33%"), or that it's waiting its turn or installing what it downloaded.
-// The label goes under the bar, at its right, or beside it. A failed install
-// says so instead, in red, with why when hovered.
 Item {
     id: root
 
-    // The mod's status, as in the installed mods model: "queued",
-    // "downloading", "extracting" or "failed".
+    // As in the installed mods model: "queued", "downloading", "extracting"
+    // or "failed".
     property string status
-    // How much has downloaded, from 0 to 1.
+    // From 0 to 1.
     property real progress: 0
-    // How fast it's downloading: "slow", "normal" or "fast".
+    // "slow", "normal" or "fast".
     property string pace: "normal"
-    // Why it failed.
     property string error
-    // Puts the label beside the bar rather than under it.
     property bool labelBeside: false
     property alias trackColor: bar.trackColor
 
@@ -67,11 +61,13 @@ Item {
 
         FontMetrics {
             id: percentMetrics
+
             font: label.font
         }
 
         HoverHandler {
             id: errorHover
+
             enabled: root.failed
         }
 

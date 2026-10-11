@@ -49,17 +49,13 @@ type soundPreview struct {
 
 	durations map[string]qt.QVariant // milliseconds, by URL
 
-	// Called when QML changes the volume or mutes, e.g. to save it.
 	onVolumeChange func(volume float64, muted bool)
 
-	ticker *qt.QTimer // updates the position while playing
+	ticker *qt.QTimer
 }
 
-// How often the position is updated while playing.
 const positionInterval = 33 * time.Millisecond
 
-// newSoundPreview returns a sound preview bridge that starts at the given
-// volume, and calls onVolumeChange (if not nil) whenever QML changes it.
 func newSoundPreview(client *banana.Client, audioState appdb.AudioState, onVolumeChange func(volume float64, muted bool)) *soundPreview {
 	p := &soundPreview{
 		QQmlPropertyMap: qml.NewQQmlPropertyMap(),
@@ -73,6 +69,7 @@ func newSoundPreview(client *banana.Client, audioState appdb.AudioState, onVolum
 		onVolumeChange:  onVolumeChange,
 		ticker:          qt.NewQTimer(),
 	}
+
 	p.ticker.SetInterval(int(positionInterval.Milliseconds()))
 	p.ticker.OnTimeout(p.tick)
 
@@ -107,22 +104,24 @@ func newSoundPreview(client *banana.Client, audioState appdb.AudioState, onVolum
 			p.SetVolume(p.volume, value.ToBool())
 		}
 	})
+
 	return p
 }
 
-// Load stops the current sound and starts loading the one at url in the
-// background; "" just stops it. If QML asks to play it meanwhile, it plays
-// once it's loaded.
+// Load downloads and decodes in the background; "" just stops the current
+// sound. If QML asks to play it meanwhile, it plays once it's loaded.
 func (p *soundPreview) Load(url string) {
 	if url == p.source {
 		return
 	}
+
 	p.unload()
 	p.source = url
 	// Players compare their own sound with this, so it has to be right even
 	// when Go changes it, e.g. stopping the sound for a new listing.
 	p.Insert("source", qt.NewQVariant14(url))
 	p.generation++
+
 	if url == "" {
 		return
 	}
@@ -132,16 +131,20 @@ func (p *soundPreview) Load(url string) {
 		if err != nil {
 			slog.Error("failed to open the audio output", "err", err)
 			p.setError(err)
+
 			return
 		}
+
 		p.engine = engine
 	}
 
 	p.Insert("loading", qt.NewQVariant8(true))
 	generation, engine := p.generation, p.engine
+
 	go func() {
 		data, err := p.client.Download(context.Background(), url)
 		var sound *audio.Sound
+
 		if err == nil {
 			sound, err = engine.Load(data)
 		}
@@ -152,26 +155,34 @@ func (p *soundPreview) Load(url string) {
 				if sound != nil {
 					sound.Close()
 				}
+
 				return
 			}
+
 			p.Insert("loading", qt.NewQVariant8(false))
+
 			if err != nil {
 				slog.Error("failed to load sound preview", "url", url, "err", err)
 				p.pendingSeek = -1
 				p.setError(err)
+
 				return
 			}
+
 			p.sound = sound
 			p.applyVolume()
+
 			duration := int(sound.Length().Milliseconds())
 			p.Insert("duration", qt.NewQVariant4(duration))
 			p.durations[url] = *qt.NewQVariant4(duration)
 			p.Insert("durations", qt.NewQVariant20(p.durations))
+
 			if p.pendingSeek >= 0 {
 				position := p.pendingSeek
 				p.pendingSeek = -1
 				p.Seek(position)
 			}
+
 			if p.state == "playing" {
 				p.play()
 			}
@@ -179,7 +190,6 @@ func (p *soundPreview) Load(url string) {
 	}()
 }
 
-// SetState plays, pauses or stops the sound.
 func (p *soundPreview) SetState(state string) {
 	switch state {
 	case "playing", "paused", "stopped":
@@ -198,25 +208,30 @@ func (p *soundPreview) SetState(state string) {
 			p.stop()
 		}
 	}
+
 	p.Insert("state", qt.NewQVariant14(p.state))
 }
 
-// Seek jumps to position. A stopped sound becomes paused there, so playing it
-// starts from there. While the sound is still loading, it starts there once
-// it has loaded.
+// Seek turns a stopped sound into a paused one, so playing it starts from
+// position. While the sound is still loading, it starts there once loaded.
 func (p *soundPreview) Seek(position time.Duration) {
 	if p.sound == nil {
 		if p.source != "" {
 			p.pendingSeek = position
 		}
+
 		return
 	}
+
 	if err := p.sound.Seek(position); err != nil {
 		p.fail(err)
+
 		return
 	}
+
 	// Reported straight away: the sound only moves once it's next mixed.
 	p.setPosition(position)
+
 	if p.state == "stopped" {
 		p.state = "paused"
 		p.Insert("state", qt.NewQVariant14(p.state))
@@ -226,62 +241,78 @@ func (p *soundPreview) Seek(position time.Duration) {
 func (p *soundPreview) play() {
 	if err := p.engine.Start(); err != nil {
 		p.fail(err)
+
 		return
 	}
+
 	if err := p.sound.Play(); err != nil {
 		p.fail(err)
+
 		return
 	}
+
 	p.ticker.Start2()
 }
 
 func (p *soundPreview) pause() {
 	p.ticker.Stop()
+
 	if err := p.sound.Pause(); err != nil {
 		p.fail(err)
+
 		return
 	}
+
 	// Nothing else plays, so the device can rest.
 	if err := p.engine.Stop(); err != nil {
 		slog.Error("failed to stop the audio output", "err", err)
 	}
+
 	p.setPosition(p.sound.Position())
 }
 
 func (p *soundPreview) stop() {
 	p.pause()
+
 	if err := p.sound.Seek(0); err != nil {
 		p.fail(err)
+
 		return
 	}
+
 	p.setPosition(0)
 }
 
-// tick updates the position while playing, and notices the end.
 func (p *soundPreview) tick() {
 	if p.sound == nil {
 		p.ticker.Stop()
+
 		return
 	}
+
 	if p.sound.AtEnd() {
 		p.state = "stopped"
 		p.stop()
 		p.Insert("state", qt.NewQVariant14(p.state))
+
 		return
 	}
+
 	p.setPosition(p.sound.Position())
 }
 
-// unload stops and frees the current sound, if any.
 func (p *soundPreview) unload() {
 	p.ticker.Stop()
+
 	if p.sound != nil {
 		p.sound.Close()
 		p.sound = nil
+
 		if err := p.engine.Stop(); err != nil {
 			slog.Error("failed to stop the audio output", "err", err)
 		}
 	}
+
 	p.state = "stopped"
 	p.pendingSeek = -1
 	p.Insert("state", qt.NewQVariant14(p.state))
@@ -291,16 +322,17 @@ func (p *soundPreview) unload() {
 	p.setError(nil)
 }
 
-// SetVolume sets the volume, from 0 to 1, and whether it's muted.
 func (p *soundPreview) SetVolume(volume float64, muted bool) {
 	volume = max(0, min(1, volume))
 	if volume == p.volume && muted == p.muted {
 		return
 	}
+
 	p.volume, p.muted = volume, muted
 	p.Insert("volume", qt.NewQVariant10(float32(volume)))
 	p.Insert("muted", qt.NewQVariant8(muted))
 	p.applyVolume()
+
 	if p.onVolumeChange != nil {
 		p.onVolumeChange(volume, muted)
 	}
@@ -310,14 +342,16 @@ func (p *soundPreview) applyVolume() {
 	if p.sound == nil {
 		return
 	}
+
 	volume := p.volume
+
 	if p.muted {
 		volume = 0
 	}
+
 	p.sound.SetVolume(float32(volume))
 }
 
-// fail reports a playback error and stops.
 func (p *soundPreview) fail(err error) {
 	slog.Error("sound preview failed", "err", err)
 	p.ticker.Stop()
@@ -332,8 +366,10 @@ func (p *soundPreview) setPosition(position time.Duration) {
 
 func (p *soundPreview) setError(err error) {
 	msg := ""
+
 	if err != nil {
 		msg = err.Error()
 	}
+
 	p.Insert("error", qt.NewQVariant14(msg))
 }

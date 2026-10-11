@@ -2,27 +2,17 @@ import QtQuick
 import QtQuick.Controls.Fusion
 import QtQuick.Effects
 
-// A compact player for a sound's preview: a play/pause button, a seek bar, the
-// time and optionally a volume button. Like YouTube's player:
-//  - hovering the seek bar lights it up to the pointer and shows the time there
-//    in a bubble above; clicking or dragging seeks;
-//  - clicking the volume button mutes and unmutes, and hovering it opens a
-//    volume slider above it. Scrolling over either changes the volume.
-//
 // The sound itself is played by the soundPreview bridge in Go, which plays one
 // sound at a time. Any number of players can show the same sound: they all
-// follow the bridge, so they stay in step. Playing or seeking a player whose
-// sound isn't the one loaded switches the bridge over to it. The volume is the
-// bridge's too, shared by the whole app.
+// follow the bridge, so they stay in step. The volume is the bridge's too,
+// shared by the whole app.
 Rectangle {
     id: root
 
     property url source
-    // Shows the volume button. Hidden where a VolumeControl elsewhere already
-    // sets the app's volume.
+    // Off where a VolumeControl elsewhere already sets the app's volume.
     property bool showVolume: true
-    // Shows the time bubble below the bar rather than above it, e.g. where
-    // the space above is cut off.
+    // For where the space above the bar is cut off.
     property bool bubbleBelow: false
 
     // From 0 to 1, for the whole app.
@@ -41,8 +31,8 @@ Rectangle {
     readonly property int duration: current && soundPreview.duration > 0 ? soundPreview.duration
         : soundPreview.durations[root.source.toString()] || 0
 
-    // How far along the bar the playhead is, from 0 to 1. While dragging, it
-    // follows the pointer; the sound only seeks once it's let go.
+    // From 0 to 1. While dragging, it follows the pointer; the sound only
+    // seeks once it's let go.
     readonly property real progress: seekArea.pressed ? seekArea.ratio
         : started && duration > 0 ? soundPreview.position / duration
         : 0
@@ -63,7 +53,7 @@ Rectangle {
             soundPreview.state = "paused"
     }
 
-    // Sets the volume, which also unmutes.
+    // Also unmutes.
     function setVolume(volume) {
         soundPreview.volume = Math.round(Math.max(0, Math.min(1, volume)) * 100) / 100
         soundPreview.muted = false
@@ -74,15 +64,16 @@ Rectangle {
             // Unmuting at no volume would still be silent.
             if (root.volume === 0)
                 soundPreview.volume = soundPreview.defaultVolume
+
             soundPreview.muted = false
         } else {
             soundPreview.muted = true
         }
     }
 
-    // Formats milliseconds as m:ss.
     function formatTime(ms) {
         const seconds = Math.floor(ms / 1000)
+
         return Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0")
     }
 
@@ -123,7 +114,6 @@ Rectangle {
         background: Rectangle {
             radius: height / 2
             color: playButton.hovered ? Theme.highlightMed : "transparent"
-            // Only shown when focused with the keyboard.
             border.width: playButton.visualFocus ? 1 : 0
             border.color: Theme.iris
 
@@ -162,8 +152,8 @@ Rectangle {
         color: root.failed ? Theme.love : root.playing ? Theme.foam : Theme.subtle
     }
 
-    // The seek bar. The whole height of the player responds to the pointer,
-    // not just the thin bar, so it's easy to hit.
+    // The whole height of the player responds to the pointer, not just the
+    // thin bar, so it's easy to hit.
     Item {
         id: seekBar
 
@@ -213,7 +203,7 @@ Rectangle {
             }
         }
 
-        // The playhead, with a soft shadow under it.
+        // The playhead.
         Rectangle {
             x: root.progress * seekBar.width - width / 2
             anchors.verticalCenter: parent.verticalCenter
@@ -256,16 +246,17 @@ Rectangle {
                 // Seeking a stopped sound only leaves it paused there, but
                 // clicking the bar of one that hasn't started should play it.
                 const wasStarted = root.started
+
                 root.load()
                 soundPreview.seek = Math.round(ratio * root.duration)
+
                 if (!wasStarted)
                     root.play()
             }
         }
     }
 
-    // The time at the pointer, in a bubble above the bar. Kept within the
-    // player's width, so it never sticks out past its ends.
+    // Kept within the player's width, so it never sticks out past its ends.
     Rectangle {
         id: bubble
 
@@ -298,10 +289,8 @@ Rectangle {
         }
     }
 
-    // The volume slider: a pill that rises out of the volume button, with the
-    // button at its foot, fading in as it goes, and sinks back into it fading
-    // out when closed. Declared before the button, so the button stays on top
-    // of it.
+    // The volume slider rises out of the volume button and sinks back into it.
+    // Declared before the button, so the button stays on top of it.
     //
     // It's clipped at the button's middle, not its bottom edge: the button is
     // round, so whatever slides behind its lower half would show through the
@@ -311,9 +300,8 @@ Rectangle {
 
         visible: root.showVolume
 
-        // Whether the slider is open. It stays open while the pointer is over
-        // the button or the slider, and briefly after the pointer leaves, so
-        // it doesn't snap shut when the pointer strays off for a moment.
+        // Stays open briefly after the pointer leaves, so it doesn't snap shut
+        // when the pointer strays off for a moment.
         property bool shown: false
         readonly property bool wanted: volumeButton.hovered || volumeButton.activeFocus
             || (shown && sliderHover.hovered) || volumeArea.pressed
@@ -336,12 +324,14 @@ Rectangle {
 
         Timer {
             id: closeDelay
+
             interval: 200
             onTriggered: volumeSlider.shown = false
         }
 
         HoverHandler {
             id: sliderHover
+
             enabled: volumeSlider.shown
         }
 
@@ -381,7 +371,7 @@ Rectangle {
                 }
             }
 
-            // The handle, with a soft shadow under it, like the playhead.
+            // The handle.
             Rectangle {
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: volumeTrack.y + (1 - volumeButton.level) * volumeTrack.height - height / 2
@@ -426,6 +416,7 @@ Rectangle {
         states: State {
             name: "shown"
             when: volumeSlider.shown
+
             PropertyChanges {
                 panel.y: 0
                 panel.opacity: 1
@@ -435,6 +426,7 @@ Rectangle {
         transitions: [
             Transition {
                 to: "shown"
+
                 NumberAnimation {
                     target: panel
                     properties: "y,opacity"
@@ -445,6 +437,7 @@ Rectangle {
             },
             Transition {
                 from: "shown"
+
                 NumberAnimation {
                     target: panel
                     properties: "y,opacity"
@@ -498,7 +491,6 @@ Rectangle {
         background: Rectangle {
             radius: height / 2
             color: volumeButton.hovered || volumeSlider.shown ? Theme.highlightMed : Theme.highlightLow
-            // Only shown when focused with the keyboard.
             border.width: volumeButton.visualFocus ? 1 : 0
             border.color: Theme.iris
 
@@ -511,7 +503,6 @@ Rectangle {
             }
         }
 
-        // The speaker's waves show the volume. Filled while the slider is open.
         contentItem: Image {
             readonly property string speaker: volumeButton.level === 0 ? "speaker_mute"
                 : volumeButton.level < 0.34 ? "speaker_0"
@@ -524,5 +515,4 @@ Rectangle {
             opacity: volumeButton.hovered || volumeSlider.shown ? 1 : 0.6
         }
     }
-
 }

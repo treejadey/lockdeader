@@ -2,17 +2,12 @@ import QtQuick
 import QtQuick.Controls.Fusion
 import QtQuick.Layouts
 
-// Browse GameBanana's mods in a grid or a list, or sounds in a list, with the
-// selected mod's details in a panel on the right. Clicking the open mod again, or
-// pressing Escape, closes it. The bar along the top shows the category being
-// browsed, and searches it.
 Item {
     id: root
 
     // The category being browsed, as Breadcrumbs crumbs, from all mods down.
     property var crumbs: []
 
-    // Emitted when one of the crumbs is clicked, to go back up to it.
     signal crumbClicked(int depth)
 
     // Sounds have no preview images, so they're listed rather than shown as cards.
@@ -21,7 +16,6 @@ Item {
     readonly property bool listed: sounds || topBar.viewIndex === 1
     readonly property var view: listed ? modList : modGrid
     readonly property int count: view.count
-    // The narrowest the page can get without squashing the bar along the top.
     readonly property int minimumWidth: topBar.minimumWidth + detailsPanel.Layout.preferredWidth
 
     function toggleMod(modId) {
@@ -65,6 +59,7 @@ Item {
 
                 Timer {
                     id: searchDelay
+
                     interval: 300
                     onTriggered: search.query = topBar.searchText
                 }
@@ -108,7 +103,6 @@ Item {
                     running: app.loading && root.count === 0
                 }
 
-                // A search that found nothing.
                 Label {
                     anchors.centerIn: parent
                     visible: !app.loading && app.error === "" && root.count === 0 && search.query !== ""
@@ -180,6 +174,7 @@ Item {
 
     ImageViewer {
         id: viewer
+
         onCopyImageRequested: (url) => clipboard.copyImage = url
         onCopyLinkRequested: (url) => clipboard.copyLink = url
     }

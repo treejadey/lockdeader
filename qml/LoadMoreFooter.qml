@@ -1,10 +1,6 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
-// The end of a lazily loaded list or grid: a spinner while the next page is
-// on its way, or the error and a Retry button if it failed. It's the same
-// height whether or not anything is showing, so the content doesn't jump when
-// loading starts or stops.
 Item {
     id: root
 
@@ -13,6 +9,8 @@ Item {
 
     signal retry()
 
+    // The same whether or not anything is showing, so the content doesn't jump
+    // when loading starts or stops.
     height: 56
 
     BusyIndicator {
@@ -34,6 +32,7 @@ Item {
 
         Button {
             id: retryButton
+
             text: "Retry"
             onClicked: root.retry()
         }

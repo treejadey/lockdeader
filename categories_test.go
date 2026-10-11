@@ -34,16 +34,21 @@ func TestLoadCategories(t *testing.T) {
 			{"_idRow": 6270, "_sName": "Abilities", "_nItemCount": 1858}
 		]`,
 	}
+
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		section := r.URL.Path[1 : len(r.URL.Path)-len("/Categories")]
+
 		body, ok := responses[section+"/"+r.URL.Query().Get("_idCategoryRow")]
 		if !ok {
 			http.NotFound(w, r)
+
 			return
 		}
+
 		w.Write([]byte(body))
 	}))
 	t.Cleanup(srv.Close)
+
 	client := banana.NewClient()
 	client.BaseURL = srv.URL
 
@@ -66,6 +71,7 @@ func TestLoadCategories(t *testing.T) {
 			{Section: banana.SectionSounds, ID: 6270, Name: "Abilities", itemCount: 1858},
 		}},
 	}
+
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got  %+v\nwant %+v", got, want)
 	}
@@ -75,11 +81,14 @@ func TestLoadCategoriesError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Query().Has("_idCategoryRow") {
 			http.Error(w, "", http.StatusInternalServerError)
+
 			return
 		}
+
 		w.Write([]byte(`[{"_idRow": 4, "_sName": "Skins", "_nItemCount": 1, "_nCategoryCount": 1}]`))
 	}))
 	t.Cleanup(srv.Close)
+
 	client := banana.NewClient()
 	client.BaseURL = srv.URL
 
@@ -94,17 +103,22 @@ func TestCategoryBrowserSelect(t *testing.T) {
 		w.Write([]byte(`{"_aMetadata": {"_nRecordCount": 0, "_bIsComplete": true}, "_aRecords": []}`))
 	}))
 	t.Cleanup(srv.Close)
+
 	client := banana.NewClient()
 	client.BaseURL = srv.URL
 
 	var changes int
+
 	b := mainthread.Wait2(func() *categoryBrowser {
 		mods := newModListModel(client, qml.NewQQmlPropertyMap())
+
 		return newCategoryBrowser(client, mods, func() { changes++ })
 	})
+
 	selectCategory := func(section banana.Section, id int) int {
 		return mainthread.Wait2(func() int {
 			b.Select(section, id)
+
 			return changes
 		})
 	}
@@ -112,12 +126,15 @@ func TestCategoryBrowserSelect(t *testing.T) {
 	if got := selectCategory(banana.SectionMods, 4); got != 1 {
 		t.Errorf("after switching to a category: onChange called %d times, want 1", got)
 	}
+
 	if got := selectCategory(banana.SectionMods, 4); got != 1 {
 		t.Errorf("after selecting the same category again: onChange called %d times, want still 1", got)
 	}
+
 	if got := selectCategory(banana.SectionSounds, 0); got != 2 {
 		t.Errorf("after switching to another section: onChange called %d times, want 2", got)
 	}
+
 	if got := selectCategory("Bogus", 1); got != 2 {
 		t.Errorf("after selecting an unknown section: onChange called %d times, want still 2", got)
 	}
