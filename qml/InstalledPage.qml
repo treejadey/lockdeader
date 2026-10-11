@@ -101,28 +101,24 @@ Item {
         property string status
         property int variants
 
-        // A hidden item would still take up its height in the menu.
         PopupMenuItem {
             text: qsTr("Retry")
             icon.source: "icons/arrow_clockwise_24_regular.svg"
-            visible: menu.status === "failed"
-            height: visible ? implicitHeight : 0
+            shown: menu.status === "failed"
             onTriggered: installed.retry = menu.key
         }
 
         PopupMenuItem {
             text: menu.status === "failed" ? qsTr("Dismiss") : qsTr("Cancel Install")
             icon.source: "icons/dismiss_24_regular.svg"
-            visible: menu.status !== ""
-            height: visible ? implicitHeight : 0
+            shown: menu.status !== ""
             onTriggered: installed.cancel = menu.key
         }
 
         PopupMenuItem {
             text: qsTr("Change Configuration…")
             icon.source: "icons/options_24_regular.svg"
-            visible: menu.status === "" && menu.variants > 1
-            height: visible ? implicitHeight : 0
+            shown: menu.status === "" && menu.variants > 1
             onTriggered: {
                 installed.configure = menu.key
                 configDialog.open()
@@ -132,8 +128,7 @@ Item {
         PopupMenuItem {
             text: qsTr("Uninstall")
             icon.source: "icons/delete_24_regular.svg"
-            visible: menu.status === ""
-            height: visible ? implicitHeight : 0
+            shown: menu.status === ""
             onTriggered: installed.uninstall = menu.key
         }
     }

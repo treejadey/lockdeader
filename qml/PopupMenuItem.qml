@@ -4,6 +4,15 @@ import QtQuick.Controls.Fusion
 MenuItem {
     id: root
 
+    // Hides the item, with no gap left where it was: a hidden item would
+    // otherwise still take up its height in the menu. Use this rather than
+    // visible, which is false whenever the menu is closed, so a height bound
+    // to it changes as the menu opens, resizing the menu: a binding loop.
+    property bool shown: true
+
+    visible: shown
+    height: shown ? implicitHeight : 0
+
     leftPadding: 12
     rightPadding: 16
     topPadding: 8

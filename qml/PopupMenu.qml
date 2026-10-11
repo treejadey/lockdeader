@@ -19,7 +19,8 @@ Menu {
 
         for (let i = 0; i < count; i++) {
             const item = itemAt(i)
-            if (item && item.visible)
+            // Not visible, which is false while the menu is closed.
+            if (item && item.shown !== false)
                 widest = Math.max(widest, item.implicitWidth)
         }
 
