@@ -27,7 +27,7 @@ AppWindow {
     maximumHeight: fittedHeight
     flags: Qt.Dialog
     visible: true
-    title: "Restore Settings — Lockdeader"
+    title: qsTr("Restore Settings — Lockdeader")
 
     onClosing: if (!answered) answer(-1)
 
@@ -47,7 +47,7 @@ AppWindow {
 
         Label {
             Layout.fillWidth: true
-            text: "Your settings couldn't be loaded"
+            text: qsTr("Your settings couldn’t be loaded")
             color: Theme.text
             font.pixelSize: 18
             font.weight: Font.DemiBold
@@ -79,9 +79,9 @@ AppWindow {
 
         Label {
             Layout.fillWidth: true
-            text: "There are backups of your settings from earlier sessions. Restore one, "
-                + "or carry on without your settings for now: you'll get the defaults, and "
-                + "nothing you change will be saved, so the file stays as it is for you to fix."
+            text: qsTr("There are backups of your settings from earlier sessions. Restore one, "
+                + "or carry on without your settings for now: you’ll get the defaults, and "
+                + "nothing you change will be saved, so the file stays as it is for you to fix.")
             color: Theme.text
             wrapMode: Text.Wrap
         }
@@ -153,14 +153,14 @@ AppWindow {
         Label {
             Layout.fillWidth: true
             visible: restore.damaged
-            text: "Some backups are damaged, so they can't be restored."
+            text: qsTr("Some backups are damaged, so they can’t be restored.")
             color: Theme.gold
             wrapMode: Text.Wrap
         }
 
         Label {
             Layout.fillWidth: true
-            text: "Restoring keeps your current file as Settings.toml.broken."
+            text: qsTr("Restoring keeps your current file as Settings.toml.broken.")
             color: Theme.subtle
             font.pixelSize: 12
             wrapMode: Text.Wrap
@@ -172,7 +172,7 @@ AppWindow {
             spacing: 8
 
             ActionButton {
-                text: "Open folder"
+                text: qsTr("Open Folder")
                 onClicked: Qt.openUrlExternally(restore.settingsDirUrl)
             }
 
@@ -181,17 +181,17 @@ AppWindow {
             }
 
             ActionButton {
-                text: "Quit"
+                text: qsTr("Quit")
                 onClicked: window.answer(-1)
             }
 
             ActionButton {
-                text: "Use defaults"
+                text: qsTr("Use Defaults")
                 onClicked: window.answer(0)
             }
 
             ActionButton {
-                text: "Restore backup"
+                text: qsTr("Restore Backup")
                 baseColor: Theme.highlightMed
                 enabled: window.selectedSlot > 0
                 onClicked: window.answer(window.selectedSlot)

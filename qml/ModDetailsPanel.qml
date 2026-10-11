@@ -176,7 +176,7 @@ Rectangle {
 
                             ToolTip.visible: authorArea.containsMouse
                             ToolTip.delay: 500
-                            ToolTip.text: "Open profile on GameBanana"
+                            ToolTip.text: qsTr("Open profile on GameBanana")
                         }
                     }
 
@@ -213,7 +213,7 @@ Rectangle {
 
                     ToolTip.visible: externalArea.containsMouse
                     ToolTip.delay: 500
-                    ToolTip.text: "Open on GameBanana"
+                    ToolTip.text: qsTr("Open on GameBanana")
                 }
             }
 
@@ -257,7 +257,7 @@ Rectangle {
 
                         Label {
                             visible: gallery.visible
-                            text: "Gallery"
+                            text: qsTr("Gallery")
                             color: Theme.subtle
                             font.bold: true
                         }
@@ -280,7 +280,7 @@ Rectangle {
                         }
 
                         Label {
-                            text: "Description"
+                            text: qsTr("Description")
                             color: Theme.subtle
                             font.bold: true
                         }
@@ -295,7 +295,7 @@ Rectangle {
                         Label {
                             width: parent.width
                             visible: root.error !== ""
-                            text: "Couldn't load the description: " + root.error
+                            text: qsTr("Couldn’t load the description: %1").arg(root.error)
                             color: Theme.love
                             wrapMode: Text.Wrap
                         }
@@ -329,7 +329,7 @@ Rectangle {
             ActionButton {
                 Layout.fillWidth: true
                 Layout.margins: 6
-                text: "Install mod…"
+                text: qsTr("Install Mod…")
                 icon.source: "icons/arrow_download_24_regular.svg"
                 onClicked: root.installClicked()
             }
@@ -354,7 +354,7 @@ Rectangle {
 
         Label {
             width: parent.width
-            text: "Select a mod to see its details"
+            text: qsTr("Select a mod to see its details")
             color: Theme.subtle
             horizontalAlignment: Text.AlignHCenter
             wrapMode: Text.Wrap

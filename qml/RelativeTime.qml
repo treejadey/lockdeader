@@ -27,22 +27,24 @@ QtObject {
         const elapsed = Math.max(0, now / 1000 - seconds)
 
         // A month is a twelfth of a year, so 11 months never rounds to 12.
+        // Each unit has its own singular and plural strings, rather than Qt's
+        // "%n year(s)", which needs a translation file even for English.
         const units = [
-            ["year", 365 * day],
-            ["month", 365 / 12 * day],
-            ["week", 7 * day],
-            ["day", day],
-            ["hour", 60 * 60],
-            ["minute", 60],
+            [365 * day, qsTr("1 year ago"), qsTr("%1 years ago")],
+            [365 / 12 * day, qsTr("1 month ago"), qsTr("%1 months ago")],
+            [7 * day, qsTr("1 week ago"), qsTr("%1 weeks ago")],
+            [day, qsTr("1 day ago"), qsTr("%1 days ago")],
+            [60 * 60, qsTr("1 hour ago"), qsTr("%1 hours ago")],
+            [60, qsTr("1 minute ago"), qsTr("%1 minutes ago")],
         ]
 
-        for (const [name, length] of units) {
+        for (const [length, one, many] of units) {
             const count = Math.floor(elapsed / length)
 
             if (count >= 1)
-                return count + " " + name + (count === 1 ? "" : "s") + " ago"
+                return count === 1 ? one : many.arg(count)
         }
 
-        return "just now"
+        return qsTr("just now")
     }
 }

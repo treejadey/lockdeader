@@ -263,7 +263,7 @@ func (m *installedMods) Install(info modInfo, files []banana.File) {
 	row := m.rows[info.key()]
 	if row != nil && row.job != nil && !row.job.failed {
 		slog.Info("already installing this mod", "mod", row.key)
-		m.notify(info.name + " is already downloading")
+		m.notify(fmt.Sprintf(tr("%s is already downloading"), info.name))
 
 		return
 	}
@@ -274,7 +274,7 @@ func (m *installedMods) Install(info modInfo, files []banana.File) {
 
 	if len(files) == 0 {
 		slog.Info("nothing to install: the files are installed already", "mod", info.key())
-		m.notify(info.name + " is already installed")
+		m.notify(fmt.Sprintf(tr("%s is already installed"), info.name))
 
 		return
 	}
@@ -314,7 +314,7 @@ func (m *installedMods) enqueue(row *installedRow, job *installJob) {
 
 	// It's still in the queue if there wasn't room to start it.
 	if slices.Contains(m.queue, row) {
-		m.notify("Waiting to download " + job.info.name)
+		m.notify(fmt.Sprintf(tr("Waiting to download %s"), job.info.name))
 	}
 }
 
@@ -333,7 +333,7 @@ func (m *installedMods) start(row *installedRow) {
 	m.running++
 
 	m.showStatus(row, install.Status{Stage: install.Downloading})
-	m.notify("Downloading " + job.info.name)
+	m.notify(fmt.Sprintf(tr("Downloading %s"), job.info.name))
 
 	slog.Info("installing a mod", "mod", row.key, "files", len(job.files))
 

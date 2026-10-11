@@ -503,8 +503,8 @@ Popup {
                         margins: 16
                     }
                     visible: !root.loading && root.files.length === 0
-                    text: root.error !== "" ? "Couldn't load the files: " + root.error
-                                            : "This mod has no files to install."
+                    text: root.error !== "" ? qsTr("Couldn’t load the files: %1").arg(root.error)
+                                            : qsTr("This mod has no files to install.")
                     color: root.error !== "" ? Theme.love : Theme.subtle
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.Wrap
@@ -525,7 +525,7 @@ Popup {
                     }
                     width: Math.max(implicitWidth, 180)
                     implicitHeight: 42
-                    text: root.single ? "Install" : "Install selected"
+                    text: root.single ? qsTr("Install") : qsTr("Install Selected")
                     baseColor: Theme.foam
                     textColor: Theme.base
                     enabled: root.selectedIds.length > 0
@@ -555,7 +555,7 @@ Popup {
 
             ToolTip.visible: hovered
             ToolTip.delay: 500
-            ToolTip.text: "Close (Esc)"
+            ToolTip.text: qsTr("Close (Esc)")
 
             background: Rectangle {
                 radius: 6

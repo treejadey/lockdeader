@@ -48,7 +48,7 @@ AppDialog {
     onAboutToShow: reset()
 
     titlePrefix: configuration.name ?? ""
-    title: "configuration"
+    title: qsTr("Configuration")
 
     Rectangle {
         width: parent.width
@@ -325,8 +325,8 @@ AppDialog {
         Label {
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width - (root.configuration.loading === true ? 26 : 0)
-            text: root.configuration.loading === true ? "Looking for other versions on GameBanana…"
-                : "Couldn't look for other versions: " + root.configuration.error
+            text: root.configuration.loading === true ? qsTr("Looking for other versions on GameBanana…")
+                : qsTr("Couldn’t look for other versions: %1").arg(root.configuration.error)
             color: root.configuration.loading === true ? Theme.subtle : Theme.love
             elide: Text.ElideRight
         }
@@ -337,7 +337,7 @@ AppDialog {
     Label {
         x: 2
         width: parent.width - 2
-        text: "At least one variant must be selected."
+        text: qsTr("At least one variant must be selected.")
         color: Theme.subtle
         font.weight: Font.DemiBold
         wrapMode: Text.Wrap
@@ -355,7 +355,7 @@ AppDialog {
     buttons: ActionButton {
         width: Math.max(implicitWidth, 218)
         implicitHeight: 44
-        text: "Change configuration"
+        text: qsTr("Change Configuration")
         baseColor: Theme.foam
         textColor: Theme.base
         enabled: root.changed

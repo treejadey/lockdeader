@@ -146,7 +146,7 @@ Rectangle {
         // Monospaced, so the digits don't shift about as they change.
         font.family: app.monospaceFont
         font.pixelSize: 12
-        text: root.failed ? "Can't play"
+        text: root.failed ? qsTr("Can’t play")
             : root.formatTime(root.progress * root.duration) + "/"
               + (root.duration > 0 ? root.formatTime(root.duration) : "-:--")
         color: root.failed ? Theme.love : root.playing ? Theme.foam : Theme.subtle

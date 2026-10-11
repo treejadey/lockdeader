@@ -210,7 +210,7 @@ func TestCopyImageFailures(t *testing.T) {
 			b := newTestBridge(t)
 			mainthread.Wait(func() { b.CopyImage(srv.URL + "/image.png") })
 
-			if got := waitForMessage(t, b, 1); got != "Couldn't copy the image" {
+			if got := waitForMessage(t, b, 1); got != "Couldn’t copy the image" {
 				t.Errorf("message = %q", got)
 			}
 

@@ -237,7 +237,7 @@ func (m *installedMods) Configure(key string, ids []string) {
 	if len(download) == 0 {
 		if err := m.change(row, change); err != nil {
 			slog.Error("failed to change a mod's configuration", "mod", key, "err", err)
-			m.notify("Couldn't change the configuration of " + row.mod.Name)
+			m.notify(fmt.Sprintf(tr("Couldn’t change the configuration of %s"), row.mod.Name))
 		}
 
 		m.show(row)

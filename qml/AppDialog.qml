@@ -211,7 +211,7 @@ Popup {
 
             ToolTip.visible: hovered
             ToolTip.delay: 500
-            ToolTip.text: "Close (Esc)"
+            ToolTip.text: qsTr("Close (Esc)")
 
             background: Rectangle {
                 radius: 6

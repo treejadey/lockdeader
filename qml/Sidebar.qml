@@ -31,14 +31,14 @@ Rectangle {
             Layout.topMargin: 4
             Layout.bottomMargin: 2
 
-            text: "Mods"
+            text: qsTr("Mods")
             color: Theme.subtle
         }
 
         SidebarItem {
             Layout.fillWidth: true
 
-            text: "View mods"
+            text: qsTr("View Mods")
             icon.source: "icons/apps_add_in_24_regular.svg"
             active: root.currentIndex === 0
             onClicked: {
@@ -53,7 +53,7 @@ Rectangle {
         SidebarItem {
             Layout.fillWidth: true
 
-            text: "Installed mods"
+            text: qsTr("Installed Mods")
             icon.source: "icons/apps_24_regular.svg"
             badge: installed.installing
             active: root.currentIndex === 1
@@ -97,7 +97,7 @@ Rectangle {
         SidebarItem {
             Layout.fillWidth: true
 
-            text: "Settings"
+            text: qsTr("Settings")
             icon.source: "icons/settings_24_regular.svg"
             active: root.currentIndex === 2
             onClicked: root.currentIndex = 2

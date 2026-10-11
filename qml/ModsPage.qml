@@ -43,7 +43,7 @@ Item {
 
                 Layout.fillWidth: true
                 crumbs: root.crumbs
-                searchPlaceholder: "Search Mods"
+                searchPlaceholder: qsTr("Search Mods")
                 // Only sounds have anything to play, and they're always listed.
                 showVolume: root.sounds
                 showViews: !root.sounds
@@ -106,7 +106,7 @@ Item {
                 Label {
                     anchors.centerIn: parent
                     visible: !app.loading && app.error === "" && root.count === 0 && search.query !== ""
-                    text: "No mods found"
+                    text: qsTr("No Mods Found")
                     color: Theme.subtle
                 }
 
@@ -117,14 +117,14 @@ Item {
 
                     Label {
                         width: Math.min(implicitWidth, root.width - 32)
-                        text: "Couldn't load mods:\n" + app.error
+                        text: qsTr("Couldn’t load mods:\n%1").arg(app.error)
                         horizontalAlignment: Text.AlignHCenter
                         wrapMode: Text.Wrap
                     }
 
                     Button {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: "Retry"
+                        text: qsTr("Retry")
                         onClicked: retryAction.trigger()
                     }
                 }

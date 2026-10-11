@@ -31,8 +31,8 @@ Item {
             left: parent.left
             right: parent.right
         }
-        crumbs: [{ name: "Installed mods", depth: 0 }]
-        searchPlaceholder: "Search Installed Mods"
+        crumbs: [{ name: qsTr("Installed Mods"), depth: 0 }]
+        searchPlaceholder: qsTr("Search Installed Mods")
         showViews: true
         onSearchEdited: installed.query = topBar.searchText
         onSearchAccepted: installed.query = topBar.searchText
@@ -73,7 +73,7 @@ Item {
 
             Label {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "No mods installed yet"
+                text: qsTr("No Mods Installed Yet")
                 color: Theme.text
                 font.pixelSize: 18
                 font.weight: Font.DemiBold
@@ -81,7 +81,7 @@ Item {
 
             Label {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "Mods you install will show up here."
+                text: qsTr("Mods you install will show up here")
                 color: Theme.subtle
             }
         }
@@ -89,7 +89,7 @@ Item {
         Label {
             anchors.centerIn: parent
             visible: installed.total > 0 && root.count === 0
-            text: "No installed mods found"
+            text: qsTr("No Installed Mods Found")
             color: Theme.subtle
         }
     }
@@ -103,7 +103,7 @@ Item {
 
         // A hidden item would still take up its height in the menu.
         PopupMenuItem {
-            text: "Retry"
+            text: qsTr("Retry")
             icon.source: "icons/arrow_clockwise_24_regular.svg"
             visible: menu.status === "failed"
             height: visible ? implicitHeight : 0
@@ -111,7 +111,7 @@ Item {
         }
 
         PopupMenuItem {
-            text: menu.status === "failed" ? "Dismiss" : "Cancel install"
+            text: menu.status === "failed" ? qsTr("Dismiss") : qsTr("Cancel Install")
             icon.source: "icons/dismiss_24_regular.svg"
             visible: menu.status !== ""
             height: visible ? implicitHeight : 0
@@ -119,7 +119,7 @@ Item {
         }
 
         PopupMenuItem {
-            text: "Change configuration…"
+            text: qsTr("Change Configuration…")
             icon.source: "icons/options_24_regular.svg"
             visible: menu.status === "" && menu.variants > 1
             height: visible ? implicitHeight : 0
@@ -130,7 +130,7 @@ Item {
         }
 
         PopupMenuItem {
-            text: "Uninstall"
+            text: qsTr("Uninstall")
             icon.source: "icons/delete_24_regular.svg"
             visible: menu.status === ""
             height: visible ? implicitHeight : 0

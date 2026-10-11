@@ -49,9 +49,9 @@ Item {
         // Room for "100%", so the bar's length doesn't change as it counts up.
         width: Math.max(implicitWidth, percentMetrics.advanceWidth("100%"))
         horizontalAlignment: Text.AlignRight
-        text: root.failed ? "Couldn't install"
-            : root.status === "queued" ? "Waiting"
-            : root.status === "extracting" ? "Installing"
+        text: root.failed ? qsTr("Couldn’t install")
+            : root.status === "queued" ? qsTr("Waiting")
+            : root.status === "extracting" ? qsTr("Installing")
             : Math.floor(Math.min(1, root.progress) * 100) + "%"
         color: root.failed ? Theme.love : Theme.subtle
         font.pixelSize: 12

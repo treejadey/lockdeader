@@ -104,7 +104,7 @@ Applies to Go, QML (including its JavaScript), C and C++.
 
 - Interface design and UI text follow [docs/interface-guidelines.md](docs/interface-guidelines.md), the parts of the elementary OS HIG that apply here. Read it before designing a view or dialog or writing UI text. In short:
   - Title Case for buttons, menu items, titles and placeholders; sentence case for labels, descriptions, tooltips and messages.
-  - Every user-visible string is in `qsTr()`.
+  - Every user-visible string is in `qsTr()`, or `tr()` (`tr.go`) for text Go hands to the UI.
   - Offer Undo rather than asking "Are you sure?".
   - Name actions, never "OK".
 - All QML lives in `qml/`. New components must be registered in `qml/qmldir`; singletons are declared there with `singleton`. Windows (`Main.qml`, `RestoreDialog.qml`) are loaded by path instead, and are `AppWindow`s, which carry the theme's palette.

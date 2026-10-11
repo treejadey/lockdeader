@@ -135,7 +135,8 @@ If a design doesn't fit these guidelines, decide whether it's a real exception, 
   - buttons;
   - menu items;
   - tab and mode names;
-  - search placeholders.
+  - search placeholders;
+  - empty-state headings ("No Mods Found").
 
   For example: "Change Configuration…", "Restore Backup", "Install Selected", "Search Installed Mods".
   - Capitalise the first and last words, and every word of four letters or more.
@@ -147,7 +148,7 @@ If a design doesn't fit these guidelines, decide whether it's a real exception, 
   - tooltips;
   - toasts;
   - notification titles;
-  - empty-state and dialog messages.
+  - the text under an empty-state heading, and dialog messages.
 
   For example: "NSFW mods", "Select a mod to see its details".
 - This departs from IBM Carbon, which uses sentence case everywhere. Carbon still sets the motion and the look of components.
@@ -155,7 +156,7 @@ If a design doesn't fit these guidelines, decide whether it's a real exception, 
 
 ### Style
 
-- **Be brief, and assume the reader is clever but not technical.** For example, "Couldn't connect to GameBanana. Check your connection and try again", not a raw HTTP error.
+- **Be brief, and assume the reader is clever but not technical.** For example, "Couldn’t connect to GameBanana. Check your connection and try again", not a raw HTTP error.
 - **Put the most important part first**, and don't repeat yourself.
 - **Use hierarchy:** a short bold line, with an explanation under it in plain text.
 - **Full stops:**
@@ -187,7 +188,7 @@ If a design doesn't fit these guidelines, decide whether it's a real exception, 
 
 - Every string the user sees is translatable:
   - in QML, `qsTr("…")`;
-  - in Go, `qt.QCoreApplication_Translate("context", "…")` for strings that reach the UI, such as `installed.message` and error text.
+  - in Go, `tr("…")` (in `tr.go`) for strings that reach the UI, such as `installed.message`, with `fmt.Sprintf` for anything filled in.
 - Keep the punctuation inside the translatable string.
 - Never build a sentence out of pieces: use placeholders, as in `qsTr("Couldn’t load mods: %1").arg(error)`.
 - Numbers, sizes and dates follow the locale where Qt can do it (`Qt.locale()`, `Locale.toString`).
@@ -212,10 +213,7 @@ If a design doesn't fit these guidelines, decide whether it's a real exception, 
 
 ## Where the app doesn't follow these yet
 
-- Strings use sentence case for buttons, menu items, titles and placeholders. They should be Title Case.
-- Strings aren't wrapped in `qsTr`, and Go messages aren't translated.
-- Several error messages join text and an error onto one string ("Couldn't load mods:\n" + …).
-- UI text uses straight quotes and apostrophes rather than ’ “ ”.
+- Errors from Go (GameBanana, downloads, sounds) are shown as Go wrote them, after a plain "Couldn’t …" line. They should be turned into plain words with a next step, and the raw error logged.
 - Uninstalling is immediate, with no Undo. `Toast` has no action or close button. There's no Ctrl+Z.
 - Closing the window during installs drops them. There's no single-instance check or system notifications.
 - The app doesn't remember the page, category, view or scroll position between launches.

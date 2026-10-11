@@ -18,7 +18,7 @@ Item {
     // category in it, or -1 for all mods. The last crumb is where the list
     // is, so it's never clicked.
     readonly property var path: {
-        const crumbs = [{ name: "All Mods", depth: -1 }]
+        const crumbs = [{ name: qsTr("All Mods"), depth: -1 }]
 
         for (let i = 1; i < stack.depth; i++) {
             const level = stack.get(i, StackView.ForceLoad)
@@ -79,7 +79,7 @@ Item {
     function open(category) {
         const above = stack.currentItem.category
 
-        stack.push(level, { category: category, backName: above ? above.name : "All Mods" })
+        stack.push(level, { category: category, backName: above ? above.name : qsTr("All Mods") })
         select(category)
     }
 
@@ -177,13 +177,13 @@ Item {
 
                     Label {
                         Layout.fillWidth: true
-                        text: "Couldn't load categories."
+                        text: qsTr("Couldn’t load categories")
                         color: Theme.subtle
                         wrapMode: Text.Wrap
                     }
 
                     Button {
-                        text: "Retry"
+                        text: qsTr("Retry")
                         onClicked: retryCategoriesAction.trigger()
                     }
                 }

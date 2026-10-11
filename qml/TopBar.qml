@@ -78,8 +78,8 @@ Item {
             verticalCenter: parent.verticalCenter
         }
         options: [
-            { icon: "icons/grid_24_regular.svg", text: "Grid view" },
-            { icon: "icons/text_bullet_list_ltr_24_regular.svg", text: "List view" },
+            { icon: "icons/grid_24_regular.svg", text: qsTr("Grid view") },
+            { icon: "icons/text_bullet_list_ltr_24_regular.svg", text: qsTr("List view") },
         ]
 
         opacity: root.showViews && !root.showVolume ? 1 : 0

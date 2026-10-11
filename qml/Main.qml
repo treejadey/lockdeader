@@ -11,7 +11,7 @@ AppWindow {
     minimumWidth: sidebar.Layout.preferredWidth + modsPage.minimumWidth
     minimumHeight: 560
     visible: true
-    title: "lockdeader"
+    title: "Lockdeader"
 
     RowLayout {
         anchors.fill: parent

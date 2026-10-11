@@ -26,14 +26,14 @@ Item {
         Label {
             anchors.verticalCenter: parent.verticalCenter
             width: Math.min(implicitWidth, root.width - retryButton.width - parent.spacing - 32)
-            text: "Couldn't load more mods: " + root.error
+            text: qsTr("Couldn’t load more mods: %1").arg(root.error)
             elide: Text.ElideRight
         }
 
         Button {
             id: retryButton
 
-            text: "Retry"
+            text: qsTr("Retry")
             onClicked: root.retry()
         }
     }

@@ -71,7 +71,7 @@ func newClipboardBridge(imageCacheDir string, client *banana.Client) *clipboardB
 
 func (b *clipboardBridge) CopyLink(url string) {
 	qt.QGuiApplication_Clipboard().SetText(url)
-	b.notify("Link copied")
+	b.notify(tr("Link copied"))
 }
 
 func (b *clipboardBridge) CopyImage(url string) {
@@ -87,7 +87,7 @@ func (b *clipboardBridge) CopyImage(url string) {
 		mainthread.Start(func() {
 			if err != nil {
 				slog.Error("failed to download image to copy", "url", url, "err", err)
-				b.notify("Couldn't copy the image")
+				b.notify(tr("Couldn’t copy the image"))
 
 				return
 			}
@@ -112,13 +112,13 @@ func (b *clipboardBridge) setImage(url string, data []byte) {
 	img := qt.QImage_FromDataWithData(data)
 	if img.IsNull() {
 		slog.Error("failed to decode image to copy", "url", url)
-		b.notify("Couldn't copy the image")
+		b.notify(tr("Couldn’t copy the image"))
 
 		return
 	}
 
 	qt.QGuiApplication_Clipboard().SetImage(img)
-	b.notify("Image copied")
+	b.notify(tr("Image copied"))
 }
 
 func (b *clipboardBridge) notify(message string) {

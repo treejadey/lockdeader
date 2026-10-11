@@ -79,8 +79,8 @@ Item {
             left: parent.left
             right: parent.right
         }
-        crumbs: [{ name: "Settings", depth: 0 }]
-        searchPlaceholder: "Search Settings"
+        crumbs: [{ name: qsTr("Settings"), depth: 0 }]
+        searchPlaceholder: qsTr("Search Settings")
     }
 
     Flickable {
@@ -130,12 +130,12 @@ Item {
                 id: modViewer
 
                 width: parent.width
-                title: "Mod Viewer"
+                title: qsTr("Mod Viewer")
                 query: root.query
 
                 SettingToggle {
-                    text: "NSFW mods"
-                    keywords: "not safe for work adult mature nudity content ratings"
+                    text: qsTr("NSFW mods")
+                    keywords: qsTr("not safe for work adult mature nudity content ratings")
                     checked: settings.showNsfw
                     onToggled: settings.showNsfw = checked
                 }
@@ -145,17 +145,17 @@ Item {
                 id: advanced
 
                 width: parent.width
-                title: "Advanced"
+                title: qsTr("Advanced")
                 query: root.query
 
                 SettingRow {
-                    text: "Data folder"
+                    text: qsTr("Data folder")
                     description: settings.dataDir
                     monospaceDescription: true
-                    keywords: "data directory location cache files backups open"
+                    keywords: qsTr("data directory location cache files backups open")
 
                     ActionButton {
-                        text: "Open folder"
+                        text: qsTr("Open Folder")
                         baseColor: Theme.highlightMed
                         onClicked: Qt.openUrlExternally(settings.dataDirUrl)
                     }
@@ -190,7 +190,7 @@ Item {
     Label {
         anchors.centerIn: flickable
         visible: !root.anyMatches
-        text: "No settings found"
+        text: qsTr("No Settings Found")
         color: Theme.subtle
     }
 }

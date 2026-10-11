@@ -205,13 +205,13 @@ Popup {
                 id: imageMenu
 
                 PopupMenuItem {
-                    text: "Copy image"
+                    text: qsTr("Copy Image")
                     icon.source: "icons/copy_24_regular.svg"
                     onTriggered: root.copyImageRequested(root.current.full)
                 }
 
                 PopupMenuItem {
-                    text: "Copy image link"
+                    text: qsTr("Copy Image Link")
                     icon.source: "icons/link_24_regular.svg"
                     onTriggered: root.copyLinkRequested(root.current.full)
                 }
@@ -292,7 +292,7 @@ Popup {
 
             ToolTip.visible: hovered
             ToolTip.delay: 500
-            ToolTip.text: "Close (Esc)"
+            ToolTip.text: qsTr("Close (Esc)")
         }
 
         Toast {
