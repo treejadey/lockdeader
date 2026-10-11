@@ -126,31 +126,54 @@ AbstractButton {
             }
         }
 
-        // Fades and grows in as it appears, and back out as it goes.
+        // Fades and grows in as it appears, and fades and shrinks back out as
+        // it goes. It's a notice of something under way, so it comes in with
+        // Carbon's expressive entrance over moderate-02 (system
+        // communication), and leaves with the exit curve over the same time,
+        // long enough to see it go.
         Rectangle {
+            id: badge
+
             Layout.preferredWidth: Math.max(height, badgeLabel.implicitWidth + 10)
             Layout.preferredHeight: 18
             visible: opacity > 0
-            opacity: root.badge > 0 ? 1 : 0
-            scale: root.badge > 0 ? 1 : 0.6
+            opacity: 0
+            scale: 0.6
             radius: height / 2
             color: Theme.foam
 
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: Motion.fast02
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: Motion.productiveStandard
+            states: State {
+                name: "shown"
+                when: root.badge > 0
+
+                PropertyChanges {
+                    badge.opacity: 1
+                    badge.scale: 1
                 }
             }
 
-            Behavior on scale {
-                NumberAnimation {
-                    duration: Motion.fast02
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: Motion.productiveStandard
+            transitions: [
+                Transition {
+                    to: "shown"
+
+                    NumberAnimation {
+                        properties: "opacity,scale"
+                        duration: Motion.moderate02
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Motion.expressiveEntrance
+                    }
+                },
+                Transition {
+                    from: "shown"
+
+                    NumberAnimation {
+                        properties: "opacity,scale"
+                        duration: Motion.moderate02
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Motion.productiveExit
+                    }
                 }
-            }
+            ]
 
             Label {
                 id: badgeLabel
