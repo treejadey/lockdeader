@@ -10,6 +10,7 @@ ContentSwitcher 1.0 ContentSwitcher.qml
 DisabledFill 1.0 DisabledFill.qml
 DownloadProgress 1.0 DownloadProgress.qml
 ErrorLabel 1.0 ErrorLabel.qml
+FilePickerList 1.0 FilePickerList.qml
 GalleryCarousel 1.0 GalleryCarousel.qml
 GalleryStrip 1.0 GalleryStrip.qml
 ImageViewer 1.0 ImageViewer.qml

@@ -144,4 +144,5 @@ Applies to Go, QML (including its JavaScript), C and C++.
   - A toast can carry one action. Uninstalling offers Undo this way (`messageUndoable`, with Ctrl+Z too). The mod stays in the database until the toast has gone (`messageGone`) or the app quits (`FinishUninstall`).
 - For an icon whose colour changes with state, use `TintedIcon`, which colours the SVG's shape, rather than an SVG per colour.
 - Right-click menus are `PopupMenu`s of `PopupMenuItem`s. Hide an item that doesn't apply with `shown: false`, never with `visible`/`height` bindings: `visible` is false while the menu is closed, so those loop.
+- Lists of a mod's files to pick from are `FilePickerList`, shared by `InstallDialog` and `ModConfigDialog`; change how picking files looks there, not in a dialog.
 - Checkboxes are `TickBox` (Carbon-style; clicking emits `clicked()` without changing `checked`, so the model decides), and progress bars are `DownloadProgress` (elementary OS-style, with a shine whose `pace` follows the download speed). `InstallStatus` pairs the bar with its label.
