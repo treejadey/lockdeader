@@ -27,7 +27,7 @@ AppWindow {
     maximumHeight: fittedHeight
     flags: Qt.Dialog
     visible: true
-    title: "Lockdeader - Restore settings?"
+    title: "Restore Settings — Lockdeader"
 
     onClosing: if (!answered) answer(-1)
 

@@ -43,7 +43,7 @@ Item {
 
                 Layout.fillWidth: true
                 crumbs: root.crumbs
-                searchPlaceholder: "Search mods.."
+                searchPlaceholder: "Search Mods"
                 // Only sounds have anything to play, and they're always listed.
                 showVolume: root.sounds
                 showViews: !root.sounds

@@ -32,7 +32,7 @@ Item {
             right: parent.right
         }
         crumbs: [{ name: "Installed mods", depth: 0 }]
-        searchPlaceholder: "Search installed mods.."
+        searchPlaceholder: "Search Installed Mods"
         showViews: true
         onSearchEdited: installed.query = topBar.searchText
         onSearchAccepted: installed.query = topBar.searchText

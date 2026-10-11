@@ -18,7 +18,7 @@ Item {
     // category in it, or -1 for all mods. The last crumb is where the list
     // is, so it's never clicked.
     readonly property var path: {
-        const crumbs = [{ name: "All mods", depth: -1 }]
+        const crumbs = [{ name: "All Mods", depth: -1 }]
 
         for (let i = 1; i < stack.depth; i++) {
             const level = stack.get(i, StackView.ForceLoad)
@@ -77,7 +77,9 @@ Item {
     }
 
     function open(category) {
-        stack.push(level, { category: category })
+        const above = stack.currentItem.category
+
+        stack.push(level, { category: category, backName: above ? above.name : "All Mods" })
         select(category)
     }
 
@@ -144,6 +146,8 @@ Item {
 
             // The category whose subcategories these are; null for the top level.
             property var category: null
+            // Where Back goes: the level this one was opened from.
+            property string backName
             readonly property var entries: category ? category.children : categories.tree
 
             ColumnLayout {
@@ -153,7 +157,7 @@ Item {
                 SidebarItem {
                     Layout.fillWidth: true
                     visible: levelItem.category !== null
-                    text: "Back"
+                    text: levelItem.backName
                     icon.source: "icons/chevron_left_24_regular.svg"
                     onClicked: root.back()
                 }

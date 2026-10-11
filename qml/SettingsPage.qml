@@ -80,7 +80,7 @@ Item {
             right: parent.right
         }
         crumbs: [{ name: "Settings", depth: 0 }]
-        searchPlaceholder: "Search settings.."
+        searchPlaceholder: "Search Settings"
     }
 
     Flickable {
@@ -134,7 +134,7 @@ Item {
                 query: root.query
 
                 SettingToggle {
-                    text: "Show NSFW"
+                    text: "NSFW mods"
                     keywords: "not safe for work adult mature nudity content ratings"
                     checked: settings.showNsfw
                     onToggled: settings.showNsfw = checked
