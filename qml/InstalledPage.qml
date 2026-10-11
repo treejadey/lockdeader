@@ -6,6 +6,8 @@ Item {
 
     readonly property bool listed: topBar.viewIndex === 1
 
+    signal browseModsRequested()
+
     // Looks up which files the mods have on GameBanana, so their menus know
     // whether there are other versions to pick from.
     onVisibleChanged: if (visible) installed.refresh = true
@@ -83,6 +85,20 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: qsTr("Mods you install will show up here")
                 color: Theme.subtle
+            }
+
+            // Spacing on top of the column's, to set the action apart.
+            Item {
+                width: 1
+                height: 6
+            }
+
+            ActionButton {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: qsTr("Browse Mods")
+                baseColor: Theme.foam
+                textColor: Theme.base
+                onClicked: root.browseModsRequested()
             }
         }
 

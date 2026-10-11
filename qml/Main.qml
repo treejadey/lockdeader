@@ -43,7 +43,9 @@ AppWindow {
                 onCrumbClicked: (depth) => sidebar.goToCategory(depth)
             }
 
-            InstalledPage {}
+            InstalledPage {
+                onBrowseModsRequested: sidebar.currentIndex = 0
+            }
 
             SettingsPage {
                 id: settingsPage
