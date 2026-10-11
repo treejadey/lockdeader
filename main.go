@@ -207,6 +207,9 @@ func main() {
 
 	code := qt.QGuiApplication_Exec()
 
+	// Undo is too late once the app has gone.
+	installed.FinishUninstall()
+
 	// Save anything still pending, and back up the settings if they changed.
 	flushSettings()
 	flushAudio()

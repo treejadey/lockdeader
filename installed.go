@@ -74,7 +74,11 @@ const maxRunningInstalls = 2
 //	setEnabled: {key, enabled}: turns a mod on or off
 //	cancel:     key: stops installing a mod, or forgets a failed install
 //	retry:      key: tries a failed install again
-//	uninstall:  key: removes an installed mod
+//	uninstall:  key: removes an installed mod, which can be undone until
+//	            its message goes
+//	undo:       messageId: puts back the mod uninstalled with that message
+//	messageGone: messageId: that message is no longer shown, so its undo
+//	            is too late
 //	configure:  key: fills in "configuration" (see configure) for the mod
 //	setConfiguration: {key, ids}: picks which of a mod's options it uses,
 //	            by id (see Configure)
@@ -86,7 +90,7 @@ const maxRunningInstalls = 2
 // "installing": how many are installing or waiting to. As in the clipboard
 // bridge, "message" says what just happened, e.g. a download starting, and
 // "messageId" goes up by one with each, so QML can tell a repeated message is
-// new.
+// new. "messageUndoable" says whether the message offers Undo.
 // All methods must be called on the Qt main thread.
 type installedMods struct {
 	*qml.QQmlPropertyMap
@@ -109,6 +113,16 @@ type installedMods struct {
 	lookupSlots chan struct{}
 	// The mod whose configuration is in "configuration", if any.
 	configuring string
+	// An uninstall that can still be undone. The mod stays in the database
+	// until it can't.
+	uninstalling *pendingUninstall
+}
+
+type pendingUninstall struct {
+	row *installedRow
+	// Where the row was in the model, to put it back there.
+	index     int
+	messageID int
 }
 
 type installedRow struct {
@@ -179,7 +193,10 @@ func newInstalledMods(client *banana.Client, db *appdb.DB, store install.Store) 
 	m.Insert("configure", qt.NewQVariant14(""))
 	m.Insert("configuration", qt.NewQVariant20(map[string]qt.QVariant{}))
 	m.Insert("message", qt.NewQVariant14(""))
+	m.Insert("messageUndoable", qt.NewQVariant8(false))
 	m.Insert("messageId", qt.NewQVariant4(0))
+	m.Insert("undo", qt.NewQVariant4(0))
+	m.Insert("messageGone", qt.NewQVariant4(0))
 
 	mods, err := db.Mods(context.Background())
 	if err != nil {
@@ -228,6 +245,14 @@ func newInstalledMods(client *banana.Client, db *appdb.DB, store install.Store) 
 			}
 
 			return
+		case "undo":
+			m.Undo(value.ToInt())
+
+			return
+		case "messageGone":
+			m.messageGone(value.ToInt())
+
+			return
 		}
 
 		rowKey := value.ToString()
@@ -256,6 +281,12 @@ func newInstalledMods(client *banana.Client, db *appdb.DB, store install.Store) 
 // Install queues behind any installs already waiting. Files that are already
 // installed are skipped, and so is a mod that's already installing.
 func (m *installedMods) Install(info modInfo, files []banana.File) {
+	// Reinstalling a mod while its uninstall can still be undone starts from
+	// it being gone.
+	if m.uninstalling != nil && m.uninstalling.row.key == info.key() {
+		m.FinishUninstall()
+	}
+
 	if info.available != nil {
 		m.available[info.key()] = info.available
 	}
@@ -503,24 +534,76 @@ func (m *installedMods) SetEnabled(key string, enabled bool) {
 	row.item.SetData(qt.NewQVariant8(enabled), roleInstalledEnabled)
 }
 
+// Uninstall takes the mod off the list straight away, but only removes it
+// once the message offering Undo has gone (see messageGone), or on
+// FinishUninstall.
 func (m *installedMods) Uninstall(key string) {
 	row := m.rows[key]
 	if row == nil || row.mod == nil || row.job != nil {
 		return
 	}
 
-	ctx := context.Background()
+	// Only the latest uninstall can be undone.
+	m.FinishUninstall()
 
-	if err := m.db.RemoveMod(ctx, row.mod.ID); err != nil {
-		slog.Error("failed to uninstall a mod", "mod", key, "err", err)
+	// Take the row out without deleting its item, so Undo can put it back.
+	index := row.item.Row()
+	m.model.TakeRow(index)
+	delete(m.rows, key)
+	m.updateCounts()
+
+	m.notifyUndoable(fmt.Sprintf(tr("%s was uninstalled"), row.mod.Name))
+	m.uninstalling = &pendingUninstall{row: row, index: index, messageID: m.messages}
+}
+
+func (m *installedMods) Undo(messageID int) {
+	p := m.uninstalling
+	if p == nil || p.messageID != messageID {
+		return
+	}
+
+	m.uninstalling = nil
+	m.putBack(p)
+
+	slog.Info("undid uninstalling a mod", "mod", p.row.key)
+}
+
+func (m *installedMods) messageGone(messageID int) {
+	if m.uninstalling != nil && m.uninstalling.messageID == messageID {
+		m.FinishUninstall()
+	}
+}
+
+// FinishUninstall removes the mod whose uninstall could still be undone, if
+// any. Call it before quitting.
+func (m *installedMods) FinishUninstall() {
+	p := m.uninstalling
+	if p == nil {
+		return
+	}
+
+	m.uninstalling = nil
+
+	if err := m.db.RemoveMod(context.Background(), p.row.mod.ID); err != nil {
+		slog.Error("failed to uninstall a mod", "mod", p.row.key, "err", err)
+
+		// It's still installed, so it goes back on the list.
+		m.putBack(p)
+		m.notify(fmt.Sprintf(tr("Couldn’t uninstall %s"), p.row.mod.Name))
 
 		return
 	}
 
-	slog.Info("uninstalled a mod", "mod", key)
-	m.removeRow(row)
+	slog.Info("uninstalled a mod", "mod", p.row.key)
+	p.row.item.Delete()
 
-	m.deleteUnusedVPKs(row.mod.Files)
+	m.deleteUnusedVPKs(p.row.mod.Files)
+}
+
+func (m *installedMods) putBack(p *pendingUninstall) {
+	m.model.InsertRow(min(p.index, m.model.RowCount(qt.NewQModelIndex())), []*qt.QStandardItem{p.row.item})
+	m.rows[p.row.key] = p.row
+	m.updateCounts()
 }
 
 // The files must have been removed from the database already. VPKs another
@@ -548,8 +631,17 @@ func (m *installedMods) deleteUnusedVPKs(files []appdb.ModFile) {
 }
 
 func (m *installedMods) notify(message string) {
+	m.sendMessage(message, false)
+}
+
+func (m *installedMods) notifyUndoable(message string) {
+	m.sendMessage(message, true)
+}
+
+func (m *installedMods) sendMessage(message string, undoable bool) {
 	m.messages++
 	m.Insert("message", qt.NewQVariant14(message))
+	m.Insert("messageUndoable", qt.NewQVariant8(undoable))
 	m.Insert("messageId", qt.NewQVariant4(m.messages))
 }
 

@@ -406,7 +406,14 @@ func TestUninstallAndSearch(t *testing.T) {
 	sha := it.mods(t)[0].Files[0].VPKs[0].SHA256
 	mainthread.Wait(func() { it.Uninstall(first) })
 
-	if len(it.mods(t)) != 1 || it.status(first) != "(gone)" || filtered() != 1 {
+	// It leaves the list at once, but stays installed while it can be undone.
+	if it.status(first) != "(gone)" || filtered() != 1 || it.count("total") != 1 || len(it.mods(t)) != 2 {
+		t.Fatal("uninstalling didn't take the mod off the list, or removed it before Undo was too late")
+	}
+
+	mainthread.Wait(func() { it.FinishUninstall() })
+
+	if len(it.mods(t)) != 1 {
 		t.Fatal("uninstalling didn't remove the mod")
 	}
 
@@ -415,10 +422,73 @@ func TestUninstallAndSearch(t *testing.T) {
 		t.Errorf("a VPK another mod has was deleted: %v", err)
 	}
 
-	mainthread.Wait(func() { it.Uninstall(second) })
+	// Its message going makes Undo too late.
+	mainthread.Wait(func() {
+		it.Uninstall(second)
+		it.messageGone(it.Value("messageId").ToInt())
+	})
 
 	if _, err := os.Stat(it.store.Path(sha)); !os.IsNotExist(err) {
 		t.Errorf("the VPK is still there after uninstalling every mod that had it: %v", err)
+	}
+}
+
+func TestUndoUninstall(t *testing.T) {
+	it := newInstallTest(t)
+
+	mainthread.Wait(func() {
+		it.Install(testInfo(1), []banana.File{it.file(t, 1, "one")})
+
+		info := testInfo(2)
+		info.name = "Abrams Blue"
+		it.Install(info, []banana.File{it.file(t, 2, "two")})
+	})
+
+	first, second := installedKey(banana.SectionMods, 1), installedKey(banana.SectionMods, 2)
+	it.waitForStatus(t, first, statusInstalled)
+	it.waitForStatus(t, second, statusInstalled)
+
+	row := func(key string) int {
+		return mainthread.Wait2(func() int { return it.rows[key].item.Row() })
+	}
+
+	before := row(first)
+	var messageID int
+
+	mainthread.Wait(func() {
+		it.Uninstall(first)
+		messageID = it.Value("messageId").ToInt()
+	})
+
+	if got := it.message(); got != "Yamato Red was uninstalled" {
+		t.Errorf("message = %q", got)
+	}
+
+	if !mainthread.Wait2(func() bool { return it.Value("messageUndoable").ToBool() }) {
+		t.Error("the uninstall message doesn't offer Undo")
+	}
+
+	// Undo for a message that isn't the uninstall's does nothing.
+	mainthread.Wait(func() { it.Undo(messageID - 1) })
+
+	if it.status(first) != "(gone)" {
+		t.Fatal("Undo for another message put the mod back")
+	}
+
+	mainthread.Wait(func() { it.Undo(messageID) })
+
+	if it.status(first) != statusInstalled || row(first) != before || it.count("total") != 2 {
+		t.Fatalf("Undo didn't put the mod back where it was: status %q, row %d (was %d)", it.status(first), row(first), before)
+	}
+
+	// It's no longer pending, so its message going doesn't remove it.
+	mainthread.Wait(func() {
+		it.messageGone(messageID)
+		it.FinishUninstall()
+	})
+
+	if len(it.mods(t)) != 2 {
+		t.Error("a mod put back by Undo was removed anyway")
 	}
 }
 

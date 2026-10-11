@@ -72,5 +72,32 @@ AppWindow {
     // Each message from the installer bumps messageId, so the same message
     // twice still shows.
     readonly property int installMessageId: installed.messageId
-    onInstallMessageIdChanged: toast.show(installed.message)
+    // The installer message the toast shows, so its Undo or its going away can
+    // be passed back.
+    property int toastMessageId: 0
+
+    // Showing a message dismisses the one before, which still has the old id.
+    onInstallMessageIdChanged: {
+        toast.show(installed.message, installed.messageUndoable ? qsTr("Undo") : "")
+        toastMessageId = installed.messageId
+    }
+
+    Connections {
+        target: toast
+
+        function onActionTriggered() {
+            installed.undo = window.toastMessageId
+        }
+
+        function onDismissed() {
+            installed.messageGone = window.toastMessageId
+        }
+    }
+
+    // A focused text field takes Ctrl+Z for itself first.
+    Shortcut {
+        sequences: [StandardKey.Undo]
+        enabled: toast.shown && toast.hasAction
+        onActivated: toast.trigger()
+    }
 }

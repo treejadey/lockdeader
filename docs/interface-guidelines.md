@@ -57,7 +57,7 @@ If a design doesn't fit these guidelines, decide whether it's a real exception, 
 
 - **Toasts** confirm something the user just did.
   - Phrase it as what happened ("Yamato Red was uninstalled", "Image copied").
-  - A toast can have one action, such as Undo or View, and has a close button. It goes away by itself.
+  - A toast can have one action, such as Undo or View. A toast with an action also has a close button, and stays up longer. Every toast goes away by itself.
 - **Info bars** sit in the view rather than over it, and stay until dealt with. They're for situations that need attention, e.g. GameBanana can't be reached, with Retry. Each has a severity:
   - **information**: something useful to know;
   - **question**: something the user should answer, but not urgently;
@@ -214,7 +214,6 @@ If a design doesn't fit these guidelines, decide whether it's a real exception, 
 ## Where the app doesn't follow these yet
 
 - Errors from Go (GameBanana, downloads, sounds) are shown as Go wrote them, after a plain "Couldn’t …" line. They should be turned into plain words with a next step, and the raw error logged.
-- Uninstalling is immediate, with no Undo. `Toast` has no action or close button. There's no Ctrl+Z.
 - Closing the window during installs drops them. There's no single-instance check or system notifications.
 - The app doesn't remember the page, category, view or scroll position between launches.
 - The empty Installed page has no button to go and find mods.
