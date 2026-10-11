@@ -36,6 +36,8 @@ type modDetails struct {
 	lookup  func(id int) (banana.Mod, bool)
 
 	install func(info modInfo, files []banana.File)
+	// Called with the id of each mod selected, 0 for none. May be nil.
+	onSelected func(id int)
 
 	selected modKey
 	profiles map[modKey]*banana.ModProfile
@@ -128,6 +130,11 @@ func (d *modDetails) Select(id int) {
 	key := modKey{d.section(), id}
 	d.selected = key
 	d.Insert("id", qt.NewQVariant4(id))
+
+	if d.onSelected != nil {
+		d.onSelected(id)
+	}
+
 	d.setStatus(false, nil)
 
 	if id == 0 {

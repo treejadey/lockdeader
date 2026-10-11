@@ -39,6 +39,12 @@ Item {
         return crumbs
     }
 
+    // Whether the categories open last time have been opened again.
+    property bool pathRestored: false
+    readonly property var tree: categories.tree
+
+    onTreeChanged: restorePath()
+
     // Goes back up to the level whose list has the crumb's category in it, and
     // picks that category, so the list and the breadcrumbs stay in step. -1
     // goes back to all mods.
@@ -69,6 +75,64 @@ Item {
         categories.selected = category
             ? { section: category.section, id: category.id }
             : { section: "Mod", id: 0 }
+
+        savePath()
+    }
+
+    function pathKey(category) {
+        return category.section + "/" + category.id
+    }
+
+    // Every change to the stack ends in select(), which saves it.
+    function savePath() {
+        const keys = []
+
+        for (let i = 1; i < stack.depth; i++) {
+            const level = stack.get(i, StackView.ForceLoad)
+
+            if (level && level.category)
+                keys.push(pathKey(level.category))
+        }
+
+        uiState.categoryPath = keys.join(",")
+    }
+
+    // Opens the categories the user had open last time, once the tree has
+    // loaded. Go has already picked the category itself, and listed its mods.
+    function restorePath() {
+        if (pathRestored || categories.tree.length === 0)
+            return
+
+        pathRestored = true
+
+        const keys = uiState.categoryPath === "" ? [] : uiState.categoryPath.split(",")
+        let entries = categories.tree
+        let backName = qsTr("All Mods")
+
+        for (const key of keys) {
+            const category = entries.find(entry => pathKey(entry) === key)
+
+            // Gone from GameBanana since: start again from all mods.
+            if (!category || category.children.length === 0) {
+                reset()
+
+                return
+            }
+
+            stack.push(level, { category: category, backName: backName }, StackView.Immediate)
+            backName = category.name
+            entries = category.children
+        }
+
+        // The picked category is either in the list now shown, or the one it
+        // belongs to. If it's neither, it's gone too.
+        const picked = categories.selected
+        const isAllMods = picked.section === "Mod" && picked.id === 0
+        const shown = entries.some(entry => isSelected(entry))
+            || (stack.currentItem.category && isSelected(stack.currentItem.category))
+
+        if (!isAllMods && !shown)
+            reset()
     }
 
     function isSelected(category) {

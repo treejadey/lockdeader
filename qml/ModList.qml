@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
+import "ScrollPosition.js" as ScrollPosition
+
 // Sounds have no preview image, so they're always listed this way, with a
 // player for their audio preview in place of the image and the category.
 //
@@ -13,6 +15,7 @@ Item {
     property bool sounds: false
 
     property alias model: list.model
+    readonly property alias contentY: list.contentY
     readonly property alias count: list.count
     property bool loading: false
     property string error: ""
@@ -48,6 +51,19 @@ Item {
     function showRow(row) {
         wheel.stop()
         list.positionViewAtIndex(row, ListView.Contain)
+    }
+
+    // The first mod on screen, and how far past its top the view is.
+    function topMod() {
+        const top = ScrollPosition.top(list)
+        const item = top.index >= 0 ? list.itemAtIndex(top.index) : null
+
+        return { modId: item ? item.modId : 0, offset: top.offset }
+    }
+
+    function restoreTop(row, offset) {
+        wheel.stop()
+        ScrollPosition.restore(list, row, offset)
     }
 
     ListView {

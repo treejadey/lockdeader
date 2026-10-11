@@ -42,6 +42,26 @@ Item {
 
     // The section last gone to with goToSection(), until the user scrolls.
     property int goneTo: -1
+    // As on the mods page: until the scroll position is restored, it isn't
+    // saved.
+    property bool scrollRestored: false
+
+    function restoreScroll() {
+        if (scrollRestored || !visible)
+            return
+
+        scrollRestored = true
+        flickable.contentY = Math.min(uiState.settingsY, Math.max(0, flickable.contentHeight - flickable.height))
+    }
+
+    function saveScroll() {
+        if (scrollRestored)
+            uiState.settingsY = Math.round(flickable.contentY)
+    }
+
+    // Once laid out, so the page is as tall as it will be.
+    Component.onCompleted: Qt.callLater(restoreScroll)
+    onVisibleChanged: Qt.callLater(restoreScroll)
 
     function sectionTop(section) {
         return sections.y + section.y
@@ -100,7 +120,12 @@ Item {
 
         // Scrolling by any other means than goToSection() lets the sections
         // being read take over again.
-        onContentYChanged: if (!scroll.running) root.goneTo = -1
+        onContentYChanged: {
+            if (!scroll.running)
+                root.goneTo = -1
+
+            root.saveScroll()
+        }
         // The user takes over from goToSection() by dragging...
         onMovementStarted: scroll.stop()
 

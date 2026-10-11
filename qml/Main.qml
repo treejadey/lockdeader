@@ -13,6 +13,9 @@ AppWindow {
     visible: true
     title: "Lockdeader"
 
+    // Reopens on the page the app was left on.
+    Component.onCompleted: sidebar.currentIndex = uiState.page
+
     RowLayout {
         anchors.fill: parent
         spacing: 0
@@ -25,6 +28,7 @@ AppWindow {
             settingsSections: settingsPage.sectionList
             currentSettingsSection: settingsPage.currentSection
             onSettingsSectionClicked: (index) => settingsPage.goToSection(index)
+            onCurrentIndexChanged: uiState.page = currentIndex
 
             Layout.preferredWidth: 240
             Layout.fillHeight: true

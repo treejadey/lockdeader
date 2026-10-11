@@ -126,7 +126,9 @@ type categoryBrowser struct {
 	client   *banana.Client
 	mods     *modListModel
 	onChange func() // called after switching to a different category; may be nil
-	loading  bool
+	// Called with the category switched to. May be nil.
+	onSelected func(section banana.Section, id int)
+	loading    bool
 }
 
 func newCategoryBrowser(client *banana.Client, mods *modListModel, onChange func()) *categoryBrowser {
@@ -165,8 +167,34 @@ func (b *categoryBrowser) Select(section banana.Section, id int) {
 		return
 	}
 
-	if b.mods.SetCategory(section, id) && b.onChange != nil {
+	if !b.mods.SetCategory(section, id) {
+		return
+	}
+
+	if b.onSelected != nil {
+		b.onSelected(section, id)
+	}
+
+	if b.onChange != nil {
 		b.onChange()
+	}
+}
+
+// Restore starts the listing in the category the user left off in. An unknown
+// section starts it at all mods.
+func (b *categoryBrowser) Restore(section banana.Section, id int) {
+	if section != banana.SectionMods && section != banana.SectionSounds {
+		section, id = banana.SectionMods, 0
+	}
+
+	b.Insert("selected", qt.NewQVariant20(map[string]qt.QVariant{
+		"section": *qt.NewQVariant14(string(section)),
+		"id":      *qt.NewQVariant4(id),
+	}))
+
+	// It only reloads the listing if the category is a different one.
+	if !b.mods.SetCategory(section, id) {
+		b.mods.FetchNextPage()
 	}
 }
 

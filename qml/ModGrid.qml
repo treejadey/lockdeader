@@ -1,10 +1,13 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
+import "ScrollPosition.js" as ScrollPosition
+
 Item {
     id: root
 
     property alias model: grid.model
+    readonly property alias contentY: grid.contentY
     readonly property alias count: grid.count
     property bool loading: false
     property string error: ""
@@ -23,6 +26,19 @@ Item {
     function showRow(row) {
         wheel.stop()
         grid.positionViewAtIndex(row, GridView.Contain)
+    }
+
+    // The first mod on screen, and how far past its top the view is.
+    function topMod() {
+        const top = ScrollPosition.top(grid)
+        const item = top.index >= 0 ? grid.itemAtIndex(top.index) : null
+
+        return { modId: item ? item.modId : 0, offset: top.offset }
+    }
+
+    function restoreTop(row, offset) {
+        wheel.stop()
+        ScrollPosition.restore(grid, row, offset)
     }
 
     GridView {

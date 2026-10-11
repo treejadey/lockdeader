@@ -1,12 +1,15 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
+import "ScrollPosition.js" as ScrollPosition
+
 // As the list narrows, the progress bar shrinks first, then when it was
 // updated goes.
 Item {
     id: root
 
     property alias model: list.model
+    readonly property alias contentY: list.contentY
     readonly property alias count: list.count
 
     // The columns, from the right: the checkbox, when it was updated, the
@@ -26,6 +29,15 @@ Item {
     signal enabledToggled(string key, bool enabled)
     // Emitted on a right click.
     signal menuRequested(string key, string status, int variants)
+
+    function topItem() {
+        return ScrollPosition.top(list)
+    }
+
+    function restoreTop(index, offset) {
+        wheel.stop()
+        ScrollPosition.restore(list, index, offset)
+    }
 
     ListView {
         id: list

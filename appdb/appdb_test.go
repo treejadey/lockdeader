@@ -601,3 +601,51 @@ func TestStrictTypes(t *testing.T) {
 		t.Error("storing text in an INTEGER column: want an error")
 	}
 }
+
+func TestUIState(t *testing.T) {
+	ctx := context.Background()
+	d, path := openTemp(t)
+
+	if s, err := d.UIState(ctx); err != nil || s != DefaultUIState() {
+		t.Errorf("UIState() on a new database = %+v, %v; want defaults", s, err)
+	}
+
+	want := UIState{Page: 1, ModsView: 1, InstalledView: 1, Section: "Sound", CategoryID: 47611,
+		CategoryPath: "3,47611", ModsTopMod: 725782, ModsTopOffset: 40, OpenMod: 12,
+		InstalledTop: 7, InstalledTopOffset: 3, SettingsY: 320}
+
+	if err := d.SetUIState(ctx, want); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := d.SetUIState(ctx, UIState{}); err == nil {
+		t.Error("SetUIState() with no section: want an error")
+	}
+
+	d.Close()
+
+	d, err := Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer d.Close()
+
+	if s, err := d.UIState(ctx); err != nil || s != want {
+		t.Errorf("UIState() after reopening = %+v, %v; want %+v", s, err, want)
+	}
+}
+
+func TestUIStateOutOfRange(t *testing.T) {
+	ctx := context.Background()
+	d, _ := openTemp(t)
+
+	// e.g. edited by hand.
+	if _, err := d.db.Exec("INSERT INTO app_state (key, value) VALUES ('ui.page', 9), ('ui.mods_view', -1), ('ui.settings_y', -5), ('ui.section', '')"); err != nil {
+		t.Fatal(err)
+	}
+
+	if s, err := d.UIState(ctx); err != nil || s != DefaultUIState() {
+		t.Errorf("UIState() = %+v, %v; want defaults", s, err)
+	}
+}

@@ -136,6 +136,21 @@ func main() {
 		}
 	})
 
+	uiState, err := db.UIState(ctx)
+	if err != nil {
+		slog.Error("failed to read where the app was left", "err", err)
+	}
+
+	var ui *uiStateBridge
+
+	saveUISoon, flushUI := debounced(func() {
+		if err := db.SetUIState(ctx, ui.State()); err != nil {
+			slog.Error("failed to save where the app was left", "err", err)
+		}
+	})
+
+	ui = newUIStateBridge(uiState, saveUISoon)
+
 	app := qml.NewQQmlPropertyMap()
 	// For numbers that shouldn't shift as they change.
 	app.Insert("monospaceFont", qt.NewQVariant14(monospaceFontFamily))
@@ -178,6 +193,9 @@ func main() {
 	categories := newCategoryBrowser(client, mods, listingChanged)
 	search := newModSearch(mods, details.Select, listingChanged)
 
+	categories.onSelected = ui.SetCategory
+	details.onSelected = ui.SetOpenMod
+
 	settingsPage := newSettingsPage(settings.Browse, dirs.Root, func(show bool) {
 		settings.Browse.ShowNSFW = show
 		settingsChanged()
@@ -207,6 +225,7 @@ func main() {
 	engine.RootContext().SetContextProperty("clipboard", clipboard.QObject)
 	engine.RootContext().SetContextProperty("soundPreview", soundPreview.QObject)
 	engine.RootContext().SetContextProperty("settings", settingsPage.QObject)
+	engine.RootContext().SetContextProperty("uiState", ui.QObject)
 	engine.RootContext().SetContextProperty("retryAction", retryAction.QObject)
 	engine.RootContext().SetContextProperty("retryCategoriesAction", retryCategoriesAction.QObject)
 
@@ -264,8 +283,35 @@ func main() {
 		app.Insert("showRequests", qt.NewQVariant4(showRequests))
 	}
 
-	// Load the first page; the grid requests the rest as it scrolls.
-	mods.FetchNextPage()
+	// Reopen where the user left off: in the same category, and scrolled to
+	// the same mod with the same one open, if they're near enough the top to
+	// find. If not, the list starts at the top, with nothing open. The grid
+	// requests more pages as it scrolls.
+	saved := ui.State()
+	categories.Restore(banana.Section(saved.Section), saved.CategoryID)
+
+	var lookFor []int
+
+	for _, id := range []int{saved.ModsTopMod, saved.OpenMod} {
+		if id != 0 {
+			lookFor = append(lookFor, id)
+		}
+	}
+
+	mods.Seek(lookFor, restorePages, func(rows map[int]int) {
+		if _, ok := rows[saved.OpenMod]; ok && saved.OpenMod != 0 {
+			details.Select(saved.OpenMod)
+		} else {
+			ui.SetOpenMod(0)
+		}
+
+		if row, ok := rows[saved.ModsTopMod]; ok && saved.ModsTopMod != 0 {
+			ui.RestoreModsScroll(row, saved.ModsTopOffset)
+		} else {
+			ui.RestoreModsScroll(-1, 0)
+		}
+	})
+
 	categories.Load()
 
 	code := qt.QGuiApplication_Exec()
@@ -276,6 +322,7 @@ func main() {
 	// Save anything still pending, and back up the settings if they changed.
 	flushSettings()
 	flushAudio()
+	flushUI()
 
 	if err := db.Close(); err != nil {
 		slog.Error("failed to close the database", "err", err)

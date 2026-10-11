@@ -5,12 +5,50 @@ Item {
     id: root
 
     readonly property bool listed: topBar.viewIndex === 1
+    readonly property var view: listed ? list : grid
+    // As on the mods page: until the scroll position is restored, it isn't
+    // saved.
+    property bool scrollRestored: false
 
     signal browseModsRequested()
 
+    function restoreScroll() {
+        if (scrollRestored || !visible)
+            return
+
+        scrollRestored = true
+        view.restoreTop(uiState.installedTop, uiState.installedTopOffset)
+    }
+
+    function saveScroll() {
+        if (!scrollRestored)
+            return
+
+        const top = view.topItem()
+
+        uiState.installedTop = Math.max(0, top.index)
+        uiState.installedTopOffset = top.offset
+    }
+
+    // Once laid out: the mods are already loaded from the database.
+    Component.onCompleted: Qt.callLater(restoreScroll)
+
+    Connections {
+        target: root.view
+
+        function onContentYChanged() {
+            root.saveScroll()
+        }
+    }
+
     // Looks up which files the mods have on GameBanana, so their menus know
     // whether there are other versions to pick from.
-    onVisibleChanged: if (visible) installed.refresh = true
+    onVisibleChanged: {
+        if (visible)
+            installed.refresh = true
+
+        restoreScroll()
+    }
 
     readonly property int count: listed ? list.count : grid.count
 
@@ -36,6 +74,8 @@ Item {
         crumbs: [{ name: qsTr("Installed Mods"), depth: 0 }]
         searchPlaceholder: qsTr("Search Installed Mods")
         showViews: true
+        viewIndex: uiState.installedView
+        onViewIndexChanged: uiState.installedView = viewIndex
         onSearchEdited: installed.query = topBar.searchText
         onSearchAccepted: installed.query = topBar.searchText
     }

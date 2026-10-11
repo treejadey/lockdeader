@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log/slog"
+	"slices"
 
 	qt "github.com/mappu/miqt/qt6"
 	"github.com/mappu/miqt/qt6/mainthread"
@@ -65,6 +66,16 @@ type modListModel struct {
 	loading  bool
 	done     bool
 	err      error // stops further fetching until Retry is called
+
+	seek *modSeek // nil when not seeking
+}
+
+// A look for mods by id in the first pages of the list, e.g. to reopen where
+// the user left off. It's given up on when the list changes.
+type modSeek struct {
+	ids      []int
+	maxPages int
+	found    func(rows map[int]int)
 }
 
 func newModListModel(client *banana.Client, state *qml.QQmlPropertyMap) *modListModel {
@@ -123,6 +134,7 @@ func (m *modListModel) FetchNextPage() {
 				slog.Error("failed to fetch mods", "section", opts.Section, "category", opts.CategoryID,
 					"query", opts.Name, "page", opts.Page, "err", err)
 				m.setError(err)
+				m.continueSeek()
 
 				return
 			}
@@ -144,8 +156,63 @@ func (m *modListModel) FetchNextPage() {
 			if m.onPage != nil {
 				m.onPage()
 			}
+
+			m.continueSeek()
 		})
 	}()
+}
+
+// Seek loads pages until every id in ids is in the list, or maxPages have been
+// loaded, then calls found with the row of each id it found. Ids it didn't
+// find are left out. If the list changes in the meantime, found gets nil.
+func (m *modListModel) Seek(ids []int, maxPages int, found func(rows map[int]int)) {
+	m.endSeek(nil)
+	m.seek = &modSeek{ids: ids, maxPages: maxPages, found: found}
+	m.continueSeek()
+}
+
+func (m *modListModel) continueSeek() {
+	s := m.seek
+	if s == nil {
+		return
+	}
+
+	allFound := true
+
+	for _, id := range s.ids {
+		if _, ok := m.byID[id]; !ok {
+			allFound = false
+
+			break
+		}
+	}
+
+	pagesLoaded := m.nextPage - 1
+	if allFound || m.done || m.err != nil || pagesLoaded >= s.maxPages {
+		rows := make(map[int]int)
+
+		for row, id := range m.rows {
+			if slices.Contains(s.ids, id) {
+				rows[id] = row
+			}
+		}
+
+		m.endSeek(rows)
+
+		return
+	}
+
+	m.FetchNextPage()
+}
+
+func (m *modListModel) endSeek(rows map[int]int) {
+	s := m.seek
+	if s == nil {
+		return
+	}
+
+	m.seek = nil
+	s.found(rows)
 }
 
 // An id of 0 lists the whole section.
@@ -203,6 +270,7 @@ func (m *modListModel) Loaded() bool {
 }
 
 func (m *modListModel) reload() {
+	m.endSeek(nil)
 	m.generation++
 	m.SetRowCount(0)
 	clear(m.byID)

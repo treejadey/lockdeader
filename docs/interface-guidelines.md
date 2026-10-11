@@ -23,12 +23,14 @@ If a design doesn't fit these guidelines, decide whether it's a real exception, 
 - If the user clears everything out (e.g. uninstalls every mod), the app is back to how it looked on first launch.
 - **The app opens where the user left it:**
   - the page;
-  - the section and category;
-  - grid or list view;
+  - the section and category, with the categories opened to reach it;
+  - grid or list view on each page;
   - the scroll position;
-  - the search, where it makes sense.
+  - the mod open in the details panel.
 
   Closing and reopening should feel like the app was never closed.
+- **Pages that load over the network** only look so far for where the user was. The mods page looks through its first 3 pages (`restorePages`) for the mod that was at the top and the mod that was open. Further down, it starts at the top with nothing open, without saying so. Local pages (Installed, Settings) always restore exactly.
+- The search isn't restored: an old search would hide most of the mods without the user knowing why.
 - **Exception:** `RestoreDialog` still opens before the main window when the settings fail to load. Starting on defaults without the user knowing would be more surprising than a dialog.
 
 ## Always saved
@@ -216,5 +218,4 @@ Windows matters as much as Linux, so each of these needs both.
 
 ## Where the app doesn't follow these yet
 
-- The app doesn't remember the page, category, view or scroll position between launches.
 - There's no `.desktop` file or Windows installer yet.

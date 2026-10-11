@@ -1,10 +1,13 @@
 import QtQuick
 import QtQuick.Controls.Fusion
 
+import "ScrollPosition.js" as ScrollPosition
+
 Item {
     id: root
 
     property alias model: grid.model
+    readonly property alias contentY: grid.contentY
     readonly property alias count: grid.count
     property int cardSize: 150
     // The edges of the grid get at least half of it.
@@ -14,6 +17,15 @@ Item {
 
     signal enabledToggled(string key, bool enabled)
     signal menuRequested(string key, string status, int variants)
+
+    function topItem() {
+        return ScrollPosition.top(grid)
+    }
+
+    function restoreTop(index, offset) {
+        wheel.stop()
+        ScrollPosition.restore(grid, index, offset)
+    }
 
     GridView {
         id: grid

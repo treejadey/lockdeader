@@ -18,12 +18,55 @@ Item {
     readonly property int count: view.count
     readonly property int minimumWidth: topBar.minimumWidth + detailsPanel.Layout.preferredWidth
 
+    // Whether the scroll position the app was left at has been restored, or
+    // given up on. Until then, the position isn't saved: it would overwrite
+    // the one being restored.
+    property bool scrollRestored: false
+
     function toggleMod(modId) {
         details.id = details.id === modId ? 0 : modId
     }
 
-    // Nothing plays while the page isn't shown.
-    onVisibleChanged: if (!visible && soundPreview.state === "playing") soundPreview.state = "paused"
+    // Go looks for the mod that was at the top in the first few pages, then
+    // bumps modsRestoreId. The view has to be shown to be scrolled.
+    function restoreScroll() {
+        if (scrollRestored || uiState.modsRestoreId === 0 || !visible)
+            return
+
+        scrollRestored = true
+        view.restoreTop(uiState.modsRestoreRow, uiState.modsRestoreOffset)
+    }
+
+    function saveScroll() {
+        if (!scrollRestored)
+            return
+
+        const top = view.topMod()
+
+        uiState.modsTopMod = top.modId
+        uiState.modsTopOffset = top.offset
+    }
+
+    Component.onCompleted: restoreScroll()
+
+    onVisibleChanged: {
+        // Nothing plays while the page isn't shown.
+        if (!visible && soundPreview.state === "playing")
+            soundPreview.state = "paused"
+
+        restoreScroll()
+    }
+
+    readonly property int modsRestoreId: uiState.modsRestoreId
+    onModsRestoreIdChanged: restoreScroll()
+
+    Connections {
+        target: root.view
+
+        function onContentYChanged() {
+            root.saveScroll()
+        }
+    }
 
     // Each pick of the best search result bumps pickId: show its row.
     readonly property int pickId: search.pickId
@@ -47,6 +90,8 @@ Item {
                 // Only sounds have anything to play, and they're always listed.
                 showVolume: root.sounds
                 showViews: !root.sounds
+                viewIndex: uiState.modsView
+                onViewIndexChanged: uiState.modsView = viewIndex
                 onCrumbClicked: (depth) => root.crumbClicked(depth)
                 // Searches once the user pauses typing, rather than for every letter.
                 onSearchEdited: searchDelay.restart()
