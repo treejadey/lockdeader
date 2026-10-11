@@ -18,6 +18,7 @@ Popup {
     property var files: []
     property bool loading: false
     property string error: ""
+    property string errorDetail: ""
 
     property var selectedIds: []
     readonly property bool single: files.length === 1
@@ -495,7 +496,7 @@ Popup {
                     visible: running
                 }
 
-                Label {
+                ErrorLabel {
                     anchors {
                         left: parent.left
                         right: parent.right
@@ -505,9 +506,9 @@ Popup {
                     visible: !root.loading && root.files.length === 0
                     text: root.error !== "" ? qsTr("Couldn’t load the files: %1").arg(root.error)
                                             : qsTr("This mod has no files to install.")
+                    detail: root.errorDetail
                     color: root.error !== "" ? Theme.love : Theme.subtle
                     horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.Wrap
                 }
             }
 

@@ -138,7 +138,7 @@ func newCategoryBrowser(client *banana.Client, mods *modListModel, onChange func
 	}
 
 	b.Insert("tree", categoryList(nil))
-	b.setStatus(false, "")
+	b.setStatus(false, nil)
 	b.Insert("selected", qt.NewQVariant20(map[string]qt.QVariant{
 		"section": *qt.NewQVariant14(string(banana.SectionMods)),
 		"id":      *qt.NewQVariant4(0),
@@ -175,7 +175,7 @@ func (b *categoryBrowser) Load() {
 		return
 	}
 
-	b.setStatus(true, "")
+	b.setStatus(true, nil)
 
 	go func() {
 		categories, err := loadCategories(context.Background(), b.client)
@@ -183,19 +183,19 @@ func (b *categoryBrowser) Load() {
 		mainthread.Start(func() {
 			if err != nil {
 				slog.Error("failed to fetch categories", "err", err)
-				b.setStatus(false, err.Error())
+				b.setStatus(false, err)
 
 				return
 			}
 
-			b.setStatus(false, "")
+			b.setStatus(false, nil)
 			b.Insert("tree", categoryList(categories))
 		})
 	}()
 }
 
-func (b *categoryBrowser) setStatus(loading bool, err string) {
+func (b *categoryBrowser) setStatus(loading bool, err error) {
 	b.loading = loading
 	b.Insert("loading", qt.NewQVariant8(loading))
-	b.Insert("error", qt.NewQVariant14(err))
+	insertError(b.QQmlPropertyMap, err)
 }

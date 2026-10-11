@@ -238,14 +238,7 @@ func (m *modListModel) setLoading(loading bool) {
 
 func (m *modListModel) setError(err error) {
 	m.err = err
-
-	var msg string
-
-	if err != nil {
-		msg = err.Error()
-	}
-
-	m.state.Insert("error", qt.NewQVariant14(msg))
+	insertError(m.state, err)
 }
 
 func (m *modListModel) append(mods []banana.Mod) (added int) {

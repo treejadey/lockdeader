@@ -8,6 +8,7 @@ Item {
     readonly property alias count: grid.count
     property bool loading: false
     property string error: ""
+    property string errorDetail: ""
     property int cardSize: 150
     // The edges of the grid get at least half of it.
     property int cardSpacing: 12
@@ -65,6 +66,7 @@ Item {
             width: grid.width
             loading: root.loading && grid.count > 0
             error: grid.count > 0 ? root.error : ""
+            errorDetail: grid.count > 0 ? root.errorDetail : ""
             onRetry: root.retry()
         }
 

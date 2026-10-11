@@ -114,11 +114,13 @@ func (m *installedMods) configure(key string) {
 	}
 
 	m.configuring = key
-	m.publishConfiguration(row, "")
+	m.publishConfiguration(row, nil)
 	m.lookUp(row)
 }
 
-func (m *installedMods) publishConfiguration(row *installedRow, lookupErr string) {
+func (m *installedMods) publishConfiguration(row *installedRow, lookupErr error) {
+	message, detail := errorTexts(lookupErr)
+
 	var list []qt.QVariant
 
 	for _, o := range m.options(row) {
@@ -134,11 +136,12 @@ func (m *installedMods) publishConfiguration(row *installedRow, lookupErr string
 	}
 
 	m.Insert("configuration", qt.NewQVariant20(map[string]qt.QVariant{
-		"key":     *qt.NewQVariant14(row.key),
-		"name":    *qt.NewQVariant14(row.mod.Name),
-		"loading": *qt.NewQVariant8(m.lookingUp[row.key]),
-		"error":   *qt.NewQVariant14(lookupErr),
-		"options": *qt.NewQVariant43(list),
+		"key":         *qt.NewQVariant14(row.key),
+		"name":        *qt.NewQVariant14(row.mod.Name),
+		"loading":     *qt.NewQVariant8(m.lookingUp[row.key]),
+		"error":       *qt.NewQVariant14(message),
+		"errorDetail": *qt.NewQVariant14(detail),
+		"options":     *qt.NewQVariant43(list),
 	}))
 }
 
@@ -163,11 +166,9 @@ func (m *installedMods) lookUp(row *installedRow) {
 
 		mainthread.Start(func() {
 			delete(m.lookingUp, key)
-			errText := ""
 
 			if err != nil {
 				slog.Error("failed to look up a mod's files", "mod", key, "err", err)
-				errText = err.Error()
 			} else {
 				// Not nil, even with no files, so it isn't looked up again.
 				m.available[key] = append([]banana.File{}, p.Files...)
@@ -183,7 +184,7 @@ func (m *installedMods) lookUp(row *installedRow) {
 			}
 
 			if m.configuring == key {
-				m.publishConfiguration(row, errText)
+				m.publishConfiguration(row, err)
 			}
 		})
 	}()
@@ -241,7 +242,7 @@ func (m *installedMods) Configure(key string, ids []string) {
 		}
 
 		m.show(row)
-		m.publishConfiguration(row, "")
+		m.publishConfiguration(row, nil)
 
 		return
 	}

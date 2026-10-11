@@ -145,7 +145,7 @@ func (c *Client) open(ctx context.Context, hc *http.Client, url string) (io.Read
 	if resp.StatusCode != http.StatusOK {
 		resp.Body.Close()
 
-		return nil, 0, fmt.Errorf("banana: downloading %s: HTTP %d", url, resp.StatusCode)
+		return nil, 0, fmt.Errorf("banana: downloading %s: %w", url, &APIError{StatusCode: resp.StatusCode})
 	}
 
 	return resp.Body, resp.ContentLength, nil

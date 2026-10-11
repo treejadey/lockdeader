@@ -16,6 +16,7 @@ Item {
     readonly property alias count: list.count
     property bool loading: false
     property string error: ""
+    property string errorDetail: ""
     // 0 for none.
     property int selectedModId: 0
 
@@ -232,6 +233,7 @@ Item {
             width: list.width
             loading: root.loading && list.count > 0
             error: list.count > 0 ? root.error : ""
+            errorDetail: list.count > 0 ? root.errorDetail : ""
             onRetry: root.retry()
         }
 

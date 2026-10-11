@@ -4,7 +4,7 @@ import QtQuick.Controls.Fusion
 AppDialog {
     id: root
 
-    // As in installed.configuration: {key, name, loading, error, options},
+    // As in installed.configuration: {key, name, loading, error, errorDetail, options},
     // where options are {id, name, detail, size, added, picked, installed}
     // objects.
     property var configuration: ({})
@@ -322,12 +322,14 @@ AppDialog {
             visible: running
         }
 
-        Label {
+        ErrorLabel {
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width - (root.configuration.loading === true ? 26 : 0)
             text: root.configuration.loading === true ? qsTr("Looking for other versions on GameBanana…")
                 : qsTr("Couldn’t look for other versions: %1").arg(root.configuration.error)
+            detail: root.configuration.loading === true ? "" : root.configuration.errorDetail ?? ""
             color: root.configuration.loading === true ? Theme.subtle : Theme.love
+            wrapMode: Text.NoWrap
             elide: Text.ElideRight
         }
     }

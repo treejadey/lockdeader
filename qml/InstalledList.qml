@@ -56,6 +56,7 @@ Item {
             required property real progress
             required property string pace
             required property string error
+            required property string errorDetail
             required property int variants
 
             readonly property bool installing: status !== ""
@@ -119,6 +120,7 @@ Item {
                 progress: row.progress
                 pace: row.pace
                 error: row.error
+                errorDetail: row.errorDetail
             }
 
             Label {

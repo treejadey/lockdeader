@@ -52,6 +52,7 @@ Item {
             required property real progress
             required property string pace
             required property string error
+            required property string errorDetail
             required property int variants
 
             readonly property bool installing: status !== ""
@@ -106,6 +107,7 @@ Item {
                 progress: cell.progress
                 pace: cell.pace
                 error: cell.error
+                errorDetail: cell.errorDetail
             }
         }
 

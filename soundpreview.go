@@ -365,11 +365,5 @@ func (p *soundPreview) setPosition(position time.Duration) {
 }
 
 func (p *soundPreview) setError(err error) {
-	msg := ""
-
-	if err != nil {
-		msg = err.Error()
-	}
-
-	p.Insert("error", qt.NewQVariant14(msg))
+	insertError(p.QQmlPropertyMap, err)
 }

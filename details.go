@@ -128,7 +128,7 @@ func (d *modDetails) Select(id int) {
 	key := modKey{d.section(), id}
 	d.selected = key
 	d.Insert("id", qt.NewQVariant4(id))
-	d.setStatus(false, "")
+	d.setStatus(false, nil)
 
 	if id == 0 {
 		return
@@ -145,7 +145,7 @@ func (d *modDetails) Select(id int) {
 		return
 	}
 
-	d.setStatus(true, "")
+	d.setStatus(true, nil)
 
 	go func() {
 		p, err := d.client.GetModProfile(context.Background(), key.section, id)
@@ -161,12 +161,12 @@ func (d *modDetails) Select(id int) {
 
 			if err != nil {
 				slog.Error("failed to fetch mod profile", "section", key.section, "id", id, "err", err)
-				d.setStatus(false, err.Error())
+				d.setStatus(false, err)
 
 				return
 			}
 
-			d.setStatus(false, "")
+			d.setStatus(false, nil)
 			d.showProfile(p)
 		})
 	}()
@@ -206,9 +206,9 @@ func (d *modDetails) show(name string, author banana.Submitter, category string,
 	d.Insert("files", fileList(files))
 }
 
-func (d *modDetails) setStatus(loading bool, err string) {
+func (d *modDetails) setStatus(loading bool, err error) {
 	d.Insert("loading", qt.NewQVariant8(loading))
-	d.Insert("error", qt.NewQVariant14(err))
+	insertError(d.QQmlPropertyMap, err)
 }
 
 // GameBanana usually only has 100px variants for anything but the first

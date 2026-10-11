@@ -2,9 +2,9 @@ package banana
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 )
@@ -38,8 +38,10 @@ func TestDownload(t *testing.T) {
 	}
 
 	_, err = c.Download(context.Background(), c.BaseURL+"/missing.mp3")
-	if err == nil || !strings.Contains(err.Error(), "HTTP 404") {
-		t.Errorf("err = %v, want an HTTP 404 error", err)
+
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusNotFound {
+		t.Errorf("err = %v, want an *APIError with HTTP 404", err)
 	}
 }
 
@@ -88,7 +90,10 @@ func TestOpenDownload(t *testing.T) {
 		t.Errorf("slow download: got %q, %v; want \"slowly\"", data, err)
 	}
 
-	if _, _, err := c.OpenDownload(context.Background(), c.BaseURL+"/missing.zip"); err == nil || !strings.Contains(err.Error(), "HTTP 404") {
-		t.Errorf("err = %v, want an HTTP 404 error", err)
+	_, _, err = c.OpenDownload(context.Background(), c.BaseURL+"/missing.zip")
+
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusNotFound {
+		t.Errorf("err = %v, want an *APIError with HTTP 404", err)
 	}
 }

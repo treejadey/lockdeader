@@ -175,11 +175,11 @@ Item {
                     spacing: 8
                     visible: levelItem.category === null && categories.error !== ""
 
-                    Label {
+                    ErrorLabel {
                         Layout.fillWidth: true
-                        text: qsTr("Couldn’t load categories")
+                        text: qsTr("Couldn’t load categories\n%1").arg(categories.error)
+                        detail: categories.errorDetail
                         color: Theme.subtle
-                        wrapMode: Text.Wrap
                     }
 
                     Button {

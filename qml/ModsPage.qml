@@ -78,6 +78,7 @@ Item {
                     model: root.listed ? null : mods
                     loading: app.loading
                     error: app.error
+                    errorDetail: app.errorDetail
                     selectedModId: details.id
                     onRetry: retryAction.trigger()
                     onModClicked: (modId) => root.toggleMod(modId)
@@ -92,6 +93,7 @@ Item {
                     sounds: root.sounds
                     loading: app.loading
                     error: app.error
+                    errorDetail: app.errorDetail
                     selectedModId: details.id
                     onRetry: retryAction.trigger()
                     onModClicked: (modId) => root.toggleMod(modId)
@@ -115,11 +117,11 @@ Item {
                     spacing: 12
                     visible: app.error !== "" && root.count === 0
 
-                    Label {
+                    ErrorLabel {
                         width: Math.min(implicitWidth, root.width - 32)
-                        text: qsTr("Couldn’t load mods:\n%1").arg(app.error)
+                        text: qsTr("Couldn’t load mods\n%1").arg(app.error)
+                        detail: app.errorDetail
                         horizontalAlignment: Text.AlignHCenter
-                        wrapMode: Text.Wrap
                     }
 
                     Button {
@@ -150,6 +152,7 @@ Item {
             description: details.description
             loading: details.loading
             error: details.error
+            errorDetail: details.errorDetail
             // The sound's row still has its player.
             pauseOnClose: !root.sounds
             onImageClicked: (index) => viewer.show(details.images, index)
@@ -166,6 +169,7 @@ Item {
         files: details.files
         loading: details.loading
         error: details.error
+        errorDetail: details.errorDetail
         onInstallRequested: (fileIds) => {
             details.install = fileIds
             close()

@@ -14,7 +14,6 @@ import "C"
 
 import (
 	"errors"
-	"fmt"
 	"time"
 	"unsafe"
 )
@@ -39,7 +38,7 @@ func NewEngineWithoutDevice() (*Engine, error) {
 func newEngine(noDevice bool) (*Engine, error) {
 	var e *C.ld_engine
 
-	if err := check("opening the output device", C.ld_engine_new(cBool(noDevice), &e)); err != nil {
+	if err := check("opening the output device", ErrDevice, C.ld_engine_new(cBool(noDevice), &e)); err != nil {
 		return nil, err
 	}
 
@@ -57,7 +56,7 @@ func (e *Engine) Start() error {
 		return nil
 	}
 
-	return check("starting the output device", C.ld_engine_start(e.e))
+	return check("starting the output device", ErrDevice, C.ld_engine_start(e.e))
 }
 
 // Stopping the device also stops time for every sound. Without a device, it
@@ -67,18 +66,18 @@ func (e *Engine) Stop() error {
 		return nil
 	}
 
-	return check("stopping the output device", C.ld_engine_stop(e.e))
+	return check("stopping the output device", ErrDevice, C.ld_engine_stop(e.e))
 }
 
 // Mixes frames stereo frames at 48 kHz, advancing every playing sound. Only
 // for engines without a device.
 func (e *Engine) Read(frames int) ([]float32, error) {
 	if !e.noDevice {
-		return nil, errors.New("audio: mixing: the engine has a device")
+		return nil, &Error{Op: "mixing", Kind: ErrDevice, Reason: "the engine has a device"}
 	}
 
 	out := make([]float32, frames*2)
-	err := check("mixing", C.ld_engine_read(e.e, (*C.float)(&out[0]), C.ulonglong(frames)))
+	err := check("mixing", ErrDevice, C.ld_engine_read(e.e, (*C.float)(&out[0]), C.ulonglong(frames)))
 
 	return out, err
 }
@@ -87,12 +86,12 @@ func (e *Engine) Read(frames int) ([]float32, error) {
 // out paused at its beginning.
 func (e *Engine) Load(data []byte) (*Sound, error) {
 	if len(data) == 0 {
-		return nil, errors.New("audio: decoding: no data")
+		return nil, &Error{Op: "decoding", Kind: ErrDecode, Reason: "no data"}
 	}
 
 	var s *C.ld_sound
 
-	if err := check("decoding", C.ld_sound_new(e.e, unsafe.Pointer(&data[0]), C.size_t(len(data)), &s)); err != nil {
+	if err := check("decoding", ErrDecode, C.ld_sound_new(e.e, unsafe.Pointer(&data[0]), C.size_t(len(data)), &s)); err != nil {
 		return nil, err
 	}
 
@@ -110,16 +109,16 @@ func (s *Sound) Close() {
 
 // Plays from the sound's position, and stops by itself at the end.
 func (s *Sound) Play() error {
-	return check("playing", C.ld_sound_play(s.s))
+	return check("playing", ErrDevice, C.ld_sound_play(s.s))
 }
 
 // Keeps the sound's position.
 func (s *Sound) Pause() error {
-	return check("pausing", C.ld_sound_pause(s.s))
+	return check("pausing", ErrDevice, C.ld_sound_pause(s.s))
 }
 
 func (s *Sound) Seek(position time.Duration) error {
-	return check("seeking", C.ld_sound_seek(s.s, C.double(position.Seconds())))
+	return check("seeking", ErrDecode, C.ld_sound_seek(s.s, C.double(position.Seconds())))
 }
 
 func (s *Sound) Position() time.Duration {
@@ -139,12 +138,32 @@ func (s *Sound) SetVolume(volume float32) {
 	C.ld_sound_set_volume(s.s, C.float(volume))
 }
 
-func check(op string, result C.int) error {
+// What went wrong, for errors.Is: the sound output, or the sound itself.
+var (
+	ErrDevice = errors.New("audio: sound output failed")
+	ErrDecode = errors.New("audio: the sound can't be decoded")
+)
+
+type Error struct {
+	Op     string // e.g. "decoding"
+	Kind   error  // ErrDevice or ErrDecode
+	Reason string
+}
+
+func (e *Error) Error() string {
+	return "audio: " + e.Op + ": " + e.Reason
+}
+
+func (e *Error) Unwrap() error {
+	return e.Kind
+}
+
+func check(op string, kind error, result C.int) error {
 	if result == 0 {
 		return nil
 	}
 
-	return fmt.Errorf("audio: %s: %s", op, C.GoString(C.ld_result_string(result)))
+	return &Error{Op: op, Kind: kind, Reason: C.GoString(C.ld_result_string(result))}
 }
 
 func cBool(b bool) C.int {

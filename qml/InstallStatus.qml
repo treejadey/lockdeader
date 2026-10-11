@@ -12,6 +12,7 @@ Item {
     // "slow", "normal" or "fast".
     property string pace: "normal"
     property string error
+    property string errorDetail
     property bool labelBeside: false
     property alias trackColor: bar.trackColor
 
@@ -74,7 +75,7 @@ Item {
         ToolTip {
             visible: errorHover.hovered && root.error !== ""
             delay: 500
-            text: root.error
+            text: root.errorDetail !== "" ? root.error + "\n\n" + root.errorDetail : root.error
             width: Math.min(implicitWidth, 360)
         }
     }

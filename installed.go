@@ -32,23 +32,25 @@ const (
 	roleInstalledProgress
 	roleInstalledPace
 	roleInstalledError
+	roleInstalledErrorDetail
 	roleInstalledVariants
 )
 
 var installedRoleNames = map[int][]byte{
-	roleInstalledKey:       []byte("key"),
-	roleInstalledModID:     []byte("modId"),
-	roleInstalledName:      []byte("name"),
-	roleInstalledAuthor:    []byte("author"),
-	roleInstalledThumbnail: []byte("thumbnail"),
-	roleInstalledUpdated:   []byte("updated"),
-	roleInstalledNSFW:      []byte("nsfw"),
-	roleInstalledEnabled:   []byte("modEnabled"),
-	roleInstalledStatus:    []byte("status"),
-	roleInstalledProgress:  []byte("progress"),
-	roleInstalledPace:      []byte("pace"),
-	roleInstalledError:     []byte("error"),
-	roleInstalledVariants:  []byte("variants"),
+	roleInstalledKey:         []byte("key"),
+	roleInstalledModID:       []byte("modId"),
+	roleInstalledName:        []byte("name"),
+	roleInstalledAuthor:      []byte("author"),
+	roleInstalledThumbnail:   []byte("thumbnail"),
+	roleInstalledUpdated:     []byte("updated"),
+	roleInstalledNSFW:        []byte("nsfw"),
+	roleInstalledEnabled:     []byte("modEnabled"),
+	roleInstalledStatus:      []byte("status"),
+	roleInstalledProgress:    []byte("progress"),
+	roleInstalledPace:        []byte("pace"),
+	roleInstalledError:       []byte("error"),
+	roleInstalledErrorDetail: []byte("errorDetail"),
+	roleInstalledVariants:    []byte("variants"),
 }
 
 // The "status" role.
@@ -418,7 +420,9 @@ func (m *installedMods) finish(row *installedRow, job *installJob, files []appdb
 
 		job.failed = true
 		row.item.SetData(qt.NewQVariant14(statusFailed), roleInstalledStatus)
-		row.item.SetData(qt.NewQVariant14(err.Error()), roleInstalledError)
+		message, detail := errorTexts(err)
+		row.item.SetData(qt.NewQVariant14(message), roleInstalledError)
+		row.item.SetData(qt.NewQVariant14(detail), roleInstalledErrorDetail)
 
 		if m.onFailed != nil {
 			m.onFailed(job.info.name)
@@ -733,6 +737,7 @@ func (m *installedMods) show(row *installedRow) {
 	item.SetData(qt.NewQVariant9(0), roleInstalledProgress)
 	item.SetData(qt.NewQVariant14(install.PaceNormal.String()), roleInstalledPace)
 	item.SetData(qt.NewQVariant14(""), roleInstalledError)
+	item.SetData(qt.NewQVariant14(""), roleInstalledErrorDetail)
 }
 
 func (m *installedMods) showStatus(row *installedRow, s install.Status) {

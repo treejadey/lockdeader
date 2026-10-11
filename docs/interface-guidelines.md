@@ -216,6 +216,5 @@ Windows matters as much as Linux, so each of these needs both.
 
 ## Where the app doesn't follow these yet
 
-- Errors from Go (GameBanana, downloads, sounds) are shown as Go wrote them, after a plain "Couldn’t …" line. They should be turned into plain words with a next step, and the raw error logged.
 - The app doesn't remember the page, category, view or scroll position between launches.
 - There's no `.desktop` file or Windows installer yet.

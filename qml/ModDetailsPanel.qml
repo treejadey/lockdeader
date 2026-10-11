@@ -23,6 +23,7 @@ Rectangle {
     property string description
     property bool loading: false
     property string error: ""
+    property string errorDetail: ""
     // Not needed where the sound's player stays on screen elsewhere, e.g. in
     // the list of sounds.
     property bool pauseOnClose: true
@@ -292,12 +293,11 @@ Rectangle {
                             running: root.loading && root.description === ""
                         }
 
-                        Label {
+                        ErrorLabel {
                             width: parent.width
                             visible: root.error !== ""
                             text: qsTr("Couldn’t load the description: %1").arg(root.error)
-                            color: Theme.love
-                            wrapMode: Text.Wrap
+                            detail: root.errorDetail
                         }
 
                         Label {

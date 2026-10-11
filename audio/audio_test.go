@@ -1,6 +1,7 @@
 package audio
 
 import (
+	"errors"
 	"math"
 	"os"
 	"testing"
@@ -171,9 +172,16 @@ func TestLoadInvalid(t *testing.T) {
 		"empty":   nil,
 		"garbage": []byte("<html>not a sound</html>"),
 	} {
-		if s, err := e.Load(data); err == nil {
+		s, err := e.Load(data)
+		if err == nil {
 			s.Close()
 			t.Errorf("Load(%s) succeeded, want an error", name)
+
+			continue
+		}
+
+		if !errors.Is(err, ErrDecode) {
+			t.Errorf("Load(%s) = %v, want ErrDecode", name, err)
 		}
 	}
 }

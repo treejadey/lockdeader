@@ -150,6 +150,19 @@ Rectangle {
             : root.formatTime(root.progress * root.duration) + "/"
               + (root.duration > 0 ? root.formatTime(root.duration) : "-:--")
         color: root.failed ? Theme.love : root.playing ? Theme.foam : Theme.subtle
+
+        HoverHandler {
+            id: timeHover
+
+            enabled: root.failed
+        }
+
+        ToolTip {
+            visible: timeHover.hovered
+            delay: 500
+            width: Math.min(implicitWidth, 360)
+            text: soundPreview.error + "\n\n" + soundPreview.errorDetail
+        }
     }
 
     // The whole height of the player responds to the pointer, not just the

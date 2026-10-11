@@ -6,6 +6,7 @@ Item {
 
     property bool loading: false
     property string error: ""
+    property string errorDetail: ""
 
     signal retry()
 
@@ -23,10 +24,12 @@ Item {
         spacing: 12
         visible: root.error !== ""
 
-        Label {
+        ErrorLabel {
             anchors.verticalCenter: parent.verticalCenter
             width: Math.min(implicitWidth, root.width - retryButton.width - parent.spacing - 32)
             text: qsTr("Couldn’t load more mods: %1").arg(root.error)
+            detail: root.errorDetail
+            wrapMode: Text.NoWrap
             elide: Text.ElideRight
         }
 
