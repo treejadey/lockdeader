@@ -43,7 +43,7 @@ AbstractButton {
         radius: 6
         color: root.active ? Theme.highlightMed
              : root.down ? Theme.highlightLow
-             : root.hovered ? Qt.lighter(Theme.overlay, 1.25)
+             : root.hovered ? Theme.lift(Theme.overlay, 0.25)
              : Theme.overlay
         border.width: root.visualFocus ? 1 : 0
         border.color: Theme.iris
@@ -60,7 +60,7 @@ AbstractButton {
     contentItem: RowLayout {
         spacing: 8
 
-        Image {
+        TintedIcon {
             Layout.preferredWidth: 20
             Layout.preferredHeight: 20
             visible: root.icon.source.toString() !== ""
@@ -69,7 +69,6 @@ AbstractButton {
             source: root.active
                 ? root.icon.source.toString().replace("_regular.svg", "_filled.svg")
                 : root.icon.source
-            sourceSize: Qt.size(width, height)
             opacity: root.active || root.hovered ? 1 : 0.6
 
             Behavior on opacity {
@@ -175,12 +174,11 @@ AbstractButton {
             }
         }
 
-        Image {
+        TintedIcon {
             Layout.preferredWidth: 16
             Layout.preferredHeight: 16
             visible: root.chevron
             source: "icons/chevron_right_24_regular.svg"
-            sourceSize: Qt.size(width, height)
             opacity: root.hovered ? 1 : 0.6
 
             Behavior on opacity {

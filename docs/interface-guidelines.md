@@ -209,6 +209,8 @@ If a design doesn't fit these guidelines, decide whether it's a real exception, 
 
 Windows matters as much as Linux, so each of these needs both.
 
+- **Light and dark:** the app follows the system's preference for a light or dark style, and switches as soon as it changes, as elementary's [Color Scheme](https://docs.elementary.io/develop/apis/color-scheme) docs ask of apps that work in both. There's no setting for it in the app. The light style is Rosé Pine Dawn; the dark one, Rosé Pine.
+
 - **Linux:** the `.desktop` file:
   - `Name` is just "Lockdeader".
   - `Comment` starts with a verb, is in sentence case and has no full stop: "Install and manage Deadlock mods".

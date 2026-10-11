@@ -16,7 +16,7 @@ Rectangle {
     implicitHeight: 36
     topLeftRadius: 4
     topRightRadius: 4
-    color: hover.hovered && !input.activeFocus ? Qt.lighter(Theme.highlightLow, 1.15) : Theme.highlightLow
+    color: hover.hovered && !input.activeFocus ? Theme.lift(Theme.field, 0.15) : Theme.field
 
     Behavior on color {
         ColorAnimation {

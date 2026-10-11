@@ -136,8 +136,8 @@ Item {
             ActionButton {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: qsTr("Browse Mods")
-                baseColor: Theme.foam
-                textColor: Theme.base
+                baseColor: Theme.accent
+                textColor: Theme.onAccent
                 onClicked: root.browseModsRequested()
             }
         }

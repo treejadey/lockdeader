@@ -139,7 +139,7 @@ Rectangle {
                         Label {
                             width: parent.width
                             text: root.name
-                            color: "white"
+                            color: Theme.onPicture
                             font.pixelSize: 20
                             font.weight: Font.Medium
                             wrapMode: Text.Wrap
@@ -151,7 +151,7 @@ Rectangle {
                             // Only as wide as the name, so only the name is a link.
                             width: Math.min(implicitWidth, parent.width)
                             text: root.author
-                            color: authorArea.containsMouse ? Qt.lighter(Theme.gold, 1.15) : Theme.gold
+                            color: authorArea.containsMouse ? Theme.lift(Theme.gold, 0.15) : Theme.gold
                             font.pixelSize: 14
                             font.weight: Font.Medium
                             font.underline: root.authorUrl !== ""
@@ -343,12 +343,11 @@ Rectangle {
         width: parent.width - 48
         spacing: 12
 
-        Image {
+        TintedIcon {
             anchors.horizontalCenter: parent.horizontalCenter
             width: 40
             height: 40
             source: "icons/cursor_click_24_regular.svg"
-            sourceSize: Qt.size(width, height)
             opacity: 0.5
         }
 

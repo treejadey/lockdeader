@@ -21,6 +21,9 @@ MenuItem {
 
     icon.width: 18
     icon.height: 18
+    // Qt colours a one-colour icon to match. The SVGs' own fill is only right
+    // for the dark style.
+    icon.color: Theme.text
 
     background: Rectangle {
         radius: 8

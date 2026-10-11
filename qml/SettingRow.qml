@@ -28,7 +28,7 @@ Rectangle {
     width: parent ? parent.width : implicitWidth
     implicitHeight: Math.max(44, labels.implicitHeight + 20, slot.childrenRect.height + 16)
     radius: 6
-    color: root.interactive && hover.hovered ? Qt.lighter(Theme.overlay, 1.15) : Theme.overlay
+    color: root.interactive && hover.hovered ? Theme.lift(Theme.overlay, 0.15) : Theme.overlay
 
     Behavior on color {
         ColorAnimation {

@@ -50,7 +50,7 @@ AbstractButton {
         // the disabled look's.
         color: !root.enabled ? Qt.rgba(root.baseColor.r, root.baseColor.g, root.baseColor.b, 0)
              : root.down ? Qt.darker(root.baseColor, 1.15)
-             : root.hovered ? Qt.lighter(root.baseColor, 1.25)
+             : root.hovered ? Theme.lift(root.baseColor, 0.25)
              : root.baseColor
         // Follows color, so it lightens and darkens with hovering and pressing.
         gradient: root.sheen && root.enabled ? sheenGradient : null
@@ -62,7 +62,8 @@ AbstractButton {
 
             GradientStop {
                 position: 0
-                color: Qt.tint(background.color, Qt.rgba(1, 1, 1, 0.45))
+                // Less in the light style, where it's closer to white already.
+                color: Qt.tint(background.color, Qt.rgba(1, 1, 1, Theme.dark ? 0.45 : 0.3))
             }
 
             GradientStop {
@@ -112,14 +113,13 @@ AbstractButton {
                 }
             }
 
-            Image {
+            TintedIcon {
                 anchors.verticalCenter: parent.verticalCenter
                 width: root.icon.width
                 height: root.icon.height
                 visible: root.icon.source.toString() !== ""
                 source: root.icon.source
-                sourceSize: Qt.size(width, height)
-                opacity: root.enabled ? 1 : 0.4
+                color: root.enabled ? root.textColor : Theme.disabledText
             }
         }
     }

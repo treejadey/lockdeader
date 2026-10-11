@@ -105,7 +105,7 @@ Item {
             height: 44
             radius: 6
             color: selected ? Theme.highlightMed
-                 : rowArea.containsMouse ? Qt.lighter(Theme.overlay, 1.15)
+                 : rowArea.containsMouse ? Theme.lift(Theme.overlay, 0.15)
                  : Theme.overlay
             // Marks the sound that's open in the details panel, like the cards.
             border.width: selected ? 1 : 0
@@ -239,12 +239,11 @@ Item {
                 width: 116
                 spacing: 4
 
-                Image {
+                TintedIcon {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 14
                     height: 14
                     source: "icons/calendar_ltr_24_regular.svg"
-                    sourceSize: Qt.size(width, height)
                     opacity: 0.6
                 }
 

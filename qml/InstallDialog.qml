@@ -264,8 +264,8 @@ Popup {
                     width: Math.max(implicitWidth, 180)
                     implicitHeight: 42
                     text: root.single ? qsTr("Install") : qsTr("Install Selected")
-                    baseColor: Theme.foam
-                    textColor: Theme.base
+                    baseColor: Theme.accent
+                    textColor: Theme.onAccent
                     enabled: root.selectedIds.length > 0
                     onClicked: root.installRequested(root.selectedIds)
                 }
@@ -310,9 +310,8 @@ Popup {
                 }
             }
 
-            contentItem: Image {
+            contentItem: TintedIcon {
                 source: "icons/dismiss_24_regular.svg"
-                sourceSize: Qt.size(width, height)
                 opacity: closeButton.hovered ? 1 : 0.7
             }
         }

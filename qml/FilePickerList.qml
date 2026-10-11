@@ -76,7 +76,7 @@ Rectangle {
                 // around the disabled look's.
                 color: file.locked ? "transparent"
                      : file.picked ? Theme.highlightMed
-                     : file.hovered ? Qt.lighter(Theme.overlay, 1.25)
+                     : file.hovered ? Theme.lift(Theme.overlay, 0.25)
                      : "transparent"
                 border.width: file.visualFocus ? 1 : 0
                 border.color: Theme.iris
@@ -104,10 +104,9 @@ Rectangle {
                     width: 22
                     height: 22
 
-                    Image {
+                    TintedIcon {
                         anchors.fill: parent
                         source: "icons/folder_zip_24_regular.svg"
-                        sourceSize: Qt.size(width, height)
                         opacity: file.picked ? 0 : 0.8
 
                         Behavior on opacity {
@@ -191,12 +190,11 @@ Rectangle {
                     }
                     spacing: 4
 
-                    Image {
+                    TintedIcon {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 14
                         height: 14
                         source: "icons/calendar_ltr_24_regular.svg"
-                        sourceSize: Qt.size(width, height)
                         opacity: 0.6
                     }
 

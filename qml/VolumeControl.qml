@@ -84,15 +84,13 @@ Rectangle {
             }
         }
 
-        contentItem: Image {
+        contentItem: TintedIcon {
             readonly property string icon: root.level === 0 ? "speaker_mute"
                 : root.level < 0.34 ? "speaker_0"
                 : root.level < 0.67 ? "speaker_1"
                 : "speaker_2"
 
             source: "icons/" + icon + (sliderArea.pressed ? "_24_filled.svg" : "_24_regular.svg")
-            sourceSize: Qt.size(width, height)
-            fillMode: Image.PreserveAspectFit
             opacity: speaker.hovered || sliderArea.pressed ? 1 : 0.6
         }
     }

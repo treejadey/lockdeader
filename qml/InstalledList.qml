@@ -76,7 +76,7 @@ Item {
             width: ListView.view.width
             height: 44
             radius: 6
-            color: rowArea.containsMouse && !installing ? Qt.lighter(Theme.overlay, 1.15) : Theme.overlay
+            color: rowArea.containsMouse && !installing ? Theme.lift(Theme.overlay, 0.15) : Theme.overlay
 
             Behavior on color {
                 ColorAnimation {
@@ -176,12 +176,11 @@ Item {
                 width: 116
                 spacing: 4
 
-                Image {
+                TintedIcon {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 14
                     height: 14
                     source: "icons/calendar_ltr_24_regular.svg"
-                    sourceSize: Qt.size(width, height)
                     opacity: 0.6
                 }
 

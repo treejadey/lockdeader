@@ -162,11 +162,9 @@ Rectangle {
                         }
                     }
 
-                    Image {
+                    TintedIcon {
                         anchors.fill: parent
                         source: option.modelData.icon
-                        sourceSize: Qt.size(width, height)
-                        fillMode: Image.PreserveAspectFit
                         opacity: option.picked ? 0 : option.hovered ? 1 : 0.6
 
                         Behavior on opacity {
@@ -178,11 +176,9 @@ Rectangle {
                         }
                     }
 
-                    Image {
+                    TintedIcon {
                         anchors.fill: parent
                         source: option.modelData.icon.replace("_regular.svg", "_filled.svg")
-                        sourceSize: Qt.size(width, height)
-                        fillMode: Image.PreserveAspectFit
                         opacity: option.picked ? 1 : 0
 
                         Behavior on opacity {

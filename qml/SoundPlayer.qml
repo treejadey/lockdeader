@@ -127,10 +127,8 @@ Rectangle {
         }
 
         // The pause icon is foam-coloured itself, to match the playing bar.
-        contentItem: Image {
+        contentItem: TintedIcon {
             source: root.playing ? "icons/pause_24_filled.svg" : "icons/play_24_regular.svg"
-            sourceSize: Qt.size(width, height)
-            fillMode: Image.PreserveAspectFit
             opacity: root.playing || playButton.hovered ? 1 : 0.6
         }
     }
@@ -516,15 +514,13 @@ Rectangle {
             }
         }
 
-        contentItem: Image {
+        contentItem: TintedIcon {
             readonly property string speaker: volumeButton.level === 0 ? "speaker_mute"
                 : volumeButton.level < 0.34 ? "speaker_0"
                 : volumeButton.level < 0.67 ? "speaker_1"
                 : "speaker_2"
 
             source: "icons/" + speaker + (volumeSlider.shown ? "_24_filled.svg" : "_24_regular.svg")
-            sourceSize: Qt.size(width, height)
-            fillMode: Image.PreserveAspectFit
             opacity: volumeButton.hovered || volumeSlider.shown ? 1 : 0.6
         }
     }

@@ -123,13 +123,17 @@ Applies to Go, QML (including its JavaScript), C and C++.
 - All QML lives in `qml/`. New components must be registered in `qml/qmldir`; singletons are declared there with `singleton`. Windows (`Main.qml`, `RestoreDialog.qml`) are loaded by path instead, and are `AppWindow`s, which carry the theme's palette.
 - Import `QtQuick.Controls.Fusion`, never plain `QtQuick.Controls`; otherwise KDE Plasma substitutes its own style and ignores the app theme.
 - Don't name a component after a Qt Quick Controls type (e.g. Qt 6.10's `SearchField`): the control wins over the file in `qml/`. Hence `SearchBox`.
-- Colours come from the `Theme` singleton (the Rosé Pine palette). Animation durations and easing curves come from the `Motion` singleton (IBM Carbon motion tokens, productive and expressive). Don't hard-code either.
+- Colours come from the `Theme` singleton: Rosé Pine while the system prefers a dark style, Rosé Pine Dawn otherwise, as elementary OS asks of apps that work in both. It follows the system's preference (`Application.styleHints.colorScheme`) and changes along with it; with no preference, it's light. Anything new has to work in both:
+  - pick colours by role rather than for how they look in one style: `accent`/`onAccent` for the main action (foam in dark, pine in light), `field` behind text being typed, `onPicture` for text and icons over pictures;
+  - for hovering, use `Theme.lift()` rather than `Qt.lighter`, which barely shows in the light style.
+- Animation durations and easing curves come from the `Motion` singleton (IBM Carbon motion tokens, productive and expressive). Don't hard-code either.
 - Fonts are bundled in `fonts/` (see `fonts/README.md`): Inter for all UI text, JetBrains Mono for monospace. `fonts.go` embeds and loads them.
   - **Inter:** set as the app's default font, at the platform's UI font size. The bundled files have the `ss04` stylistic set (a tailed l, a serifed I) built in, and are renamed `Inter SS04` so an installed Inter never stands in for them.
   - **Monospace in QML:** use `font.family: app.monospaceFont`; never rely on the system's monospace font.
   - **Monospace in descriptions:** `codeStyle()` sets `<code>`/`<pre>` in rich text descriptions to JetBrains Mono.
   - **Explicit `font.pixelSize` values** are chosen for Inter.
 - Icons are Microsoft Fluent UI System Icons SVGs in `qml/icons/`. Add new icons from that set, keeping the original path data and setting the fill colour on the `<svg>` element; don't draw your own.
+  - That fill is the dark style's text colour, so on the app's own surfaces draw icons with `TintedIcon` (which defaults to `Theme.text`), or `icon.color` on a Qt Quick Controls item such as a menu item. A plain `Image` is only for icons over pictures, which stay light.
 - `qml/icons/bitmap/` holds the app's own pictures, which aren't icons, e.g. `sound_icon.png`, shown on the card of a sound, which has no picture on GameBanana. Don't put GameBanana's own artwork in the app: it's theirs to distribute.
 - Icons are outlined (`*_24_regular.svg`) while their element is inactive, and switch to the filled version (`*_24_filled.svg`) while it's active. Examples:
   - the current page in the sidebar (`SidebarItem` swaps `_regular` for `_filled` itself, so both files must exist);

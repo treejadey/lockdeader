@@ -116,7 +116,7 @@ AppWindow {
                     background: Rectangle {
                         radius: 6
                         color: backup.selected ? Theme.highlightMed
-                             : backup.hovered ? Qt.lighter(Theme.overlay, 1.25)
+                             : backup.hovered ? Theme.lift(Theme.overlay, 0.25)
                              : Theme.overlay
                         border.width: backup.visualFocus ? 1 : 0
                         border.color: Theme.iris

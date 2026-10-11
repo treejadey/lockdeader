@@ -47,8 +47,8 @@ AbstractButton {
             // bright images as well as dark rows.
             // Clear while disabled, so its antialiased edge doesn't show
             // around the disabled look's.
-            color: !root.enabled ? Qt.rgba(Theme.foam.r, Theme.foam.g, Theme.foam.b, 0)
-                 : root.checked ? (root.lit ? Qt.lighter(Theme.foam, 1.08) : Theme.foam)
+            color: !root.enabled ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0)
+                 : root.checked ? (root.lit ? Theme.lift(Theme.accent, 0.08) : Theme.accent)
                  : Qt.rgba(Theme.base.r, Theme.base.g, Theme.base.b, root.lit ? 0.7 : 0.55)
             border.width: root.checked || !root.enabled ? 0 : 1.5
             border.color: root.lit ? Theme.text : Theme.subtle
@@ -90,7 +90,7 @@ AbstractButton {
             height: width
             source: "icons/checkmark_24_filled.svg"
             // Kept while disabled, so it still shows what it will be.
-            color: root.enabled ? Theme.base : Theme.highlightMed
+            color: root.enabled ? Theme.onAccent : Theme.highlightMed
             opacity: grown > 0 ? 1 : 0
             // Grows from the corner of the tick, as Carbon's does.
             transform: Scale {

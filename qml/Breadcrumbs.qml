@@ -71,13 +71,12 @@ Item {
 
                 spacing: root.spacing
 
-                Image {
+                TintedIcon {
                     anchors.verticalCenter: parent.verticalCenter
                     width: root.arrowSize
                     height: root.arrowSize
                     visible: crumb.index > 0
                     source: "icons/chevron_right_24_regular.svg"
-                    sourceSize: Qt.size(width, height)
                     opacity: 0.35
                 }
 

@@ -100,8 +100,8 @@ Rectangle {
 
             implicitHeight: 38
             text: qsTr("Play With Mods")
-            baseColor: Theme.foam
-            textColor: Theme.base
+            baseColor: Theme.accent
+            textColor: Theme.onAccent
             sheen: true
             // Disabled rather than hidden, so it's clear there's a way to
             // play with mods once some are installed.

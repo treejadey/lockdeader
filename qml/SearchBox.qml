@@ -16,7 +16,7 @@ Rectangle {
     implicitHeight: 36
     topLeftRadius: 4
     topRightRadius: 4
-    color: hover.hovered && !input.activeFocus ? Qt.lighter(Theme.overlay, 1.15) : Theme.overlay
+    color: hover.hovered && !input.activeFocus ? Theme.lift(Theme.overlay, 0.15) : Theme.overlay
 
     Behavior on color {
         ColorAnimation {
@@ -99,10 +99,8 @@ Rectangle {
             }
         }
 
-        contentItem: Image {
+        contentItem: TintedIcon {
             source: "icons/search_24_regular.svg"
-            sourceSize: Qt.size(width, height)
-            fillMode: Image.PreserveAspectFit
             opacity: searchButton.hovered ? 1 : 0.6
 
             Behavior on opacity {
