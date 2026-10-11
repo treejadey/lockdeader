@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls.Fusion
+import QtQuick.Dialogs
 
 // The sidebar lists the sections (see SettingsNav): currentSection is the one
 // being read, and goToSection() scrolls to one.
@@ -61,7 +62,14 @@ Item {
 
     // Once laid out, so the page is as tall as it will be.
     Component.onCompleted: Qt.callLater(restoreScroll)
-    onVisibleChanged: Qt.callLater(restoreScroll)
+
+    onVisibleChanged: {
+        Qt.callLater(restoreScroll)
+
+        // Deadlock may have been installed since the app started.
+        if (visible && settings.gameFolder === "")
+            settings.findGame = true
+    }
 
     function sectionTop(section) {
         return sections.y + section.y
@@ -152,6 +160,51 @@ Item {
             spacing: 32
 
             SettingsSection {
+                id: gameSection
+
+                width: parent.width
+                title: qsTr("Game")
+                query: root.query
+
+                SettingRow {
+                    text: qsTr("Deadlock folder")
+                    description: settings.gameFolder !== "" ? settings.gameFolder
+                        : qsTr("Not found in Steam’s libraries. Choose the folder Steam installed it in.")
+                    monospaceDescription: settings.gameFolder !== ""
+                    error: settings.gameFolderError
+                    keywords: qsTr("game location install path directory steam library")
+
+                    Row {
+                        spacing: 6
+
+                        ActionButton {
+                            visible: settings.gameFolder !== ""
+                            text: qsTr("Open Folder")
+                            baseColor: Theme.highlightMed
+                            onClicked: Qt.openUrlExternally(settings.gameFolderUrl)
+                        }
+
+                        ActionButton {
+                            text: settings.gameFolder !== "" ? qsTr("Change…") : qsTr("Choose…")
+                            baseColor: Theme.highlightMed
+                            onClicked: gameFolderDialog.open()
+                        }
+                    }
+                }
+
+                SettingRow {
+                    text: qsTr("Launch options")
+                    description: qsTr("Added to the game’s command line when Lockdeader starts it")
+                    keywords: qsTr("command line arguments parameters flags startup")
+
+                    TextBox {
+                        text: settings.launchOptions
+                        onTextEdited: settings.launchOptions = text
+                    }
+                }
+            }
+
+            SettingsSection {
                 id: modViewer
 
                 width: parent.width
@@ -217,5 +270,15 @@ Item {
         visible: !root.anyMatches
         text: qsTr("No Settings Found")
         color: Theme.subtle
+    }
+
+    // Starts in the folder Deadlock has, if any. Go checks the folder picked:
+    // one that isn't Deadlock's is turned down, with gameFolderError.
+    FolderDialog {
+        id: gameFolderDialog
+
+        title: qsTr("Choose Deadlock’s Folder")
+        currentFolder: settings.gameFolderUrl
+        onAccepted: settings.chooseGameFolder = selectedFolder.toString()
     }
 }

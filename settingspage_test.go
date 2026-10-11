@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -18,8 +20,8 @@ import (
 func TestSettingsPageShowNSFW(t *testing.T) {
 	mainthread.Wait(func() {
 		var changes []bool
-		p := newSettingsPage(appdata.BrowseSettings{ShowNSFW: true}, "/data/Lockdeader",
-			func(show bool) { changes = append(changes, show) })
+		p := newSettingsPage(appdata.BrowseSettings{ShowNSFW: true}, appdata.GameSettings{}, "/data/Lockdeader",
+			func(show bool) { changes = append(changes, show) }, nil)
 
 		if !p.Value("showNsfw").ToBool() {
 			t.Error("showNsfw = false, want true")
@@ -142,5 +144,102 @@ func TestModListHidesNSFW(t *testing.T) {
 		if got := modIDs(m); got != "[1 2 3]" {
 			t.Errorf("rows with NSFW mods shown = %v, want [1 2 3]", got)
 		}
+	})
+}
+
+// fakeDeadlock makes a folder that game.Check takes as Deadlock's.
+func fakeDeadlock(t *testing.T) string {
+	t.Helper()
+
+	dir := filepath.Join(t.TempDir(), "Deadlock")
+	path := filepath.Join(dir, "game", "citadel", "gameinfo.gi")
+
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(path, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	return dir
+}
+
+func TestSettingsPageGameFolder(t *testing.T) {
+	deadlock := fakeDeadlock(t)
+	other := t.TempDir()
+
+	mainthread.Wait(func() {
+		var saved []appdata.GameSettings
+		p := newSettingsPage(appdata.BrowseSettings{}, appdata.GameSettings{}, "/data", nil,
+			func(s appdata.GameSettings) { saved = append(saved, s) })
+
+		if got := p.Value("gameFolder").ToString(); got != "" {
+			t.Errorf("gameFolder = %q, want none", got)
+		}
+
+		// Not Deadlock's: nothing changes, and the error says so.
+		p.ChooseGameFolder(other)
+
+		if p.Value("gameFolder").ToString() != "" || p.Value("gameFolderError").ToString() == "" || len(saved) != 0 {
+			t.Errorf("after choosing another folder: gameFolder = %q, gameFolderError = %q, saved %v",
+				p.Value("gameFolder").ToString(), p.Value("gameFolderError").ToString(), saved)
+		}
+
+		// A folder inside it counts as the game's own, and clears the error.
+		p.ChooseGameFolder(filepath.Join(deadlock, "game", "citadel"))
+
+		if got := p.Value("gameFolder").ToString(); got != deadlock {
+			t.Errorf("gameFolder = %q, want %q", got, deadlock)
+		}
+
+		if p.Value("gameFolderError").ToString() != "" {
+			t.Error("the error is still shown after choosing Deadlock's folder")
+		}
+
+		if len(saved) != 1 || saved[0].Path != deadlock {
+			t.Errorf("saved %v, want the game folder once", saved)
+		}
+
+		// Picking something wrong after doesn't lose the right one.
+		p.ChooseGameFolder(other)
+
+		if got := p.Value("gameFolder").ToString(); got != deadlock {
+			t.Errorf("gameFolder = %q after a wrong pick, want %q kept", got, deadlock)
+		}
+
+		p.SetLaunchOptions("-novid")
+		p.SetLaunchOptions("-novid")
+
+		if len(saved) != 2 || saved[1].LaunchOptions != "-novid" || saved[1].Path != deadlock {
+			t.Errorf("saved %v, want the launch options once, with the folder", saved)
+		}
+	})
+}
+
+func TestSettingsPageFindGame(t *testing.T) {
+	deadlock := fakeDeadlock(t)
+	found := make(chan appdata.GameSettings, 1)
+
+	mainthread.Wait(func() {
+		p := newSettingsPage(appdata.BrowseSettings{}, appdata.GameSettings{}, "/data", nil,
+			func(s appdata.GameSettings) { found <- s })
+		p.find = func() string { return deadlock }
+		p.FindGame()
+	})
+
+	if s := <-found; s.Path != deadlock {
+		t.Errorf("found %q, want %q", s.Path, deadlock)
+	}
+
+	// With a folder already, it isn't looked for.
+	mainthread.Wait(func() {
+		p := newSettingsPage(appdata.BrowseSettings{}, appdata.GameSettings{Path: deadlock}, "/data", nil, nil)
+		p.find = func() string {
+			t.Error("looked for Deadlock with a folder already set")
+
+			return ""
+		}
+		p.FindGame()
 	})
 }

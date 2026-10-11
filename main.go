@@ -12,6 +12,7 @@ import (
 	"github.com/treejadey/lockdeader/appdata"
 	"github.com/treejadey/lockdeader/appdb"
 	"github.com/treejadey/lockdeader/banana"
+	"github.com/treejadey/lockdeader/game"
 	"github.com/treejadey/lockdeader/install"
 	"github.com/treejadey/lockdeader/notification"
 )
@@ -196,14 +197,33 @@ func main() {
 	categories.onSelected = ui.SetCategory
 	details.onSelected = ui.SetOpenMod
 
-	settingsPage := newSettingsPage(settings.Browse, dirs.Root, func(show bool) {
+	// A game folder that's stopped being Deadlock's, e.g. once it's
+	// uninstalled, is dropped, and Deadlock is looked for again.
+	if path := settings.Game.Path; path != "" {
+		folder, err := game.Check(path)
+		if err != nil {
+			slog.Warn("the game folder isn't Deadlock's any more", "path", path)
+		}
+
+		if folder != path {
+			settings.Game.Path = folder
+			settingsChanged()
+		}
+	}
+
+	settingsPage := newSettingsPage(settings.Browse, settings.Game, dirs.Root, func(show bool) {
 		settings.Browse.ShowNSFW = show
 		settingsChanged()
 
 		if mods.SetHideNSFW(!show) {
 			listingChanged()
 		}
+	}, func(gameSettings appdata.GameSettings) {
+		settings.Game = gameSettings
+		settingsChanged()
 	})
+
+	settingsPage.FindGame()
 
 	retryAction := qt.NewQAction()
 	retryAction.OnTriggered(mods.Retry)

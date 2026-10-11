@@ -41,6 +41,7 @@ Sidebar 1.0 Sidebar.qml
 SidebarItem 1.0 SidebarItem.qml
 SmoothWheel 1.0 SmoothWheel.qml
 SoundPlayer 1.0 SoundPlayer.qml
+TextBox 1.0 TextBox.qml
 TextShadow 1.0 TextShadow.qml
 TickBox 1.0 TickBox.qml
 TintedIcon 1.0 TintedIcon.qml

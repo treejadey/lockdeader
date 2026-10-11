@@ -13,8 +13,16 @@ import (
 // App state that the user doesn't set as such, like the sound preview volume,
 // is in the database (see appdb) instead.
 type Settings struct {
+	Game   GameSettings   `toml:"game"`
 	Browse BrowseSettings `toml:"browse"`
 	Cache  CacheSettings  `toml:"cache"`
+}
+
+type GameSettings struct {
+	// Only ever a folder game.Check accepts, or "". One that's stopped being
+	// Deadlock's, e.g. once it's uninstalled, is dropped when the app starts.
+	Path          string `toml:"path" comment:"The folder Deadlock is installed in. Left empty, Lockdeader looks for it in Steam's libraries."`
+	LaunchOptions string `toml:"launch_options" comment:"Added to Deadlock's command line when Lockdeader starts it, e.g. \"-novid -high\"."`
 }
 
 type BrowseSettings struct {

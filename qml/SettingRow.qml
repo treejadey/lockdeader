@@ -7,6 +7,8 @@ Rectangle {
     property string text
     property string description
     property bool monospaceDescription: false
+    // Why the setting couldn't be changed; "" for none.
+    property string error
     // Other words that should find the setting when searched for.
     property string keywords
     // Makes the whole row hover and emit rowPressed, e.g. to flip its switch.
@@ -76,6 +78,15 @@ Rectangle {
             font.family: root.monospaceDescription ? app.monospaceFont : Qt.application.font.family
             font.pixelSize: 12
             wrapMode: root.monospaceDescription ? Text.WrapAnywhere : Text.Wrap
+        }
+
+        Label {
+            width: parent.width
+            visible: text !== ""
+            text: root.error
+            color: Theme.love
+            font.pixelSize: 12
+            wrapMode: Text.Wrap
         }
     }
 
