@@ -130,6 +130,7 @@ Applies to Go, QML (including its JavaScript), C and C++.
   - **Monospace in descriptions:** `codeStyle()` sets `<code>`/`<pre>` in rich text descriptions to JetBrains Mono.
   - **Explicit `font.pixelSize` values** are chosen for Inter.
 - Icons are Microsoft Fluent UI System Icons SVGs in `qml/icons/`. Add new icons from that set, keeping the original path data and setting the fill colour on the `<svg>` element; don't draw your own.
+- `qml/icons/bitmap/` holds the app's own pictures, which aren't icons, e.g. `sound_icon.png`, shown on the card of a sound, which has no picture on GameBanana. Don't put GameBanana's own artwork in the app: it's theirs to distribute.
 - Icons are outlined (`*_24_regular.svg`) while their element is inactive, and switch to the filled version (`*_24_filled.svg`) while it's active. Examples:
   - the current page in the sidebar (`SidebarItem` swaps `_regular` for `_filled` itself, so both files must exist);
   - play turning into a filled pause while playing;

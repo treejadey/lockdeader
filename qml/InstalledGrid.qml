@@ -84,7 +84,9 @@ Item {
                 name: cell.name
                 author: cell.author
                 updated: cell.updated
-                thumbnail: cell.thumbnail
+                // Sounds have no picture on GameBanana, so they get the app's.
+                thumbnail: cell.thumbnail !== "" || !cell.key.startsWith("Sound/") ? cell.thumbnail
+                    : Qt.resolvedUrl("icons/bitmap/sound_icon.png")
                 nsfw: cell.nsfw
                 tileSize: root.cardSize
                 horizontalOffset: Math.floor((grid.width - grid.columns * grid.cellWidth) / 2)
