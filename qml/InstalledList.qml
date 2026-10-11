@@ -103,6 +103,8 @@ Item {
             }
 
             Label {
+                id: nameLabel
+
                 anchors {
                     left: parent.left
                     leftMargin: 12
@@ -114,6 +116,18 @@ Item {
                 color: Theme.text
                 font.pixelSize: 13
                 elide: Text.ElideRight
+
+                HoverHandler {
+                    id: nameHover
+                }
+
+                // The whole name, when it's cut short.
+                ToolTip {
+                    visible: nameHover.hovered && nameLabel.truncated
+                    delay: 500
+                    text: nameLabel.text
+                    width: Math.min(implicitWidth, 360)
+                }
             }
 
             InstallStatus {

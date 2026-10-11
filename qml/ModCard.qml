@@ -185,6 +185,8 @@ Item {
             anchors.margins: 10
 
             Label {
+                id: nameLabel
+
                 anchors {
                     top: parent.top
                     left: parent.left
@@ -196,6 +198,18 @@ Item {
                 wrapMode: Text.Wrap
                 maximumLineCount: 2
                 elide: Text.ElideRight
+
+                HoverHandler {
+                    id: nameHover
+                }
+
+                // The whole name, when it's cut short.
+                ToolTip {
+                    visible: nameHover.hovered && nameLabel.truncated
+                    delay: 500
+                    text: nameLabel.text
+                    width: Math.min(implicitWidth, 360)
+                }
             }
 
             Row {
