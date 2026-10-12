@@ -23,8 +23,8 @@ jobs:
       - uses: actions/checkout@v7
 
       # cgo can't use MSVC, so Qt and the compiler come from MSYS2's UCRT64
-      # environment. windeployqt is in qt6-base; ntldd finds the DLLs it
-      # misses.
+      # environment. windeployqt is in qt6-base, and needs qt6-tools'
+      # lconvert to merge Qt's translations; ntldd finds the DLLs it misses.
       - uses: msys2/setup-msys2@v2
         id: msys2
         with:
@@ -38,6 +38,7 @@ jobs:
             mingw-w64-ucrt-x86_64-qt6-svg
             mingw-w64-ucrt-x86_64-qt6-imageformats
             mingw-w64-ucrt-x86_64-qt6-translations
+            mingw-w64-ucrt-x86_64-qt6-tools
             mingw-w64-ucrt-x86_64-ntldd
 
       - uses: actions/setup-go@v7

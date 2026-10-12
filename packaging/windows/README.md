@@ -9,8 +9,9 @@ GitHub Actions runs both (`.github/workflows/build.yml`).
 
 1. Install [MSYS2](https://www.msys2.org/), and in its UCRT64 shell the
    packages the workflow lists: `gcc`, `pkgconf`, `qt6-base`,
-   `qt6-declarative`, `qt6-svg`, `qt6-imageformats`, `qt6-translations` and
-   `ntldd`, each as `mingw-w64-ucrt-x86_64-<name>`.
+   `qt6-declarative`, `qt6-svg`, `qt6-imageformats`, `qt6-translations`,
+   `qt6-tools` (for `lconvert`, which `windeployqt` merges the translations
+   with) and `ntldd`, each as `mingw-w64-ucrt-x86_64-<name>`.
 2. Install [Go](https://go.dev/dl/).
 3. From the repository's root, in PowerShell:
 
