@@ -1,12 +1,15 @@
-# Lockdeader - A Deadlock mod manager (W.I.P)
+# Lockdeader - A Deadlock mod manager
 
-![Image showcasing the main layout of the application in the mod view](/Images/app_screenshot.png)
+Lockdeader is a mod manager for Deadlock which aims to make your modding experience just a bit nicer :)
 
-I was tired with the fact that the existing Deadlock mod managers were vibecoded browser slop so I decided to fix it...
+It has a pretty nice (if I may say so myself) **native** Qt/QML based UI.
 
-....by creating my own vibecoded slop mod manager of course.
+![Image showcasing the main layout of the application in the mod view](Images/app_screenshot.png)
 
-It doesn't do the thing of being an actual mod manager for now but you can view mods I guess...
+You should feel free to try it if you're the kind of person who wants to try something new, or alternatively 
+if you're a Linux user and you're super tired of how *NICE* Tauri apps feel on Linux :)
+
+---
 
 # Responsible AI Disclosure
 
@@ -14,3 +17,4 @@ This project heavily uses AI for development, but I try to make sure it doesn't 
 
 I'm the main designer of the UI and I make sure the UX seems good enough for me.
 
+Only the code is AI generated, if there are any kinds of images or icon assets they're handmade by me.
