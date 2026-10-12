@@ -1,0 +1,738 @@
+#
+# Jade <me@jadey.net>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Lockdeader\n"
+"Language: uk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"PO-Revision-Date: 2026-10-12 04:16+0200\n"
+"Last-Translator: Jade <me@jadey.net>\n"
+"X-Generator: Gtranslator 50.0\n"
+
+#: clipboard.go
+msgid "Link copied"
+msgstr "Посилання скопійовано"
+
+#: clipboard.go
+msgid "Couldn’t copy the image"
+msgstr "Не вдалося скопіювати посилання"
+
+#: clipboard.go
+msgid "Image copied"
+msgstr "Скопіювали зображення"
+
+#: configure.go
+msgid "Couldn’t change the configuration of %s"
+msgstr "Не змогли змінити конфігурацію %s"
+
+#: errormessage.go
+msgid "It’s no longer on GameBanana."
+msgstr "Цього більше не має на GameBanana."
+
+#: errormessage.go
+msgid "GameBanana is busy. Try again in a minute."
+msgstr "GameBanana зараз зайняте. Зачекайте хвилинку."
+
+#: errormessage.go
+msgid "GameBanana isn’t working right now. Try again later."
+msgstr "GameBanana зараз не працює. Спробуйте пізніше."
+
+#: errormessage.go
+msgid "Something went wrong."
+msgstr "Щось пішло не так."
+
+#: errormessage.go
+msgid ""
+"GameBanana can’t be reached. Check your internet connection and try again."
+msgstr ""
+"Не вдається підключитися до GameBanana. Перевірте підключення до Інтернету "
+"та спробуйте ще раз."
+
+#: errormessage.go
+msgid "The download was damaged. Try installing it again."
+msgstr ""
+"Файл для завантаження був пошкоджений. Спробуйте встановити його ще раз."
+
+#: errormessage.go
+msgid "The mod’s file isn’t an archive Lockdeader can open."
+msgstr "Файл мода не є архівом, який Lockdeader може відкрити."
+
+#: errormessage.go
+msgid "The mod has no files the game can use."
+msgstr "Мод не має файли які ми можемо користувати."
+
+#: errormessage.go
+msgid "The mod is split into parts, which isn’t supported yet."
+msgstr "Мод розділений на частини, що поки що не підтримується."
+
+#: errormessage.go
+msgid "The mod is too big to pack."
+msgstr "Мод занадто великий, щоб його упакувати."
+
+#: errormessage.go
+msgid "Deadlock is running. Close it and try again."
+msgstr "Deadlock зараз запущен. Закрийте його та спробуйте ще раз."
+
+#: errormessage.go
+msgid "Too many of the mods that are on change the same files. Turn some off."
+msgstr ""
+"Занадто багато модов які зминюють тиж сами файли. Вимкніть деякі з них."
+
+#: errormessage.go
+msgid "Some mods’ files are missing. Reinstall them."
+msgstr "Деякі файли модов відсутні. Встановіть їх заново."
+
+#: errormessage.go
+msgid ""
+"Deadlock’s gameinfo.gi isn’t one Lockdeader understands. Verify the game "
+"files in Steam."
+msgstr ""
+"Файл gameinfo.gi Deadlock'а не розпізнається програмою. Перевірте файли гри "
+"у Steam."
+
+#: errormessage.go
+msgid "There isn’t enough disk space."
+msgstr "Не має місту на дискі."
+
+#: errormessage.go
+msgid "Lockdeader isn’t allowed to change files in Deadlock’s folder."
+msgstr "Lockdeader не має права змінювати файли у папці Deadlock."
+
+#: errormessage.go
+msgid "Lockdeader isn’t allowed to save files in its data folder."
+msgstr "Lockdeader'у заборонено зберігати файли у своїй папці з даними."
+
+#: errormessage.go
+msgid "No sound output is available."
+msgstr "Не маємо виводу звука."
+
+#: errormessage.go
+msgid "This sound can’t be played."
+msgstr "Цей звук не проігрується."
+
+#: installed.go
+msgid "%s is already downloading"
+msgstr "%s вже завантажується"
+
+#: installed.go
+msgid "%s is already installed"
+msgstr "%s вже завантажен"
+
+#: installed.go
+msgid "Waiting to download %s"
+msgstr "Очікування завантаження %s"
+
+#: installed.go
+msgid "Downloading %s"
+msgstr "Завантажуємо %s"
+
+#: installed.go
+msgid "%s was uninstalled"
+msgstr "%s було видалено"
+
+#: installed.go
+msgid "Couldn’t uninstall %s"
+msgstr "Не вдалося видалити %s"
+
+#: launcher.go
+msgid "Choose Deadlock’s folder first."
+msgstr "Спочатку виберіть папку Deadlock."
+
+#: launcher.go
+msgid "Couldn’t start Deadlock. Check that Steam is installed."
+msgstr "Не вдалося запустити Deadlock. Перевірте, чи встановлено Steam."
+
+#: launcher.go
+msgid "Starting Deadlock with mods"
+msgstr "Запустити Deadlock с модами"
+
+#: launcher.go
+msgid "Starting Deadlock without mods"
+msgstr "Запустити Deadlock без модів"
+
+#: main.go
+msgid "Couldn’t install %s"
+msgstr "Не вдалося встановити %s"
+
+#: main.go
+msgid "Try installing it again in Lockdeader"
+msgstr "Спробуйте встановити його ще раз у Lockdeader"
+
+#: othermods.go
+msgid "Deadlock Mod Manager"
+msgstr "Deadlock Mod Manager"
+
+#: othermods.go
+msgid "Addons folder"
+msgstr "Папка аддонів"
+
+#: othermods.go
+msgid "Couldn’t take the mods over. They’re still where they were."
+msgstr "Не вдалося перенести моди. Вони досі там, де й були."
+
+#: othermods.go
+msgid "The mod was taken over"
+msgstr "Перейняли мод"
+
+#: othermods.go
+#, qt-plural-format
+msgid "%n mod was taken over"
+msgid_plural "%n mods were taken over"
+msgstr[0] "Перейняли %n мод"
+msgstr[1] "Перейняли %n мода"
+msgstr[2] "Перейняли %n модів"
+
+#. %d is how many mods weren't taken over.
+#: othermods.go
+#, qt-plural-format
+msgid "%n mod was taken over; %d couldn’t be, or are installed already"
+msgid_plural ""
+"%n mods were taken over; %d couldn’t be, or are installed already"
+msgstr[0] "Перейняли %n мод; %d не змогли або вже встановлени."
+msgstr[1] "Перейняли %n мода; %d не змогли або вже встановлени."
+msgstr[2] "Перейняли %n модів; %d не змогли або вже встановлени."
+
+#: qml/AppDialog.qml qml/ImageViewer.qml qml/InstallDialog.qml
+msgid "Close (Esc)"
+msgstr "Закрити (Esc)"
+
+#: qml/CategoryNav.qml
+msgid "All Mods"
+msgstr "Усі Моди"
+
+#: qml/CategoryNav.qml
+#, qt-format
+msgid ""
+"Couldn’t load categories\n"
+"%1"
+msgstr ""
+"Не змогли загрузити категорії\n"
+"%1"
+
+#: qml/CategoryNav.qml qml/InstalledPage.qml qml/LoadMoreFooter.qml
+#: qml/ModsPage.qml
+msgid "Retry"
+msgstr "Повторити"
+
+#: qml/ImageViewer.qml
+msgid "Copy Image"
+msgstr "Скопіювати Зображення"
+
+#: qml/ImageViewer.qml
+msgid "Copy Image Link"
+msgstr "Скопіювати Ссилку на Зображення"
+
+#: qml/InstallDialog.qml
+#, qt-format
+msgid "Couldn’t load the files: %1"
+msgstr "Не вдалося завантажити файли: %1"
+
+#: qml/InstallDialog.qml
+msgid "This mod has no files to install."
+msgstr "В моду не має файлов для установлення."
+
+#: qml/InstallDialog.qml
+msgid "Install"
+msgstr "Встановити"
+
+#: qml/InstallDialog.qml
+msgid "Install Selected"
+msgstr "Встановити вибране"
+
+#: qml/InstallStatus.qml
+msgid "Couldn’t install"
+msgstr "Не вдалося встановити"
+
+#: qml/InstallStatus.qml
+msgid "Waiting"
+msgstr "Очікуємо"
+
+#: qml/InstallStatus.qml
+msgid "Installing"
+msgstr "Встановлюємо"
+
+#: qml/InstalledPage.qml
+msgid "From Other Tools"
+msgstr "З Інших Програм"
+
+#: qml/InstalledPage.qml qml/Sidebar.qml
+msgid "Installed Mods"
+msgstr "Установлені Моди"
+
+#: qml/InstalledPage.qml
+msgid "Search Installed Mods"
+msgstr "Пошук встановлених модифікацій"
+
+#: qml/InstalledPage.qml
+msgid "Couldn’t put the mods into the game. "
+msgstr "Не вдалося встановити моди в гру."
+
+#: qml/InstalledPage.qml
+msgid ""
+"A mod from another tool was found in the game’s addons folder. Lockdeader "
+"can take it over."
+msgstr ""
+"Знайшли мод с іншой програми в папці addons. Lockdeader може перейняти його."
+
+#: qml/InstalledPage.qml
+#, qt-format
+msgid ""
+"%1 mods from other tools were found in the game’s addons folder. Lockdeader "
+"can take them over."
+msgstr ""
+"%1 модів з інших програм знайшли внутри папці addons игри. Lockdeader має "
+"перейняти їх."
+
+#: qml/InstalledPage.qml qml/SettingsPage.qml
+msgid "Take Over…"
+msgstr "Перейняти..."
+
+#: qml/InstalledPage.qml
+msgid "No Mods Installed Yet"
+msgstr "Поки Що Не Встановлено Жодного Мода"
+
+#: qml/InstalledPage.qml
+msgid "Mods you install will show up here"
+msgstr "Встановлені вами моди з’являться тут"
+
+#: qml/InstalledPage.qml
+msgid "Browse Mods"
+msgstr "Глянути Моди"
+
+#: qml/InstalledPage.qml
+msgid "No Installed Mods Found"
+msgstr "Не Знайшли Встановлених Модів"
+
+#: qml/InstalledPage.qml
+msgid "Dismiss"
+msgstr "Відхилити"
+
+#: qml/InstalledPage.qml
+msgid "Cancel Install"
+msgstr "Скасувати встановлення"
+
+#: qml/InstalledPage.qml
+msgid "Change Configuration…"
+msgstr "Змінити конфігурацію…"
+
+#: qml/InstalledPage.qml
+msgid "Uninstall"
+msgstr "Видалити"
+
+#: qml/InstalledPage.qml qml/RestoreDialog.qml qml/SettingsPage.qml
+msgid "Open Folder"
+msgstr "Відкрити Папку"
+
+#: qml/LoadMoreFooter.qml
+#, qt-format
+msgid "Couldn’t load more mods: %1"
+msgstr "Не вдалося прогрузити більше модів: %1"
+
+#: qml/Main.qml
+msgid "Undo"
+msgstr "Повернути Назад"
+
+#: qml/Main.qml qml/SettingsPage.qml qml/Sidebar.qml
+msgid "Settings"
+msgstr "Налаштування"
+
+#: qml/ModConfigDialog.qml
+msgid "Configuration"
+msgstr "Конфігурація."
+
+#: qml/ModConfigDialog.qml
+msgid "Looking for other versions on GameBanana…"
+msgstr "Шукаємо інши версії на GameBanana…"
+
+#: qml/ModConfigDialog.qml
+#, qt-format
+msgid "Couldn’t look for other versions: %1"
+msgstr "Не змогли найти інши версиї: %1"
+
+#: qml/ModConfigDialog.qml
+msgid "At least one variant must be selected."
+msgstr "Необхідно вибрати хоча б одну версію"
+
+#: qml/ModConfigDialog.qml
+msgid "Change Configuration"
+msgstr "Змінити Конфігурацію."
+
+#: qml/ModDetailsPanel.qml
+msgid "Open profile on GameBanana"
+msgstr "Відкрити профіль на GameBanana"
+
+#: qml/ModDetailsPanel.qml
+msgid "Open on GameBanana"
+msgstr "Відкрити на GameBanana"
+
+#: qml/ModDetailsPanel.qml
+msgid "Gallery"
+msgstr "Галерея"
+
+#: qml/ModDetailsPanel.qml
+msgid "Description"
+msgstr "Описання"
+
+#: qml/ModDetailsPanel.qml
+#, qt-format
+msgid "Couldn’t load the description: %1"
+msgstr "Не вдалося прогрузити описання: %1"
+
+#: qml/ModDetailsPanel.qml
+msgid "Install Mod…"
+msgstr "Встановити Мод…"
+
+#: qml/ModDetailsPanel.qml
+msgid "Select a mod to see its details"
+msgstr "Виберіть мод, щоб переглянути його детальну інформацію"
+
+#: qml/ModsPage.qml
+msgid "Search Mods"
+msgstr "Шукати Моди"
+
+#: qml/ModsPage.qml
+msgid "No Mods Found"
+msgstr "Не знайшли моди"
+
+#: qml/ModsPage.qml
+#, qt-format
+msgid ""
+"Couldn’t load mods\n"
+"%1"
+msgstr ""
+"Не змогли прогрузити моди:\n"
+"%1"
+
+#: qml/RelativeTime.qml
+#, qt-plural-format
+msgid "%n year ago"
+msgid_plural "%n years ago"
+msgstr[0] "%n рік тому"
+msgstr[1] "%n років тому"
+msgstr[2] "%n років тому"
+
+#: qml/RelativeTime.qml
+#, qt-plural-format
+msgid "%n month ago"
+msgid_plural "%n months ago"
+msgstr[0] "%n місяць тому"
+msgstr[1] "%n місяця тому"
+msgstr[2] "%n місяців тому"
+
+#: qml/RelativeTime.qml
+#, qt-plural-format
+msgid "%n week ago"
+msgid_plural "%n weeks ago"
+msgstr[0] "%n тиждень тому"
+msgstr[1] "%n тижні тому"
+msgstr[2] "%n тижнів тому"
+
+#: qml/RelativeTime.qml
+#, qt-plural-format
+msgid "%n day ago"
+msgid_plural "%n days ago"
+msgstr[0] "%n день тому"
+msgstr[1] "%n дня тому"
+msgstr[2] "%n днів тому"
+
+#: qml/RelativeTime.qml
+#, qt-plural-format
+msgid "%n hour ago"
+msgid_plural "%n hours ago"
+msgstr[0] "%n годину тому"
+msgstr[1] "%n години тому"
+msgstr[2] "%n годин тому"
+
+#: qml/RelativeTime.qml
+#, qt-plural-format
+msgid "%n minute ago"
+msgid_plural "%n minutes ago"
+msgstr[0] "%n хвилину тому"
+msgstr[1] "%n хвилини тому"
+msgstr[2] "%n хвилин тому"
+
+#: qml/RelativeTime.qml
+msgid "just now"
+msgstr "зараз"
+
+#: qml/RestoreDialog.qml
+msgid "Restore Settings — Lockdeader"
+msgstr "Відновити Налаштування — Lockdeader"
+
+#: qml/RestoreDialog.qml
+msgid "Your settings couldn’t be loaded"
+msgstr "Ваші налаштування не вдалося загрузити"
+
+#: qml/RestoreDialog.qml
+msgid ""
+"There are backups of your settings from earlier sessions. Restore one, or "
+"carry on without your settings for now: you’ll get the defaults, and nothing "
+"you change will be saved, so the file stays as it is for you to fix."
+msgstr ""
+"Існують резервні копії ваших налаштувань із попередніх сеансів. Відновіть "
+"одну з них або поки що продовжуйте роботу без своїх налаштувань: ви "
+"отримаєте налаштування за замовчуванням, і жодні зміни не будуть збережені, "
+"тож файл залишиться в тому стані, в якому він є, щоб ви могли його виправити."
+
+#: qml/RestoreDialog.qml
+msgid "Some backups are damaged, so they can’t be restored."
+msgstr "Деякі резервні копії пошкоджені, тому їх неможливо відновити."
+
+#: qml/RestoreDialog.qml
+msgid "Restoring keeps your current file as Settings.toml.broken."
+msgstr ""
+"Під час відновлення поточний файл зберігається під назвою "
+"Settings.toml.broken."
+
+#: qml/RestoreDialog.qml
+msgid "Quit"
+msgstr "Вийти"
+
+#: qml/RestoreDialog.qml
+msgid "Use Defaults"
+msgstr "Користовувати Дефолтні"
+
+#: qml/RestoreDialog.qml
+msgid "Restore Backup"
+msgstr "Відновити резервну копію"
+
+#: qml/SettingsPage.qml
+msgid "Search Settings"
+msgstr "Шукати Налаштування"
+
+#: qml/SettingsPage.qml
+msgid "Game"
+msgstr "Гра"
+
+#: qml/SettingsPage.qml
+msgid "Deadlock folder"
+msgstr "Папка Deadlock'a"
+
+#: qml/SettingsPage.qml
+msgid ""
+"Not found in Steam’s libraries. Choose the folder Steam installed it in."
+msgstr ""
+"Не знайдено у бібліотеках Steam. Оберіть папку, в яку Steam встановив гру."
+
+#: qml/SettingsPage.qml
+msgid "game location install path directory steam library"
+msgstr "локація гри установлено путь папка діректорія бібліотека steam"
+
+#: qml/SettingsPage.qml
+msgid "Change…"
+msgstr "Змінити…"
+
+#: qml/SettingsPage.qml
+msgid "Choose…"
+msgstr "Виберіть"
+
+#: qml/SettingsPage.qml
+msgid "Launch options"
+msgstr "Параметри запуску"
+
+#: qml/SettingsPage.qml
+msgid "Added to the game’s command line when Lockdeader starts it"
+msgstr ""
+"Додається до командного рядка гри під час її запуску програмою Lockdeader"
+
+#: qml/SettingsPage.qml
+msgid "command line arguments parameters flags startup"
+msgstr "аргументи коммандного рядка параметри флагі запуск "
+
+#: qml/SettingsPage.qml
+msgid "Mods from other tools"
+msgstr "Моди с інших програм"
+
+#: qml/SettingsPage.qml
+msgid "None found in the game’s addons folder"
+msgstr "Не знайшли жодної у папці аддонів гри."
+
+#: qml/SettingsPage.qml
+msgid ""
+"One mod in the game’s addons folder, from Deadlock Mod Manager or put there "
+"by hand. Lockdeader can take it over, and then turn it on and off, update "
+"and uninstall it."
+msgstr ""
+"Один мод у папці аддонів гри, доданий за допомогою Deadlock Mod Manager або "
+"розміщений там вручну. Lockdeader може взяти його під свій контроль, а потім "
+"вмикати та вимикати, оновлювати й видаляти."
+
+#: qml/SettingsPage.qml
+#, qt-format
+msgid ""
+"%1 mods in the game’s addons folder, from Deadlock Mod Manager or put there "
+"by hand. Lockdeader can take them over, and then turn them on and off, "
+"update and uninstall them."
+msgstr ""
+"%1 модів у папці аддонів гри, доданий за допомогою Deadlock Mod Manager або "
+"розміщений там вручну. Lockdeader може взяти його під свій контроль, а потім "
+"вмикати та вимикати, оновлювати й видаляти."
+
+#: qml/SettingsPage.qml
+msgid ""
+"deadlock mod manager dmm addons folder import take over migrate port third "
+"party"
+msgstr ""
+"deadlock mod manager dmm аддони папка імпорт перейняти міграція портувати інш"
+
+#: qml/SettingsPage.qml
+msgid "Also load mods installed by other tools"
+msgstr "Також користувати моди, встановлені іншими программами"
+
+#: qml/SettingsPage.qml
+msgid ""
+"Mods put in the game’s addons folder by hand or by another mod manager load "
+"after Lockdeader’s when it starts Deadlock with mods"
+msgstr ""
+"Моди, розміщені в папці аддонів гри вручну або за допомогою іншого менеджера "
+"модів, завантажуються після модів Lockdeader під час запуску Deadlock із "
+"модами"
+
+#: qml/SettingsPage.qml
+msgid "addons folder deadlock mod manager dmm manual external other"
+msgstr "аддони папка deadlock mod manager dmm вручную внішне інше"
+
+#: qml/SettingsPage.qml
+msgid "Mod Viewer"
+msgstr "Шукати моди"
+
+#: qml/SettingsPage.qml
+msgid "NSFW mods"
+msgstr "Моди 18+"
+
+#: qml/SettingsPage.qml
+msgid "not safe for work adult mature nudity content ratings"
+msgstr "18+ доросли рейтінги контент"
+
+#: qml/SettingsPage.qml
+msgid "Advanced"
+msgstr "Досвідчени"
+
+#: qml/SettingsPage.qml
+msgid "Data folder"
+msgstr "Папка даних"
+
+#: qml/SettingsPage.qml
+msgid "data directory location cache files backups open"
+msgstr "дани діректорія папка локація кеш файли резерв відкрити"
+
+#: qml/SettingsPage.qml
+msgid "No Settings Found"
+msgstr "Налаштувань Не Знайдено"
+
+#: qml/Sidebar.qml
+msgid "Mods"
+msgstr "Моди"
+
+#: qml/Sidebar.qml
+msgid "View Mods"
+msgstr "Шукати Моди"
+
+#: qml/Sidebar.qml
+msgid "Play With Mods"
+msgstr "Грати С Модами"
+
+#: qml/Sidebar.qml
+msgid "Deadlock is running"
+msgstr "Deadlock запущений"
+
+#: qml/Sidebar.qml
+msgid "Play Without Mods"
+msgstr "Грати Без Модів"
+
+#: qml/SoundPlayer.qml
+msgid "Can’t play"
+msgstr "Не можна грати"
+
+#: qml/TakeOverDialog.qml
+msgid "Take Over Mods From Other Tools"
+msgstr "Перейняти Моди З Інших Програм"
+
+#: qml/TakeOverDialog.qml
+msgid ""
+"The mod in the game’s addons folder will be moved into Lockdeader, which "
+"will then turn it on and off, update and uninstall it. Deadlock Mod Manager "
+"won’t see it any more."
+msgstr ""
+"Мод із папки аддонів гри буде переміщено до Lockdeader, який надалі зможе "
+"вмикати та вимикати його, оновлювати та видаляти. Deadlock Mod Manager "
+"більше не бачитиме його."
+
+#: qml/TakeOverDialog.qml
+#, qt-format
+msgid ""
+"The %1 mods in the game’s addons folder will be moved into Lockdeader, which "
+"will then turn them on and off, update and uninstall them. Deadlock Mod "
+"Manager won’t see them any more."
+msgstr ""
+"%1 Модів із папки аддонів гри буде переміщено до Lockdeader, який надалі "
+"зможе вмикати та вимикати його, оновлювати та видаляти. Deadlock Mod Manager "
+"більше не бачитиме його."
+
+#: qml/TakeOverDialog.qml
+msgid ""
+"Mods GameBanana has are downloaded from it again, so they’re no different "
+"from ones installed here. Files it doesn’t know are kept as they are, by "
+"their file names."
+msgstr ""
+"Моди, які є на GameBanana, завантажуються звідти знову, тому вони нічим не "
+"відрізняються від тих, що встановлені тут. Файли, які сайт не розпізнає, "
+"зберігаються без змін, за їхніми іменами."
+
+#: qml/TakeOverDialog.qml
+msgid "One of them has several files on GameBanana. Pick which to download:"
+msgstr ""
+"В одного з них на GameBanana є кілька файлів. Виберіть, яки із них "
+"завантажити:"
+
+#: qml/TakeOverDialog.qml
+#, qt-format
+msgid "%1 of them have several files on GameBanana. Pick which to download:"
+msgstr ""
+"%1 з них на GameBanana має кілька файлів. Виберіть, яки із них завантажити:"
+
+#: qml/TakeOverDialog.qml
+msgid "Cancel"
+msgstr "Скасувати"
+
+#: qml/TakeOverDialog.qml
+msgid "Take Over the Mod"
+msgstr "Перейняти Мод"
+
+#: qml/TakeOverDialog.qml
+#, qt-format
+msgid "Take Over %1 Mods"
+msgstr "Перейняти %1 Модів"
+
+#: qml/Toast.qml
+msgid "Close"
+msgstr "Закрити"
+
+#: qml/TopBar.qml
+msgid "Grid view"
+msgstr "Табличний вигляд"
+
+#: qml/TopBar.qml
+msgid "List view"
+msgstr "Списочний выгляд"
+
+#: settingspage.go
+msgid "Choose Deadlock’s Folder"
+msgstr "Оберіть папку Deadlock"
+
+#: settingspage.go
+msgid "The folder dialog couldn’t be opened."
+msgstr "Не змогли відкрити діалог пошука файлів."
+
+#: settingspage.go
+msgid ""
+"That folder isn’t Deadlock’s. Choose the one Steam installed it in, usually "
+"steamapps/common/Deadlock."
+msgstr ""
+"Ця папка не належить грі Deadlock. Оберіть ту, в яку її встановлен Steam — "
+"зазвичай це steamapps/common/Deadlock."
