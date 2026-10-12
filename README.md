@@ -18,3 +18,13 @@ This project heavily uses AI for development, but I try to make sure it doesn't 
 I'm the main designer of the UI and I make sure the UX seems good enough for me.
 
 Only the code is AI generated, if there are any kinds of images or icon assets they're handmade by me.
+
+# Contribution
+
+Pull requests are disabled on GitHub because of people who use AI to create contributions and spam huge code prs that are completely impossible to read through and check. 
+
+Listen, I can *ALSO* use AI to do the same thing
+
+If you actually want to contribute and you're willing to go through the process I suggest sending a patch to my email and I will take a look at it asap.
+
+It serves as a separator for people where if you want to do changes you can still do them while discouraging super low effort stuff.
