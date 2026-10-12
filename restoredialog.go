@@ -111,10 +111,10 @@ func askToRestoreSettings(loadErr error, backups []appdata.SettingsBackup, setti
 
 	engine.RootContext().SetContextProperty("app", app.QObject)
 	engine.RootContext().SetContextProperty("restore", dialog.QObject)
-	engine.Load(qt.QUrl_FromLocalFile("qml/RestoreDialog.qml"))
+	engine.Load(qmlURL("RestoreDialog.qml"))
 
 	if len(engine.RootObjects()) == 0 {
-		slog.Error("failed to load qml/RestoreDialog.qml")
+		slog.Error("failed to load RestoreDialog.qml")
 
 		return restoreIgnore
 	}

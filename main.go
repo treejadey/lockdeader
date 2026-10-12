@@ -23,6 +23,10 @@ import (
 func main() {
 	guiApp := qt.NewQGuiApplication(os.Args)
 
+	// On Wayland, the window's app ID, which matches it to its desktop file
+	// and icon (packaging/).
+	qt.QGuiApplication_SetDesktopFileName("io.github.treejadey.Lockdeader")
+
 	if err := loadFonts(); err != nil {
 		slog.Error("failed to load the bundled fonts", "err", err)
 		os.Exit(1)
@@ -34,12 +38,18 @@ func main() {
 
 	installTranslations()
 
+	if err := registerQML(); err != nil {
+		slog.Error("failed to load the bundled QML", "err", err)
+		os.Exit(1)
+	}
+
 	dirs, err := appdata.Setup()
 	if err != nil {
 		slog.Error("failed to set up the data directory", "err", err)
 		os.Exit(1)
 	}
 
+	slog.Info("starting Lockdeader", "version", version)
 	slog.Info("using data directory", "path", dirs.Root)
 
 	// Set once the window is up.
@@ -168,6 +178,7 @@ func main() {
 	app.Insert("showRequests", qt.NewQVariant4(0))
 
 	client := banana.NewClient()
+	client.UserAgent = banana.UserAgent(version)
 	mods := newModListModel(client, app)
 	mods.SetHideNSFW(!settings.Browse.ShowNSFW)
 
@@ -278,10 +289,10 @@ func main() {
 	engine.RootContext().SetContextProperty("retryAction", retryAction.QObject)
 	engine.RootContext().SetContextProperty("retryCategoriesAction", retryCategoriesAction.QObject)
 
-	engine.Load(qt.QUrl_FromLocalFile("qml/Main.qml"))
+	engine.Load(qmlURL("Main.qml"))
 
 	if len(engine.RootObjects()) == 0 {
-		slog.Error("failed to load qml/Main.qml")
+		slog.Error("failed to load Main.qml")
 		os.Exit(1)
 	}
 

@@ -1,0 +1,59 @@
+app-id: io.github.treejadey.Lockdeader
+runtime: org.kde.Platform
+runtime-version: '6.11'
+sdk: org.kde.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.golang
+command: lockdeader
+
+finish-args:
+  - --share=network
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+
+  # For sound previews.
+  - --socket=pulseaudio
+
+  - --talk-name=org.freedesktop.Notifications
+
+  # We have to rely on escaping the sandbox to be able to tell
+  # whether the game is running to provide required functionality, unfortunately. 
+  - --talk-name=org.freedesktop.Flatpak
+
+  # As we interact with Steam we need to have access to 
+  # presumed locations as it would suck a lot if it didn't work out of the gate.
+  - --filesystem=xdg-data/Steam
+  - --filesystem=~/.steam
+  - --filesystem=~/.var/app/com.valvesoftware.Steam
+
+modules:
+  - name: lockdeader
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/golang/bin
+      env:
+        CGO_ENABLED: '1'
+        GOTOOLCHAIN: local
+      # Go downloads the modules. That's fine for building here, but not on
+      # Flathub, whose builds have no network: there, they'd be listed as
+      # sources instead.
+      build-args:
+        - --share=network
+    build-commands:
+      - go build -trimpath -o /app/bin/lockdeader .
+      - install -Dm644 packaging/io.github.treejadey.Lockdeader.desktop -t /app/share/applications
+      - install -Dm644 packaging/io.github.treejadey.Lockdeader.metainfo.xml -t /app/share/metainfo
+      - install -Dm644 assets/logo.svg /app/share/icons/hicolor/scalable/apps/io.github.treejadey.Lockdeader.svg
+      - install -Dm644 LICENSE -t /app/share/licenses/io.github.treejadey.Lockdeader
+    sources:
+      - type: dir
+        path: ../..
+        skip:
+          - .git
+          - .flatpak-builder
+          - flatpak-build
+          - flatpak-repo
+          - dist
+          - lockdeader

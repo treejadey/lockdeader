@@ -48,8 +48,12 @@ func installTranslations() {
 	// doesn't have.
 	if t.Language != "" {
 		qtTranslator := qt.NewQTranslator()
+		locale := qt.NewQLocale2(t.Language)
 
-		if qtTranslator.Load8(qt.NewQLocale2(t.Language), "qt", "_", qt.QLibraryInfo_Path(qt.QLibraryInfo__TranslationsPath)) {
+		// Where Qt was installed, or, in the Windows zip, the translations
+		// folder windeployqt puts next to the app (packaging/windows).
+		if qtTranslator.Load8(locale, "qt", "_", qt.QLibraryInfo_Path(qt.QLibraryInfo__TranslationsPath)) ||
+			qtTranslator.Load8(locale, "qt", "_", qt.QCoreApplication_ApplicationDirPath()+"/translations") {
 			qt.QCoreApplication_InstallTranslator(qtTranslator)
 		} else {
 			slog.Info("Qt has no translation of its own text into the language", "language", t.Language)

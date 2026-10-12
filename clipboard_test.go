@@ -42,6 +42,10 @@ func TestMain(m *testing.M) {
 
 	installTranslator(english)
 
+	if err := registerQML(); err != nil {
+		panic(err)
+	}
+
 	code := 0
 
 	go func() {

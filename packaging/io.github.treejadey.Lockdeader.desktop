@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Lockdeader
+GenericName=Mod Manager
+Comment=Manage mods for Deadlock
+Exec=lockdeader
+Icon=io.github.treejadey.Lockdeader
+Terminal=false
+Categories=Game;
+Keywords=Deadlock;mods;GameBanana;
+StartupWMClass=lockdeader

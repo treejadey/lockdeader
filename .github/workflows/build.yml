@@ -1,0 +1,127 @@
+# Builds what users download: the Windows zip and the Linux Flatpak, each
+# uploaded as an artifact of the run. The build scripts are PowerShell, which
+# both runners have, so there's one language to maintain for both.
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    name: Windows zip
+    runs-on: windows-latest
+    # The first build compiles miqt's Qt bindings, which takes a long time.
+    # setup-go caches Go's build cache between runs, so later ones don't.
+    timeout-minutes: 120
+    outputs:
+      zip: ${{ steps.build.outputs.zip }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # cgo can't use MSVC, so Qt and the compiler come from MSYS2's UCRT64
+      # environment. windeployqt is in qt6-base; ntldd finds the DLLs it
+      # misses.
+      - uses: msys2/setup-msys2@v2
+        id: msys2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-qt6-base
+            mingw-w64-ucrt-x86_64-qt6-declarative
+            mingw-w64-ucrt-x86_64-qt6-svg
+            mingw-w64-ucrt-x86_64-qt6-imageformats
+            mingw-w64-ucrt-x86_64-qt6-translations
+            mingw-w64-ucrt-x86_64-ntldd
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # So go, pkg-config and windeployqt find MSYS2's gcc and Qt from
+      # PowerShell.
+      - name: Put MSYS2's UCRT64 tools on the PATH
+        shell: pwsh
+        run: '"${{ steps.msys2.outputs.msys2-location }}\ucrt64\bin" | Out-File $env:GITHUB_PATH -Append'
+
+      - name: Test
+        shell: pwsh
+        env:
+          CGO_ENABLED: '1'
+        run: |
+          go vet ./...
+          go test ./...
+
+      - name: Build the zip
+        id: build
+        shell: pwsh
+        run: ./packaging/windows/build.ps1 -Msys2Root '${{ steps.msys2.outputs.msys2-location }}'
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Lockdeader-windows-x64
+          path: ${{ steps.build.outputs.zip }}
+          if-no-files-found: error
+
+  windows-smoke-test:
+    name: Windows zip runs
+    needs: windows
+    # A clean runner, without MSYS2, so a DLL left out of the zip shows.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: Lockdeader-windows-x64
+          path: dist
+
+      - name: Start the app from the zip
+        shell: pwsh
+        run: ./packaging/windows/smoke-test.ps1 -Zip (Get-ChildItem dist/*.zip).FullName
+
+  flatpak:
+    name: Linux Flatpak
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install flatpak-builder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+
+      # Ubuntu 24.04 lets only programs with an AppArmor profile make the
+      # user namespaces the build sandbox needs. Its bwrap has one, but
+      # lifting the restriction costs nothing on a throwaway runner.
+      - name: Allow unprivileged user namespaces
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+
+      # The compiled C++ of miqt's bindings, from the last build that
+      # finished, so this one doesn't compile it again.
+      - uses: actions/cache@v6
+        with:
+          path: .flatpak-builder/ccache
+          key: flatpak-ccache-${{ hashFiles('go.sum', 'packaging/flatpak/*.yml') }}-${{ github.sha }}
+          restore-keys: |
+            flatpak-ccache-${{ hashFiles('go.sum', 'packaging/flatpak/*.yml') }}-
+            flatpak-ccache-
+
+      - name: Build the Flatpak
+        id: build
+        shell: pwsh
+        run: ./packaging/flatpak/build.ps1
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Lockdeader-linux-x86_64
+          path: ${{ steps.build.outputs.bundle }}
+          if-no-files-found: error

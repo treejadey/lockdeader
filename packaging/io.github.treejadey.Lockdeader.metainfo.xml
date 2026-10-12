@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.treejadey.Lockdeader</id>
+  <name>Lockdeader</name>
+  <summary>Find, install and manage mods for Deadlock</summary>
+  <developer id="io.github.treejadey">
+    <name>Jade Kolos</name>
+  </developer>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <description>
+    <p>
+      Lockdeader is a mod manager for Deadlock which aims to
+      provide a neat experience for the user.
+
+      GameBanana is used as the main "store" for the mods.
+    </p>
+    <p>
+      Lockdeader isn't made by or affiliated with Valve in any way shape or form.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">io.github.treejadey.Lockdeader.desktop</launchable>
+
+  <url type="homepage">https://github.com/treejadey/lockdeader</url>
+  <url type="bugtracker">https://github.com/treejadey/lockdeader/issues</url>
+
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/treejadey/lockdeader/main/Images/app_screenshot.png</image>
+    </screenshot>
+  </screenshots>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="0.1.0" date="2026-10-12"/>
+  </releases>
+</component>

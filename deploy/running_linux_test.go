@@ -2,6 +2,7 @@ package deploy
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 )
@@ -44,5 +45,59 @@ func TestRunning(t *testing.T) {
 
 	if _, err := running(filepath.Join(proc, "missing")); err == nil {
 		t.Error("no error for a proc that can't be read")
+	}
+}
+
+func TestPgrep(t *testing.T) {
+	// pgrep's exit codes: 0 found, 1 not found, more for its own errors.
+	for code, want := range map[string]bool{"0": true, "1": false} {
+		if got, err := pgrep("sh", "-c", "exit "+code, "sh"); got != want || err != nil {
+			t.Errorf("exit %s: %v, %v; want %v", code, got, err, want)
+		}
+	}
+
+	if _, err := pgrep("sh", "-c", "exit 2", "sh"); err == nil {
+		t.Error("pgrep's own error isn't one")
+	}
+
+	if _, err := pgrep("sh", "-c", "sleep 5", "sh"); err == nil {
+		t.Error("a pgrep that doesn't finish in time isn't an error")
+	}
+
+	if _, err := pgrep("no-such-command-lockdeader"); err == nil {
+		t.Error("a missing command isn't an error")
+	}
+
+	// The real pgrep finds a process named like the game.
+	if _, err := exec.LookPath("pgrep"); err != nil {
+		t.Skip("no pgrep")
+	}
+
+	sleep, err := exec.LookPath("sleep")
+	if err != nil {
+		t.Skip("no sleep")
+	}
+
+	data, err := os.ReadFile(sleep)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	game := filepath.Join(t.TempDir(), exeName)
+
+	if err := os.WriteFile(game, data, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	cmd := exec.Command(game, "10")
+
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+
+	defer cmd.Process.Kill()
+
+	if got, err := pgrep("pgrep"); !got || err != nil {
+		t.Errorf("pgrep with the game running: %v, %v", got, err)
 	}
 }

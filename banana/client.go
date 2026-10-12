@@ -23,13 +23,19 @@ const (
 	// Preview images come from here. Files there never change, since new
 	// uploads always get a new name, so cached copies never go stale.
 	ImageHost = "images.gamebanana.com"
-
-	ClientVersion = "0.1.0"
 )
 
-var (
-	defaultUserAgent = fmt.Sprintf("lockdeader v%s <https://github.com/treejadey/lockdeader>", ClientVersion)
-)
+var defaultUserAgent = UserAgent("")
+
+// UserAgent is what the client tells GameBanana it is, with the app's
+// version ("" leaves it out).
+func UserAgent(version string) string {
+	if version == "" {
+		return "lockdeader <https://github.com/treejadey/lockdeader>"
+	}
+
+	return fmt.Sprintf("lockdeader v%s <https://github.com/treejadey/lockdeader>", version)
+}
 
 // The zero value isn't usable; use NewClient.
 type Client struct {
