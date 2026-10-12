@@ -110,6 +110,7 @@ Rectangle {
                 // play with mods once some are installed and the game is
                 // known.
                 enabled: installed.installedCount > 0 && settings.gameFolder !== ""
+                         && !launcher.gameRunning
                 onClicked: launcher.play = "mods"
             }
 
@@ -118,18 +119,44 @@ Rectangle {
             // button takes no clicks, so this sits over it.
             MouseArea {
                 anchors.fill: parent
-                enabled: settings.gameFolder === ""
+                enabled: settings.gameFolder === "" && !launcher.gameRunning
                 onClicked: launcher.play = "mods"
+            }
+
+            // A disabled button doesn't see the pointer, so its parent does.
+            HoverHandler {
+                id: playHover
+            }
+
+            ToolTip {
+                visible: playHover.hovered && launcher.gameRunning
+                delay: 500
+                text: qsTr("Deadlock is running")
             }
         }
 
-        ActionButton {
+        Item {
             Layout.fillWidth: true
             Layout.bottomMargin: 4
 
             implicitHeight: 38
-            text: qsTr("Play Without Mods")
-            onClicked: launcher.play = "vanilla"
+
+            ActionButton {
+                anchors.fill: parent
+                text: qsTr("Play Without Mods")
+                enabled: !launcher.gameRunning
+                onClicked: launcher.play = "vanilla"
+            }
+
+            HoverHandler {
+                id: playVanillaHover
+            }
+
+            ToolTip {
+                visible: playVanillaHover.hovered && launcher.gameRunning
+                delay: 500
+                text: qsTr("Deadlock is running")
+            }
         }
 
         SidebarItem {

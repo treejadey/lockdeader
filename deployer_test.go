@@ -152,12 +152,34 @@ func TestDeployer(t *testing.T) {
 			t.Errorf("after preparing without mods: applied %d, disabled %d, err %v", len(applied), disabled, prepared[1])
 		}
 
+		// Resetting takes the lines out, and applies, as part of the same
+		// apply, so a launch that follows straight away gets them back.
+		d.ResetSoon()
+		d.Prepare(true, func(err error) { prepared = append(prepared, err) })
+	})
+	waitFor(t, "preparing after a reset", func() bool { return len(prepared) == 3 })
+
+	mainthread.Wait(func() {
+		if len(applied) != 5 || disabled != 2 || fmt.Sprint(enabled) != "[true true]" || prepared[2] != nil {
+			t.Errorf("after a reset: applied %d, disabled %d, enabled %v, err %v", len(applied), disabled, enabled, prepared[2])
+		}
+
+		// Only the next apply takes them out.
+		d.Apply(func(err error) { got = err })
+	})
+	waitFor(t, "the apply after a reset", doneCount(7))
+
+	mainthread.Wait(func() {
+		if len(applied) != 6 || disabled != 2 {
+			t.Errorf("applied %d, disabled %d; want the lines left alone", len(applied), disabled)
+		}
+
 		// Without a game folder there's nothing to do.
 		gameDir = ""
 		got = errors.New("unset")
 		d.Apply(func(err error) { got = err })
 
-		if got != nil || len(applied) != 4 {
+		if got != nil || len(applied) != 6 {
 			t.Errorf("without a folder: err %v, applied %d", got, len(applied))
 		}
 	})

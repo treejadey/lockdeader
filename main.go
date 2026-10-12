@@ -386,16 +386,22 @@ func main() {
 	// Lockdeader's lines in gameinfo.gi are only for its own launches, so
 	// they come out on startup; and the mods go into the game again, in
 	// case a previous session left that unfinished.
-	if gameDir := settings.Game.Path; gameDir != "" {
-		go func() {
-			if _, err := deploy.DisableMods(gameDir, dirs.GameInfoBackup()); err != nil {
-				slog.Error("failed to take Lockdeader's lines out of gameinfo.gi", "err", err)
-			}
-		}()
-
-		deployer.ApplySoon()
+	if settings.Game.Path != "" {
+		deployer.ResetSoon()
 		otherMods.Scan()
 	}
+
+	// While Deadlock runs, the Play buttons are disabled. Once it closes, the
+	// lines come out of gameinfo.gi, so starting it from Steam runs it
+	// without mods, and changes made meanwhile go in.
+	watcher := newGameWatcher(func(running bool) {
+		launcher.SetGameRunning(running)
+
+		if !running {
+			deployer.ResetSoon()
+		}
+	})
+	watcher.Start()
 
 	code := qt.QGuiApplication_Exec()
 

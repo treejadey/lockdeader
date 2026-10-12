@@ -43,6 +43,8 @@ type deployer struct {
 
 	timer *qt.QTimer
 	busy  bool
+	// The next apply takes Lockdeader's lines out of gameinfo.gi first.
+	takeOutLines bool
 	// A change came in while applying, so it goes again once done, and the
 	// callbacks waiting for that run.
 	again   bool
@@ -74,6 +76,16 @@ func newDeployer(db *appdb.DB, store install.Store, gameDir func() string, loadO
 // ApplySoon applies half a second after the last change.
 func (d *deployer) ApplySoon() {
 	d.timer.Start2()
+}
+
+// ResetSoon takes Lockdeader's lines out of gameinfo.gi, which are only for
+// its own launches, and applies, half a second after the last change. It's
+// for when the game isn't running Lockdeader's launch any more: on startup,
+// and once it closes. The lines come out as part of the apply, so they're
+// out before Prepare puts them back in for a launch that follows.
+func (d *deployer) ResetSoon() {
+	d.takeOutLines = true
+	d.ApplySoon()
 }
 
 // Flush applies now if a change is waiting to be.
@@ -121,14 +133,25 @@ func (d *deployer) Apply(then func(error)) {
 		d.current = append(d.current, then)
 	}
 
+	takeOutLines := d.takeOutLines
+	d.takeOutLines = false
+
 	go func() {
-		err := d.run(dir)
+		err := d.run(dir, takeOutLines)
 
 		mainthread.Start(func() { d.finish(err) })
 	}()
 }
 
-func (d *deployer) run(dir string) error {
+func (d *deployer) run(dir string, takeOutLines bool) error {
+	// Even while the game runs: it has already read gameinfo.gi. A failure
+	// is only logged, and doesn't stop the mods going in.
+	if takeOutLines {
+		if _, err := d.disable(dir, d.backup); err != nil {
+			slog.Error("failed to take Lockdeader's lines out of gameinfo.gi", "err", err)
+		}
+	}
+
 	if running, err := d.running(); err != nil {
 		slog.Warn("couldn't tell whether Deadlock is running", "err", err)
 	} else if running {

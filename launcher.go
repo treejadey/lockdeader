@@ -7,6 +7,7 @@ import (
 	qt "github.com/mappu/miqt/qt6"
 	"github.com/mappu/miqt/qt6/qml"
 
+	"github.com/treejadey/lockdeader/deploy"
 	"github.com/treejadey/lockdeader/game"
 )
 
@@ -19,6 +20,8 @@ import (
 // options from the settings. As in the clipboard bridge, "message" says how
 // it went, and "messageId" goes up by one with each. "messageAction" is
 // "settings" for a message that should offer to open the settings, or "".
+// "gameRunning" is true while Deadlock is (see gameWatcher), when there's no
+// playing.
 //
 // All methods must be called on the Qt main thread.
 type gameLauncher struct {
@@ -33,8 +36,9 @@ type gameLauncher struct {
 	launch  func(args []string) error
 	openURL func(url string) bool
 
-	preparing bool
-	messages  int
+	preparing   bool
+	gameRunning bool
+	messages    int
 }
 
 func newGameLauncher(launchOptions, gameFolder func() string, prepare func(withMods bool, then func(error))) *gameLauncher {
@@ -53,6 +57,7 @@ func newGameLauncher(launchOptions, gameFolder func() string, prepare func(withM
 	l.Insert("message", qt.NewQVariant14(""))
 	l.Insert("messageAction", qt.NewQVariant14(""))
 	l.Insert("messageId", qt.NewQVariant4(0))
+	l.Insert("gameRunning", qt.NewQVariant8(false))
 
 	// Only fires for changes made from QML, not for our own Inserts.
 	l.OnValueChanged(func(key string, value *qt.QVariant) {
@@ -77,6 +82,14 @@ func (l *gameLauncher) Play(withMods bool) {
 		return
 	}
 
+	// The buttons are disabled meanwhile; this answers a press that comes in
+	// just as they're disabled.
+	if l.gameRunning {
+		l.notify(errorMessage(deploy.ErrGameRunning), "")
+
+		return
+	}
+
 	if l.gameFolder() == "" {
 		l.notify(tr("Choose Deadlock’s folder first."), "settings")
 
@@ -98,6 +111,11 @@ func (l *gameLauncher) Play(withMods bool) {
 
 		l.start(withMods)
 	})
+}
+
+func (l *gameLauncher) SetGameRunning(running bool) {
+	l.gameRunning = running
+	l.Insert("gameRunning", qt.NewQVariant8(running))
 }
 
 func (l *gameLauncher) start(withMods bool) {

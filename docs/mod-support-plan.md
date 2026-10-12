@@ -55,7 +55,7 @@ Conflicts are resolved a whole mod at a time. Breakage after a game update goes 
 - A manifest in our folder, `lockdeader.json`, says which VPK (by SHA-256) each slot holds, so nothing has to be hashed. It's deleted before the folder is changed and written again afterwards, so after a crash the folder is checked file by file.
 - Running apply twice does nothing the second time.
 - Recovering from a crash is just running apply again on startup. That replaces DMM's staging files and rollback code.
-- It runs half a second after every change to the installed mods, and again before Play With Mods. Nothing is changed while Deadlock is running (`deploy.Running`): the change waits for the next apply. On Windows, files the game has open can't be renamed or deleted anyway.
+- It runs half a second after every change to the installed mods, and again before Play With Mods. Nothing is changed while Deadlock is running (`deploy.Running`): the change waits until it closes, which Lockdeader checks for every two seconds. On Windows, files the game has open can't be renamed or deleted anyway.
 - Switching profiles (later) will only change what's in our folder. `gameinfo.gi` isn't touched.
 
 **Slots** (`deploy/alloc.go`). The game mounts 99 files per folder. That's a limit on files, not mods: VPKs that don't change any of the same files can share one. Up to 99 enabled VPKs get a slot each, hard-linked. Past that, the lowest in the load order are merged into as few generated VPKs as will fit (`vpk.Write`, streamed, never all in memory), never two that touch the same file, so which one wins always stays plain from the slot numbers. Once conflicting mods can't both be on (see 3), that last rule never triggers.

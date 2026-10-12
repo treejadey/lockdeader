@@ -113,5 +113,23 @@ func TestGameLauncher(t *testing.T) {
 		if got := l.Value("messageAction").ToString(); got != "" {
 			t.Errorf("messageAction = %q after a plain message", got)
 		}
+
+		// While the game runs, it isn't readied or started again.
+		l.SetGameRunning(true)
+		l.Play(true)
+
+		if !l.Value("gameRunning").ToBool() || len(launched) != 4 || len(prepared) != 6 {
+			t.Errorf("with the game running: gameRunning %v, launched %d, prepared %d", l.Value("gameRunning").ToBool(), len(launched), len(prepared))
+		}
+
+		if got := l.Value("message").ToString(); got != "Deadlock is running. Close it and try again." {
+			t.Errorf("message = %q", got)
+		}
+
+		l.SetGameRunning(false)
+
+		if l.Value("gameRunning").ToBool() {
+			t.Error("gameRunning is still true")
+		}
 	})
 }
