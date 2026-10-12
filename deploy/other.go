@@ -221,7 +221,9 @@ func ScanOtherMods(gameDir string) ([]OtherMod, error) {
 func firstEnabledPath(m OtherMod) string {
 	for _, f := range m.Files {
 		if f.Enabled {
-			return strings.ToLower(f.Path)
+			// With slashes, so "addons/" sorts before "addons2/" on Windows
+			// too: '/' comes before '2', but '\\' comes after it.
+			return strings.ToLower(filepath.ToSlash(f.Path))
 		}
 	}
 

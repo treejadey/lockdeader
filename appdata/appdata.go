@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 )
@@ -114,8 +115,10 @@ func locate(goos string, getenv func(string) string, homeDir func() (string, err
 		return filepath.Join(home, "Library", "Application Support", appName), nil
 
 	default:
-		// The XDG spec says to ignore relative paths.
-		if dir := getenv("XDG_DATA_HOME"); filepath.IsAbs(dir) {
+		// The XDG spec says to ignore relative paths. Its paths are POSIX,
+		// so a leading slash is what counts, whatever the host (the tests
+		// run this branch on Windows too).
+		if dir := getenv("XDG_DATA_HOME"); path.IsAbs(dir) {
 			return filepath.Join(dir, appName), nil
 		}
 

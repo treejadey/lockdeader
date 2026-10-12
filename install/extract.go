@@ -296,9 +296,11 @@ func (x *extraction) check(sha string) error {
 		return err
 	}
 
-	defer f.Close()
-
 	d, err := vpk.ReadDir(f)
+
+	// Closed before it may be removed: Windows won't delete an open file.
+	f.Close()
+
 	if err != nil {
 		x.store.Remove(sha)
 

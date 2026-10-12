@@ -5,11 +5,16 @@ import QtQuick
 // App-wide colours: Rosé Pine while the system prefers a dark style, and
 // Rosé Pine Dawn otherwise. As elementary OS asks of apps that work in
 // either, it follows the system's preference, and changes along with it.
-// With no preference, it's light, as elementary's apps are by default.
+// Where the system states no preference (Windows' high-contrast themes, a
+// Linux desktop without a settings portal), its palette decides: a window
+// darker than its text means dark.
 QtObject {
     id: theme
 
+    readonly property SystemPalette system: SystemPalette {}
     readonly property bool dark: Application.styleHints.colorScheme === Qt.ColorScheme.Dark
+                                 || (Application.styleHints.colorScheme === Qt.ColorScheme.Unknown
+                                     && theme.system.window.hslLightness < theme.system.windowText.hslLightness)
 
     readonly property color base: theme.dark ? "#191724" : "#faf4ed"
     readonly property color surface: theme.dark ? "#1f1d2e" : "#fffaf3"

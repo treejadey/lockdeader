@@ -263,23 +263,31 @@ func TestApplyRebuildsWhatTheManifestCantVouchFor(t *testing.T) {
 	apply(t, game, files)
 
 	manifestPath := filepath.Join(Dir(game), manifestName)
-	good := readFile(t, manifestPath)
 
 	tests := map[string]struct {
-		damage func()
+		damage func(good []byte)
 		placed int
 	}{
-		"missing manifest": {func() { os.Remove(manifestPath) }, 2},
-		"corrupt manifest": {func() { os.WriteFile(manifestPath, []byte("{"), 0o644) }, 2},
-		"manifest lying": {func() {
+		"missing manifest": {func([]byte) { os.Remove(manifestPath) }, 2},
+		"corrupt manifest": {func([]byte) { os.WriteFile(manifestPath, []byte("{"), 0o644) }, 2},
+		"manifest lying": {func(good []byte) {
 			os.WriteFile(manifestPath, bytes.Replace(good, []byte(files[1].SHA256), []byte("0000"), 1), 0o644)
 		}, 1},
-		"wrong size on disk": {func() { os.WriteFile(slotPath(game, 1), []byte("short"), 0o644) }, 1},
+		"wrong size on disk": {func([]byte) {
+			// Removed first: the slot is a hard link to the store's file,
+			// and writing into it would shorten that too.
+			os.Remove(slotPath(game, 1))
+			os.WriteFile(slotPath(game, 1), []byte("short"), 0o644)
+		}, 1},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			tc.damage()
+			// The cases run in any order and share the folder, so each
+			// starts from a sound one.
+			apply(t, game, files)
+			good := readFile(t, manifestPath)
+			tc.damage(good)
 
 			res := apply(t, game, files)
 			if res.Placed != tc.placed {
@@ -383,8 +391,6 @@ func TestApplyBundles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	defer f.Close()
-
 	d, err := vpk.ReadDir(f)
 	if err != nil {
 		t.Fatal(err)
@@ -404,6 +410,10 @@ func TestApplyBundles(t *testing.T) {
 			t.Errorf("%s has the wrong CRC", e.Path)
 		}
 	}
+
+	// Closed before the bundle is rebuilt below: Windows won't rename over
+	// an open file (which is why nothing is applied while the game runs).
+	f.Close()
 
 	if want := []string{"materials/m098.vmat_c", "materials/m099.vmat_c", "materials/m100.vmat_c"}; !slices.Equal(paths, want) {
 		t.Errorf("bundle holds %v, want %v", paths, want)
