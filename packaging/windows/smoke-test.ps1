@@ -1,15 +1,15 @@
 #!/usr/bin/env pwsh
-# Checks that the Windows zip runs on a machine with nothing installed:
-# unzips it, starts the app, and fails if it doesn't get as far as its
-# "starting Lockdeader" log line and stay up. A DLL, Qt plugin or QML module
-# left out of the zip stops it before that.
+# Checks that the Windows app runs on a machine with nothing installed:
+# starts it from the folder build.ps1 made, and fails if it doesn't get as
+# far as its "starting Lockdeader" log line and stay up. A DLL, Qt plugin or
+# QML module left out of the folder stops it before that.
 #
-#     pwsh packaging/windows/smoke-test.ps1 -Zip dist\Lockdeader-0.1.0-windows-x64.zip
+#     pwsh packaging/windows/smoke-test.ps1 -AppDir dist\Lockdeader
 
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [string]$Zip,
+    [string]$AppDir,
     # How long the app gets to start.
     [int]$Seconds = 20
 )
@@ -17,7 +17,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 if (-not $IsWindows) {
-    throw 'The Windows zip can only be tested on Windows.'
+    throw 'The Windows app can only be tested on Windows.'
 }
 
 # Windows shows a dialog, and waits, when an exe's DLL is missing. With this
@@ -36,11 +36,10 @@ $work = Join-Path ([System.IO.Path]::GetTempPath()) "lockdeader-smoke-test-$PID"
 New-Item -ItemType Directory -Path $work -Force | Out-Null
 
 try {
-    Expand-Archive -Path $Zip -DestinationPath $work
-    $exe = Join-Path $work 'Lockdeader' 'Lockdeader.exe'
+    $exe = Join-Path $AppDir 'Lockdeader.exe'
 
     if (-not (Test-Path $exe)) {
-        throw "The zip has no Lockdeader\Lockdeader.exe"
+        throw "There's no Lockdeader.exe in $AppDir"
     }
 
     # Its data goes here rather than the machine's own, and Qt's warnings,

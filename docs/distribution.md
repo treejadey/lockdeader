@@ -74,26 +74,26 @@ A `THIRD-PARTY-NOTICES` file (or a folder of licences) listing what's bundled, w
 
 ```
 Lockdeader-1.2.3-windows-x64.zip
-└── Lockdeader/
-    ├── Lockdeader.exe          built with -H windowsgui, so no console window
-    ├── Qt6*.dll                Core, Gui, Network, Qml, Quick, QuickControls2, ...
-    ├── lib*.dll                the MinGW runtime and Qt's own dependencies
-    ├── platforms/qwindows.dll
-    ├── imageformats/           qsvg, qjpeg, qgif, qwebp: icons and GameBanana's pictures
-    ├── iconengines/qsvgicon.dll
-    ├── tls/                    HTTPS for images loaded through Qt (qschannelbackend)
-    ├── qml/                    Qt's QML modules: QtQuick, Controls (Fusion), Layouts, Effects
-    │                           (the app's own QML is in the .exe)
-    ├── translations/           Qt's own (qt_*.qm), which the app loads for Qt's text
-    ├── LICENSE
-    └── THIRD-PARTY-NOTICES
+├── Lockdeader.exe          built with -H windowsgui, so no console window
+├── Qt6*.dll                Core, Gui, Network, Qml, Quick, QuickControls2, ...
+├── lib*.dll                the MinGW runtime and Qt's own dependencies
+├── platforms/qwindows.dll
+├── imageformats/           qsvg, qjpeg, qgif, qwebp: icons and GameBanana's pictures
+├── iconengines/qsvgicon.dll
+├── tls/                    HTTPS for images loaded through Qt (qschannelbackend)
+├── qml/                    Qt's QML modules: QtQuick, Controls (Fusion), Layouts, Effects
+│                           (the app's own QML is in the .exe)
+├── translations/           Qt's own (qt_*.qm), which the app loads for Qt's text
+├── qt.conf                 where those are; MSYS2's Qt looks in share\qt6\ otherwise
+├── LICENSE
+└── THIRD-PARTY-NOTICES
 ```
 
 Unzip and run. It's portable, apart from the data in `%LOCALAPPDATA%\Lockdeader`, which `appdata` already puts there. Toast notifications register the app under the user's registry key the first time (`notification_windows.go`), which a portable app can do.
 
 ### Building it
 
-**Built:** `packaging/windows/build.ps1` and `smoke-test.ps1`, run by the `windows` and `windows-smoke-test` jobs of `.github/workflows/build.yml`, which upload the zip as an artifact. Attaching it to a release on a tag is still to do. The build scripts are PowerShell on both platforms, since both runners ship it. What follows is the reasoning.
+**Built:** `packaging/windows/build.ps1` and `smoke-test.ps1`, run by the `windows` and `windows-smoke-test` jobs of `.github/workflows/build.yml`, which upload the app's folder as an artifact (GitHub zips it, so the build doesn't). Attaching it to a release on a tag is still to do. The build scripts are PowerShell on both platforms, since both runners ship it. What follows is the reasoning.
 
 cgo can't use MSVC, so Qt has to be a MinGW build. Which one doesn't matter much; use whichever is more convenient. That's likely **MSYS2's UCRT64 environment**:
 
@@ -114,10 +114,10 @@ The workflow:
 4. **Collect the DLLs.**
    - `windeployqt --qmldir qml --release Lockdeader.exe` copies Qt's DLLs, plugins and the QML modules the app imports. MSYS2 may name it `windeployqt6`; check.
    - `windeployqt` doesn't copy what Qt itself links against from MSYS2: ICU, zstd, HarfBuzz, FreeType, libpng, PCRE2, and the MinGW runtime (`libgcc_s_seh-1`, `libstdc++-6`, `libwinpthread-1`). Find those with `ntldd -R` (MSYS2's `mingw-w64-ucrt-x86_64-ntldd`) and copy each one that lives in `/ucrt64/bin`.
-5. **Smoke-test.** In a later job, on a clean runner without MSYS2, unzip and start the app with `QT_QPA_PLATFORM=offscreen` and `QT_FORCE_STDERR_LOGGING=1`. Fail if it exits early or logs a missing module or DLL. This is what catches a DLL left out.
+5. **Smoke-test.** In a later job, on a clean runner without MSYS2, download the artifact and start the app with `QT_QPA_PLATFORM=offscreen` and `QT_FORCE_STDERR_LOGGING=1`. Fail if it exits early or logs a missing module or DLL. This is what catches a DLL left out.
 6. **Publish.**
-   - Every push: upload the zip as a workflow artifact, for trying out.
-   - A `v*` tag: attach it to a GitHub Release, with a `.sha256` file.
+   - Every push: upload the folder as a workflow artifact, for trying out.
+   - A `v*` tag: zip it and attach it to a GitHub Release, with a `.sha256` file.
 
 MSYS2's Qt is built with ICU, which adds about 30 MB. If MSYS2 turns out awkward, Qt's official MinGW build is the fallback: install it with `aqtinstall`, along with its matching MinGW. It's built without ICU, so the zip is smaller, but there's more to set up.
 

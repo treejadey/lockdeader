@@ -1,4 +1,4 @@
-# Builds what users download: the Windows zip and the Linux Flatpak, each
+# Builds what users download: the Windows app and the Linux Flatpak, each
 # uploaded as an artifact of the run. The build scripts are PowerShell, which
 # both runners have, so there's one language to maintain for both.
 name: Build
@@ -12,13 +12,13 @@ on:
 
 jobs:
   windows:
-    name: Windows zip
+    name: Windows app
     runs-on: windows-latest
     # The first build compiles miqt's Qt bindings, which takes a long time.
     # setup-go caches Go's build cache between runs, so later ones don't.
     timeout-minutes: 120
     outputs:
-      zip: ${{ steps.build.outputs.zip }}
+      version: ${{ steps.build.outputs.version }}
     steps:
       - uses: actions/checkout@v7
 
@@ -52,18 +52,20 @@ jobs:
         shell: pwsh
         run: '"${{ steps.msys2.outputs.msys2-location }}\ucrt64\bin" | Out-File $env:GITHUB_PATH -Append'
 
-      - name: Build the zip
+      - name: Build the app
         id: build
         shell: pwsh
         run: ./packaging/windows/build.ps1 -Msys2Root '${{ steps.msys2.outputs.msys2-location }}'
 
+      # GitHub zips the folder, so it's uploaded as it is. The zip has the
+      # folder's contents at its top.
       - uses: actions/upload-artifact@v7
         with:
-          name: Lockdeader-windows-x64
-          path: ${{ steps.build.outputs.zip }}
+          name: Lockdeader-${{ steps.build.outputs.version }}-windows-x64
+          path: ${{ steps.build.outputs.dir }}
           if-no-files-found: error
 
-      # After the zip is up, so a failing test still leaves one to try. Qt
+      # After the app is up, so a failing test still leaves one to try. Qt
       # only logs to a console on Windows, and the runner has none, so
       # without QT_FORCE_STDERR_LOGGING its warnings and fatal errors would
       # go unseen. -v shows which test a crash happened in.
@@ -77,21 +79,21 @@ jobs:
           go test -v ./...
 
   windows-smoke-test:
-    name: Windows zip runs
+    name: Windows app runs
     needs: windows
-    # A clean runner, without MSYS2, so a DLL left out of the zip shows.
+    # A clean runner, without MSYS2, so a DLL left out shows.
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/download-artifact@v8
         with:
-          name: Lockdeader-windows-x64
-          path: dist
+          name: Lockdeader-${{ needs.windows.outputs.version }}-windows-x64
+          path: dist/Lockdeader
 
-      - name: Start the app from the zip
+      - name: Start the app
         shell: pwsh
-        run: ./packaging/windows/smoke-test.ps1 -Zip (Get-ChildItem dist/*.zip).FullName
+        run: ./packaging/windows/smoke-test.ps1 -AppDir dist/Lockdeader
 
   flatpak:
     name: Linux Flatpak
@@ -126,8 +128,10 @@ jobs:
         shell: pwsh
         run: ./packaging/flatpak/build.ps1
 
+      # One file, so it's uploaded as it is rather than zipped; the
+      # artifact takes the file's name.
       - uses: actions/upload-artifact@v7
         with:
-          name: Lockdeader-linux-x86_64
           path: ${{ steps.build.outputs.bundle }}
+          archive: false
           if-no-files-found: error

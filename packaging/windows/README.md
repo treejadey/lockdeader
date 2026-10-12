@@ -1,9 +1,10 @@
-# Windows zip
+# Windows app
 
-`build.ps1` builds `Lockdeader-<version>-windows-x64.zip`: a `Lockdeader`
-folder with the app and everything it needs, so it runs where it's unzipped.
-`smoke-test.ps1` checks that it does, on a machine with nothing installed.
-GitHub Actions runs both (`.github/workflows/build.yml`).
+`build.ps1` builds `dist\Lockdeader`: a folder with the app and everything it
+needs, so it runs wherever the folder is put. `smoke-test.ps1` checks that it
+does, on a machine with nothing installed. GitHub Actions runs both
+(`.github/workflows/build.yml`) and uploads the folder as an artifact, which
+GitHub zips as `Lockdeader-<version>-windows-x64.zip`.
 
 ## Building by hand
 
@@ -17,10 +18,10 @@ GitHub Actions runs both (`.github/workflows/build.yml`).
 
    ```powershell
    ./packaging/windows/build.ps1 -Msys2Root C:\msys64
-   ./packaging/windows/smoke-test.ps1 -Zip (Get-ChildItem dist/*.zip).FullName
+   ./packaging/windows/smoke-test.ps1 -AppDir dist\Lockdeader
    ```
 
-## What's in the zip, and how it's found
+## What's in the folder, and how it's found
 
 - **`Lockdeader.exe`**, built without a console window. The QML is inside
   it.
@@ -31,7 +32,9 @@ GitHub Actions runs both (`.github/workflows/build.yml`).
   MinGW runtime, ...), which `windeployqt` doesn't copy. `ntldd` reads each
   file's imports, and anything it finds in MSYS2's `ucrt64\bin` is copied
   in, until nothing new turns up.
-- **Qt's own translations** in `translations/`, where `translations.go`
-  looks after Qt's install folder.
+- **Qt's own translations** in `translations/`.
+- **`qt.conf`**, which tells Qt where those are. Without it, MSYS2's Qt
+  looks for its QML modules and translations in `share\qt6\` next to the
+  app, finds no `QtQuick`, and the app quits before its window opens.
 - **`LICENSE.txt`.** Licences for what's bundled are still to come (see
   `docs/distribution.md`).

@@ -1,12 +1,14 @@
 #!/usr/bin/env pwsh
-# Builds the Windows zip: Lockdeader.exe with every DLL, Qt plugin and QML
-# module it needs, so it runs where it's unzipped. Needs MSYS2's UCRT64
-# packages (see .github/workflows/build.yml for the list) and Go.
+# Builds the Windows app: a folder with Lockdeader.exe and every DLL, Qt
+# plugin and QML module it needs, so it runs wherever the folder is put.
+# Needs MSYS2's UCRT64 packages (see .github/workflows/build.yml for the
+# list) and Go.
 #
 #     pwsh packaging/windows/build.ps1 [-Msys2Root C:\msys64] [-OutDir dist]
 #
-# Writes dist/Lockdeader-<version>-windows-x64.zip, and tells GitHub Actions
-# its path as the step's "zip" output.
+# Writes dist/Lockdeader, and tells GitHub Actions its path and the app's
+# version as the step's "dir" and "version" outputs. GitHub zips the folder
+# when it's uploaded as an artifact.
 
 [CmdletBinding()]
 param(
@@ -34,12 +36,11 @@ if (-not (Test-Path $ucrt64Bin)) {
 $env:PATH = "$ucrt64Bin;$env:PATH"
 
 $version = (Get-Content VERSION.txt -Raw).Trim()
-$staging = Join-Path $OutDir 'staging'
-$appDir = Join-Path $staging 'Lockdeader'
+$appDir = Join-Path $OutDir 'Lockdeader'
 $exe = Join-Path $appDir 'Lockdeader.exe'
 
-if (Test-Path $staging) {
-    Remove-Item $staging -Recurse -Force
+if (Test-Path $appDir) {
+    Remove-Item $appDir -Recurse -Force
 }
 
 New-Item -ItemType Directory -Path $appDir -Force | Out-Null
@@ -59,6 +60,18 @@ go build -trimpath -ldflags '-s -w -H windowsgui' -o $exe .
 Write-Host 'Collecting Qt'
 windeployqt6 --release --qmldir qml --no-opengl-sw --no-system-d3d-compiler `
     --exclude-plugins qicns,qtga,qtiff,qwbmp $exe
+
+# MSYS2's Qt looks for QML modules and translations under share\qt6 next to
+# the app, not where windeployqt puts them, and without its QML modules the
+# app can't load its window. qt.conf tells it where they are. Paths are
+# relative to the app's folder.
+Set-Content (Join-Path $appDir 'qt.conf') -Encoding utf8NoBOM -Value @'
+[Paths]
+Prefix = .
+Plugins = .
+QmlImports = qml
+Translations = translations
+'@
 
 # windeployqt doesn't copy what Qt itself links against from MSYS2 (ICU,
 # zstd, HarfBuzz, the MinGW runtime, ...), or what the plugins do (libjpeg,
@@ -101,22 +114,9 @@ Write-Host "Copied $copied more DLLs"
 
 Copy-Item LICENSE (Join-Path $appDir 'LICENSE.txt')
 
-# The zip holds a Lockdeader folder, so unzipping doesn't scatter files.
-$zip = Join-Path (Resolve-Path $OutDir) "Lockdeader-$version-windows-x64.zip"
-
-if (Test-Path $zip) {
-    Remove-Item $zip
-}
-
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path $appDir), $zip,
-    [System.IO.Compression.CompressionLevel]::Optimal, $true)
-
-Remove-Item $staging -Recurse -Force
-
-$size = [math]::Round((Get-Item $zip).Length / 1MB)
-Write-Host "Wrote $zip ($size MB)"
+$size = [math]::Round((Get-ChildItem $appDir -Recurse -File | Measure-Object Length -Sum).Sum / 1MB)
+Write-Host "Wrote $appDir ($size MB)"
 
 if ($env:GITHUB_OUTPUT) {
-    "zip=$zip" | Out-File $env:GITHUB_OUTPUT -Append
+    "dir=$(Resolve-Path $appDir)", "version=$version" | Out-File $env:GITHUB_OUTPUT -Append
 }
