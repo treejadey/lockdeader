@@ -1,0 +1,657 @@
+# The text of Lockdeader's interface, to translate.
+# Made by `go run ./cmd/translations extract`, so don't edit it by hand.
+msgid ""
+msgstr ""
+"Project-Id-Version: Lockdeader\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: clipboard.go
+msgid "Link copied"
+msgstr ""
+
+#: clipboard.go
+msgid "Couldn’t copy the image"
+msgstr ""
+
+#: clipboard.go
+msgid "Image copied"
+msgstr ""
+
+#: configure.go
+msgid "Couldn’t change the configuration of %s"
+msgstr ""
+
+#: errormessage.go
+msgid "It’s no longer on GameBanana."
+msgstr ""
+
+#: errormessage.go
+msgid "GameBanana is busy. Try again in a minute."
+msgstr ""
+
+#: errormessage.go
+msgid "GameBanana isn’t working right now. Try again later."
+msgstr ""
+
+#: errormessage.go
+msgid "Something went wrong."
+msgstr ""
+
+#: errormessage.go
+msgid "GameBanana can’t be reached. Check your internet connection and try again."
+msgstr ""
+
+#: errormessage.go
+msgid "The download was damaged. Try installing it again."
+msgstr ""
+
+#: errormessage.go
+msgid "The mod’s file isn’t an archive Lockdeader can open."
+msgstr ""
+
+#: errormessage.go
+msgid "The mod has no files the game can use."
+msgstr ""
+
+#: errormessage.go
+msgid "The mod is split into parts, which isn’t supported yet."
+msgstr ""
+
+#: errormessage.go
+msgid "The mod is too big to pack."
+msgstr ""
+
+#: errormessage.go
+msgid "Deadlock is running. Close it and try again."
+msgstr ""
+
+#: errormessage.go
+msgid "Too many of the mods that are on change the same files. Turn some off."
+msgstr ""
+
+#: errormessage.go
+msgid "Some mods’ files are missing. Reinstall them."
+msgstr ""
+
+#: errormessage.go
+msgid "Deadlock’s gameinfo.gi isn’t one Lockdeader understands. Verify the game files in Steam."
+msgstr ""
+
+#: errormessage.go
+msgid "There isn’t enough disk space."
+msgstr ""
+
+#: errormessage.go
+msgid "Lockdeader isn’t allowed to change files in Deadlock’s folder."
+msgstr ""
+
+#: errormessage.go
+msgid "Lockdeader isn’t allowed to save files in its data folder."
+msgstr ""
+
+#: errormessage.go
+msgid "No sound output is available."
+msgstr ""
+
+#: errormessage.go
+msgid "This sound can’t be played."
+msgstr ""
+
+#: installed.go
+msgid "%s is already downloading"
+msgstr ""
+
+#: installed.go
+msgid "%s is already installed"
+msgstr ""
+
+#: installed.go
+msgid "Waiting to download %s"
+msgstr ""
+
+#: installed.go
+msgid "Downloading %s"
+msgstr ""
+
+#: installed.go
+msgid "%s was uninstalled"
+msgstr ""
+
+#: installed.go
+msgid "Couldn’t uninstall %s"
+msgstr ""
+
+#: launcher.go
+msgid "Choose Deadlock’s folder first."
+msgstr ""
+
+#: launcher.go
+msgid "Couldn’t start Deadlock. Check that Steam is installed."
+msgstr ""
+
+#: launcher.go
+msgid "Starting Deadlock with mods"
+msgstr ""
+
+#: launcher.go
+msgid "Starting Deadlock without mods"
+msgstr ""
+
+#: main.go
+msgid "Couldn’t install %s"
+msgstr ""
+
+#: main.go
+msgid "Try installing it again in Lockdeader"
+msgstr ""
+
+#: othermods.go
+msgid "Deadlock Mod Manager"
+msgstr ""
+
+#: othermods.go
+msgid "Addons folder"
+msgstr ""
+
+#: othermods.go
+msgid "Couldn’t take the mods over. They’re still where they were."
+msgstr ""
+
+#: othermods.go
+msgid "The mod was taken over"
+msgstr ""
+
+#: othermods.go
+#, qt-plural-format
+msgid "%n mod was taken over"
+msgid_plural "%n mods were taken over"
+msgstr[0] ""
+msgstr[1] ""
+
+#. %d is how many mods weren't taken over.
+#: othermods.go
+#, qt-plural-format
+msgid "%n mod was taken over; %d couldn’t be, or are installed already"
+msgid_plural "%n mods were taken over; %d couldn’t be, or are installed already"
+msgstr[0] ""
+msgstr[1] ""
+
+#: qml/AppDialog.qml
+#: qml/ImageViewer.qml
+#: qml/InstallDialog.qml
+msgid "Close (Esc)"
+msgstr ""
+
+#: qml/CategoryNav.qml
+msgid "All Mods"
+msgstr ""
+
+#: qml/CategoryNav.qml
+#, qt-format
+msgid ""
+"Couldn’t load categories\n"
+"%1"
+msgstr ""
+
+#: qml/CategoryNav.qml
+#: qml/InstalledPage.qml
+#: qml/LoadMoreFooter.qml
+#: qml/ModsPage.qml
+msgid "Retry"
+msgstr ""
+
+#: qml/ImageViewer.qml
+msgid "Copy Image"
+msgstr ""
+
+#: qml/ImageViewer.qml
+msgid "Copy Image Link"
+msgstr ""
+
+#: qml/InstallDialog.qml
+#, qt-format
+msgid "Couldn’t load the files: %1"
+msgstr ""
+
+#: qml/InstallDialog.qml
+msgid "This mod has no files to install."
+msgstr ""
+
+#: qml/InstallDialog.qml
+msgid "Install"
+msgstr ""
+
+#: qml/InstallDialog.qml
+msgid "Install Selected"
+msgstr ""
+
+#: qml/InstallStatus.qml
+msgid "Couldn’t install"
+msgstr ""
+
+#: qml/InstallStatus.qml
+msgid "Waiting"
+msgstr ""
+
+#: qml/InstallStatus.qml
+msgid "Installing"
+msgstr ""
+
+#: qml/InstalledPage.qml
+msgid "From Other Tools"
+msgstr ""
+
+#: qml/InstalledPage.qml
+#: qml/Sidebar.qml
+msgid "Installed Mods"
+msgstr ""
+
+#: qml/InstalledPage.qml
+msgid "Search Installed Mods"
+msgstr ""
+
+#: qml/InstalledPage.qml
+msgid "Couldn’t put the mods into the game. "
+msgstr ""
+
+#: qml/InstalledPage.qml
+msgid "A mod from another tool was found in the game’s addons folder. Lockdeader can take it over."
+msgstr ""
+
+#: qml/InstalledPage.qml
+#, qt-format
+msgid "%1 mods from other tools were found in the game’s addons folder. Lockdeader can take them over."
+msgstr ""
+
+#: qml/InstalledPage.qml
+#: qml/SettingsPage.qml
+msgid "Take Over…"
+msgstr ""
+
+#: qml/InstalledPage.qml
+msgid "No Mods Installed Yet"
+msgstr ""
+
+#: qml/InstalledPage.qml
+msgid "Mods you install will show up here"
+msgstr ""
+
+#: qml/InstalledPage.qml
+msgid "Browse Mods"
+msgstr ""
+
+#: qml/InstalledPage.qml
+msgid "No Installed Mods Found"
+msgstr ""
+
+#: qml/InstalledPage.qml
+msgid "Dismiss"
+msgstr ""
+
+#: qml/InstalledPage.qml
+msgid "Cancel Install"
+msgstr ""
+
+#: qml/InstalledPage.qml
+msgid "Change Configuration…"
+msgstr ""
+
+#: qml/InstalledPage.qml
+msgid "Uninstall"
+msgstr ""
+
+#: qml/InstalledPage.qml
+#: qml/RestoreDialog.qml
+#: qml/SettingsPage.qml
+msgid "Open Folder"
+msgstr ""
+
+#: qml/LoadMoreFooter.qml
+#, qt-format
+msgid "Couldn’t load more mods: %1"
+msgstr ""
+
+#: qml/Main.qml
+msgid "Undo"
+msgstr ""
+
+#: qml/Main.qml
+#: qml/SettingsPage.qml
+#: qml/Sidebar.qml
+msgid "Settings"
+msgstr ""
+
+#: qml/ModConfigDialog.qml
+msgid "Configuration"
+msgstr ""
+
+#: qml/ModConfigDialog.qml
+msgid "Looking for other versions on GameBanana…"
+msgstr ""
+
+#: qml/ModConfigDialog.qml
+#, qt-format
+msgid "Couldn’t look for other versions: %1"
+msgstr ""
+
+#: qml/ModConfigDialog.qml
+msgid "At least one variant must be selected."
+msgstr ""
+
+#: qml/ModConfigDialog.qml
+msgid "Change Configuration"
+msgstr ""
+
+#: qml/ModDetailsPanel.qml
+msgid "Open profile on GameBanana"
+msgstr ""
+
+#: qml/ModDetailsPanel.qml
+msgid "Open on GameBanana"
+msgstr ""
+
+#: qml/ModDetailsPanel.qml
+msgid "Gallery"
+msgstr ""
+
+#: qml/ModDetailsPanel.qml
+msgid "Description"
+msgstr ""
+
+#: qml/ModDetailsPanel.qml
+#, qt-format
+msgid "Couldn’t load the description: %1"
+msgstr ""
+
+#: qml/ModDetailsPanel.qml
+msgid "Install Mod…"
+msgstr ""
+
+#: qml/ModDetailsPanel.qml
+msgid "Select a mod to see its details"
+msgstr ""
+
+#: qml/ModsPage.qml
+msgid "Search Mods"
+msgstr ""
+
+#: qml/ModsPage.qml
+msgid "No Mods Found"
+msgstr ""
+
+#: qml/ModsPage.qml
+#, qt-format
+msgid ""
+"Couldn’t load mods\n"
+"%1"
+msgstr ""
+
+#: qml/RelativeTime.qml
+#, qt-plural-format
+msgid "%n year ago"
+msgid_plural "%n years ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: qml/RelativeTime.qml
+#, qt-plural-format
+msgid "%n month ago"
+msgid_plural "%n months ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: qml/RelativeTime.qml
+#, qt-plural-format
+msgid "%n week ago"
+msgid_plural "%n weeks ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: qml/RelativeTime.qml
+#, qt-plural-format
+msgid "%n day ago"
+msgid_plural "%n days ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: qml/RelativeTime.qml
+#, qt-plural-format
+msgid "%n hour ago"
+msgid_plural "%n hours ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: qml/RelativeTime.qml
+#, qt-plural-format
+msgid "%n minute ago"
+msgid_plural "%n minutes ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: qml/RelativeTime.qml
+msgid "just now"
+msgstr ""
+
+#: qml/RestoreDialog.qml
+msgid "Restore Settings — Lockdeader"
+msgstr ""
+
+#: qml/RestoreDialog.qml
+msgid "Your settings couldn’t be loaded"
+msgstr ""
+
+#: qml/RestoreDialog.qml
+msgid "There are backups of your settings from earlier sessions. Restore one, or carry on without your settings for now: you’ll get the defaults, and nothing you change will be saved, so the file stays as it is for you to fix."
+msgstr ""
+
+#: qml/RestoreDialog.qml
+msgid "Some backups are damaged, so they can’t be restored."
+msgstr ""
+
+#: qml/RestoreDialog.qml
+msgid "Restoring keeps your current file as Settings.toml.broken."
+msgstr ""
+
+#: qml/RestoreDialog.qml
+msgid "Quit"
+msgstr ""
+
+#: qml/RestoreDialog.qml
+msgid "Use Defaults"
+msgstr ""
+
+#: qml/RestoreDialog.qml
+msgid "Restore Backup"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "Search Settings"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "Game"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "Deadlock folder"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "Not found in Steam’s libraries. Choose the folder Steam installed it in."
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "game location install path directory steam library"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "Change…"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "Choose…"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "Launch options"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "Added to the game’s command line when Lockdeader starts it"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "command line arguments parameters flags startup"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "Mods from other tools"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "None found in the game’s addons folder"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "One mod in the game’s addons folder, from Deadlock Mod Manager or put there by hand. Lockdeader can take it over, and then turn it on and off, update and uninstall it."
+msgstr ""
+
+#: qml/SettingsPage.qml
+#, qt-format
+msgid "%1 mods in the game’s addons folder, from Deadlock Mod Manager or put there by hand. Lockdeader can take them over, and then turn them on and off, update and uninstall them."
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "deadlock mod manager dmm addons folder import take over migrate port third party"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "Also load mods installed by other tools"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "Mods put in the game’s addons folder by hand or by another mod manager load after Lockdeader’s when it starts Deadlock with mods"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "addons folder deadlock mod manager dmm manual external other"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "Mod Viewer"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "NSFW mods"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "not safe for work adult mature nudity content ratings"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "Advanced"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "Data folder"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "data directory location cache files backups open"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "No Settings Found"
+msgstr ""
+
+#: qml/Sidebar.qml
+msgid "Mods"
+msgstr ""
+
+#: qml/Sidebar.qml
+msgid "View Mods"
+msgstr ""
+
+#: qml/Sidebar.qml
+msgid "Play With Mods"
+msgstr ""
+
+#: qml/Sidebar.qml
+msgid "Deadlock is running"
+msgstr ""
+
+#: qml/Sidebar.qml
+msgid "Play Without Mods"
+msgstr ""
+
+#: qml/SoundPlayer.qml
+msgid "Can’t play"
+msgstr ""
+
+#: qml/TakeOverDialog.qml
+msgid "Take Over Mods From Other Tools"
+msgstr ""
+
+#: qml/TakeOverDialog.qml
+msgid "The mod in the game’s addons folder will be moved into Lockdeader, which will then turn it on and off, update and uninstall it. Deadlock Mod Manager won’t see it any more."
+msgstr ""
+
+#: qml/TakeOverDialog.qml
+#, qt-format
+msgid "The %1 mods in the game’s addons folder will be moved into Lockdeader, which will then turn them on and off, update and uninstall them. Deadlock Mod Manager won’t see them any more."
+msgstr ""
+
+#: qml/TakeOverDialog.qml
+msgid "Mods GameBanana has are downloaded from it again, so they’re no different from ones installed here. Files it doesn’t know are kept as they are, by their file names."
+msgstr ""
+
+#: qml/TakeOverDialog.qml
+msgid "One of them has several files on GameBanana. Pick which to download:"
+msgstr ""
+
+#: qml/TakeOverDialog.qml
+#, qt-format
+msgid "%1 of them have several files on GameBanana. Pick which to download:"
+msgstr ""
+
+#: qml/TakeOverDialog.qml
+msgid "Cancel"
+msgstr ""
+
+#: qml/TakeOverDialog.qml
+msgid "Take Over the Mod"
+msgstr ""
+
+#: qml/TakeOverDialog.qml
+#, qt-format
+msgid "Take Over %1 Mods"
+msgstr ""
+
+#: qml/Toast.qml
+msgid "Close"
+msgstr ""
+
+#: qml/TopBar.qml
+msgid "Grid view"
+msgstr ""
+
+#: qml/TopBar.qml
+msgid "List view"
+msgstr ""
+
+#: settingspage.go
+msgid "Choose Deadlock’s Folder"
+msgstr ""
+
+#: settingspage.go
+msgid "The folder dialog couldn’t be opened."
+msgstr ""
+
+#: settingspage.go
+msgid "That folder isn’t Deadlock’s. Choose the one Steam installed it in, usually steamapps/common/Deadlock."
+msgstr ""

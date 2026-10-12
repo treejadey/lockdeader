@@ -1,0 +1,31 @@
+#!/bin/sh
+# Stops a commit whose translation template doesn't match the app's text,
+# or whose translations have mistakes (see po/README.md). Turn it on in a
+# clone with:
+#
+#     git config core.hooksPath .githooks
+#
+# It checks the files as staged, not the working tree, so a change that's
+# only partly staged is checked as it will be committed.
+
+set -eu
+
+# Only commits that change the text, the translations or the tool.
+if git diff --cached --quiet -- qml po i18n cmd/translations ':(glob)*.go'; then
+	exit 0
+fi
+
+staged=$(mktemp -d)
+trap 'rm -rf "$staged"' EXIT
+
+git ls-files -z -- go.mod go.sum qml po i18n cmd/translations ':(glob)*.go' |
+	git checkout-index -z --stdin --prefix="$staged/"
+
+if ! (cd "$staged" && go run ./cmd/translations check); then
+	echo
+	echo "Translations aren't up to date. Run this, stage po/ and commit again:"
+	echo
+	echo "    go run ./cmd/translations extract"
+
+	exit 1
+fi

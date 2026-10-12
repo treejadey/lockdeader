@@ -17,6 +17,7 @@ import (
 	"github.com/mappu/miqt/qt6/network"
 
 	"github.com/treejadey/lockdeader/banana"
+	"github.com/treejadey/lockdeader/i18n"
 )
 
 // Qt has to be used from the thread that created it, but Go runs each test on
@@ -31,6 +32,15 @@ func TestMain(m *testing.M) {
 	// in-process clipboard and needs no display.
 	os.Setenv("QT_QPA_PLATFORM", "offscreen")
 	qt.NewQGuiApplication([]string{"test"})
+
+	// As in the app, which English needs for plurals; in English whatever
+	// the system's language, as tests expect.
+	english, err := i18n.Load(translationFS(), []string{"en"})
+	if err != nil {
+		panic(err)
+	}
+
+	installTranslator(english)
 
 	code := 0
 

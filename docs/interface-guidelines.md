@@ -191,10 +191,15 @@ If a design doesn't fit these guidelines, decide whether it's a real exception, 
 - Every string the user sees is translatable:
   - in QML, `qsTr("…")`;
   - in Go, `tr("…")` (in `tr.go`) for strings that reach the UI, such as `installed.message`, with `fmt.Sprintf` for anything filled in.
+- The text must be a string literal (or literals joined with `+`), so `go run ./cmd/translations extract` can find it. Run that after changing UI text.
 - Keep the punctuation inside the translatable string.
 - Never build a sentence out of pieces: use placeholders, as in `qsTr("Couldn’t load mods: %1").arg(error)`.
+- Text with a number in it has a plural, since languages have up to six forms: `qsTr("%n mod", "%n mods", count)` in QML (the English plural goes where a disambiguation would), `trN("%n mod", "%n mods", count)` in Go. Never pick between "1 mod" and "%1 mods" yourself.
+- Say what a placeholder stands for, where it isn't obvious, in a `//:` comment on the line right above, which translators see: `//: %1 is a mod's name.`
+- The same text is translated once wherever it's used. Where it should be translated differently, give it a disambiguation: `qsTr("Open", "verb")`.
+- The app follows the system's language, as elementary OS apps do, with no setting of its own.
 - Numbers, sizes and dates follow the locale where Qt can do it (`Qt.locale()`, `Locale.toString`).
-- There are no translations yet, and right-to-left layouts aren't tested. Still, prefer start and end over left and right where QML offers both, so mirroring can work later.
+- Right-to-left layouts aren't tested. Still, prefer start and end over left and right where QML offers both, so mirroring can work later.
 
 ## Icons
 

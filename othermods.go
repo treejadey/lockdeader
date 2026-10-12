@@ -421,9 +421,11 @@ func (o *otherMods) TakeOver(picks map[string][]int) {
 		case kept == 0 && took == 1:
 			o.installed.notify(tr("The mod was taken over"))
 		case kept == 0:
-			o.installed.notify(fmt.Sprintf(tr("%d mods were taken over"), took))
+			o.installed.notify(trN("%n mod was taken over", "%n mods were taken over", took))
 		default:
-			o.installed.notify(fmt.Sprintf(tr("%d mods were taken over; %d couldn’t be, or are installed already"), took, kept))
+			//: %d is how many mods weren't taken over.
+			o.installed.notify(fmt.Sprintf(trN("%n mod was taken over; %d couldn’t be, or are installed already",
+				"%n mods were taken over; %d couldn’t be, or are installed already", took), kept))
 		}
 	}
 
