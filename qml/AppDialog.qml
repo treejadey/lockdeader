@@ -130,14 +130,9 @@ Popup {
                   + (buttonRow.children.length > 0 ? 36 + buttonRow.height + 14 : 28)
             radius: 22
             color: Theme.overlay
-            // Keeps text from wobbling on fractionally scaled displays. The dialog
-            // is a popup, so the nudge on the main window's content doesn't reach it.
-            transform: [
-                Translate {
-                    id: cardShift
-                },
-                PixelNudge {}
-            ]
+            transform: Translate {
+                id: cardShift
+            }
 
             // Clicks on the dialog stay on it, rather than closing it.
             MouseArea {

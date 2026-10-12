@@ -21,6 +21,8 @@ const (
 	roleUpdated
 	roleNSFW
 	roleAudio
+	roleViews
+	roleLikes
 )
 
 var modRoleNames = map[int][]byte{
@@ -32,6 +34,8 @@ var modRoleNames = map[int][]byte{
 	roleUpdated:   []byte("updated"),
 	roleNSFW:      []byte("nsfw"),
 	roleAudio:     []byte("audio"),
+	roleViews:     []byte("views"),
+	roleLikes:     []byte("likes"),
 }
 
 // Cards are never wider than this, so previews stay sharp without fetching
@@ -330,6 +334,8 @@ func (m *modListModel) append(mods []banana.Mod) (added int) {
 		item.SetData(qt.NewQVariant6(mod.LastUpdated().Unix()), roleUpdated)
 		item.SetData(qt.NewQVariant8(mod.IsNSFW()), roleNSFW)
 		item.SetData(qt.NewQVariant14(mod.PreviewMedia.Metadata.AudioURL), roleAudio)
+		item.SetData(qt.NewQVariant4(mod.ViewCount), roleViews)
+		item.SetData(qt.NewQVariant4(mod.LikeCount), roleLikes)
 
 		m.AppendRow([]*qt.QStandardItem{item})
 	}

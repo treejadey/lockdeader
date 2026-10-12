@@ -144,7 +144,15 @@ Rectangle {
             ActionButton {
                 anchors.fill: parent
                 text: qsTr("Play Without Mods")
-                enabled: !launcher.gameRunning
+                enabled: settings.gameFolder !== "" && !launcher.gameRunning
+                onClicked: launcher.play = "vanilla"
+            }
+
+            // As over Play With Mods: pressing it without a game folder gets
+            // the same answer.
+            MouseArea {
+                anchors.fill: parent
+                enabled: settings.gameFolder === "" && !launcher.gameRunning
                 onClicked: launcher.play = "vanilla"
             }
 

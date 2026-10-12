@@ -11,6 +11,8 @@ Item {
     property real radius: 6
     property color placeholderColor: Theme.overlay
     property bool blurred: false
+    // Which part of a picture of another shape stays when it's cropped.
+    property alias verticalAlignment: image.verticalAlignment
 
     Item {
         anchors.fill: parent

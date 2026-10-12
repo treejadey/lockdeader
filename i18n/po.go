@@ -328,14 +328,8 @@ func (f *File) Write(w io.Writer) error {
 		writeComment(&b, "#", c)
 	}
 
-	// gettext's tools always write the header a line at a time.
-	b.WriteString("msgid \"\"\nmsgstr \"\"\n")
-
-	for line := range strings.SplitAfterSeq(f.Header, "\n") {
-		if line != "" {
-			b.WriteString(quote(line) + "\n")
-		}
-	}
+	writeString(&b, "", "msgid", "")
+	writeString(&b, "", "msgstr", f.Header)
 
 	for _, m := range f.Messages {
 		b.WriteByte('\n')
@@ -348,9 +342,7 @@ func (f *File) Write(w io.Writer) error {
 			writeComment(&b, "#.", c)
 		}
 
-		for _, file := range m.Files {
-			b.WriteString("#: " + file + "\n")
-		}
+		writeReferences(&b, m.Files)
 
 		if len(m.Flags) > 0 {
 			b.WriteString("#, " + strings.Join(m.Flags, ", ") + "\n")
@@ -399,27 +391,6 @@ func writeComment(b *bytes.Buffer, marker, text string) {
 		b.WriteString(marker + "\n")
 	} else {
 		b.WriteString(marker + " " + text + "\n")
-	}
-}
-
-// writeString writes a keyword and its string, a line for each line of the
-// string when it has several, as gettext's tools do.
-func writeString(b *bytes.Buffer, prefix, keyword, s string) {
-	lines := strings.SplitAfter(s, "\n")
-	if lines[len(lines)-1] == "" {
-		lines = lines[:len(lines)-1]
-	}
-
-	if len(lines) <= 1 {
-		b.WriteString(prefix + keyword + " " + quote(s) + "\n")
-
-		return
-	}
-
-	b.WriteString(prefix + keyword + ` ""` + "\n")
-
-	for _, line := range lines {
-		b.WriteString(prefix + quote(line) + "\n")
 	}
 }
 

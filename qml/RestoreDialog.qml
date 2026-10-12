@@ -42,8 +42,6 @@ AppWindow {
             margins: 24
         }
         spacing: 16
-        // Keeps text from wobbling on fractionally scaled displays.
-        transform: PixelNudge {}
 
         Label {
             Layout.fillWidth: true

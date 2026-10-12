@@ -28,8 +28,6 @@ Rectangle {
     visible: height > 0
     color: Theme.overlay
 
-    transform: PixelNudge {}
-
     Behavior on implicitHeight {
         NumberAnimation {
             duration: Motion.moderate01

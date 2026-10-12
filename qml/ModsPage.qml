@@ -194,6 +194,9 @@ Item {
             images: details.images
             audio: details.audio
             profileUrl: details.profileUrl
+            updated: details.updated
+            views: details.views
+            likes: details.likes
             description: details.description
             loading: details.loading
             error: details.error

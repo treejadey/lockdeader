@@ -16,7 +16,10 @@ Item {
     // Laid out inside something else that scrolls, e.g. a footer: as tall
     // as its contents, without a scrollbar.
     property bool embedded: false
-    property int cardSize: 150
+    property int cardWidth: 240
+    property int cardHeight: Math.round(cardWidth * 9 / 16)
+    // Under the picture, for the name and date.
+    property int textHeight: 48
     // The edges of the grid get at least half of it.
     property int cardSpacing: 12
     // In pixels per mouse wheel notch.
@@ -54,8 +57,8 @@ Item {
         interactive: !root.embedded
         boundsBehavior: Flickable.StopAtBounds
 
-        cellWidth: root.cardSize + root.cardSpacing
-        cellHeight: cellWidth + statusHeight
+        cellWidth: root.cardWidth + root.cardSpacing
+        cellHeight: root.cardHeight + root.textHeight + root.cardSpacing + statusHeight
 
         delegate: Item {
             id: cell
@@ -63,7 +66,6 @@ Item {
             required property string key
             required property int modId
             required property string name
-            required property string author
             required property double updated
             required property string thumbnail
             required property bool nsfw
@@ -78,7 +80,7 @@ Item {
             readonly property bool installing: status !== ""
             // Where the tile is in the cell: centred, then shifted with the
             // block of columns (see ModGrid).
-            readonly property real tileX: (width - root.cardSize) / 2 + card.horizontalOffset
+            readonly property real tileX: (width - root.cardWidth) / 2 + card.horizontalOffset
 
             width: grid.cellWidth
             height: grid.cellHeight
@@ -87,21 +89,19 @@ Item {
                 id: card
 
                 width: grid.cellWidth
-                height: grid.cellWidth
+                height: root.cardHeight + root.textHeight + root.cardSpacing
                 modId: cell.modId
                 name: cell.name
-                author: cell.author
                 updated: cell.updated
                 // Sounds have no picture on GameBanana, so they get the app's.
                 thumbnail: cell.thumbnail !== "" || !cell.key.startsWith("Sound/") ? cell.thumbnail
                     : Qt.resolvedUrl("icons/bitmap/sound_icon.png")
                 nsfw: cell.nsfw
-                tileSize: root.cardSize
+                tileWidth: root.cardWidth
+                tileHeight: root.cardHeight
+                textHeight: root.textHeight
                 horizontalOffset: Math.floor((grid.width - grid.columns * grid.cellWidth) / 2)
-                // Like the checkbox, the author waits for the install to finish.
-                showAuthor: !cell.installing
                 dimmed: cell.installing || !cell.modEnabled
-                cornerRightMargin: check.width + 6
                 onClicked: if (!cell.installing && !root.readOnly) root.enabledToggled(cell.key, !cell.modEnabled)
                 onMenuRequested: root.menuRequested(cell.key, cell.status, cell.variants)
 
@@ -122,8 +122,8 @@ Item {
 
             InstallStatus {
                 x: cell.tileX
-                y: (grid.cellWidth - root.cardSize) / 2 + root.cardSize + 8
-                width: root.cardSize
+                y: root.cardSpacing / 2 + root.cardHeight + root.textHeight
+                width: root.cardWidth
                 visible: cell.installing
                 status: cell.status
                 progress: cell.progress

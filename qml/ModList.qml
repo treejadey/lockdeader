@@ -24,20 +24,20 @@ Item {
     property int selectedModId: 0
 
     // The columns, from the left: the image, the name, the category (or for
-    // sounds, the player), the author and when it was updated. Each column's
-    // width includes the gap after it.
+    // sounds, the player), views and likes, and when it was updated. Each
+    // column's width includes the gap after it.
     readonly property int leadingWidth: sounds ? 12 : 64
     readonly property int nameMinWidth: 140
     readonly property int middleGap: sounds ? 8 : 22
     readonly property int middleMinWidth: sounds ? 180 : 120
     readonly property int middleMaxWidth: sounds ? 250 : 238
-    readonly property int authorWidth: 120 + 12
+    readonly property int statsWidth: 110 + 12
     readonly property int updatedWidth: 116 + 12
     // The player always shows, so it counts here; the category doesn't.
     readonly property bool showUpdated: list.width - leadingWidth - nameMinWidth
-        - (sounds ? middleGap + middleMinWidth : 0) - authorWidth - updatedWidth >= 0
+        - (sounds ? middleGap + middleMinWidth : 0) - statsWidth - updatedWidth >= 0
     readonly property real middleWidth: {
-        const room = list.width - leadingWidth - nameMinWidth - middleGap - authorWidth
+        const room = list.width - leadingWidth - nameMinWidth - middleGap - statsWidth
             - (showUpdated ? updatedWidth : 12)
 
         return sounds ? Math.max(middleMinWidth, Math.min(middleMaxWidth, room))
@@ -90,7 +90,8 @@ Item {
             required property int index
             required property int modId
             required property string name
-            required property string author
+            required property int views
+            required property int likes
             // Unix timestamp of the last update, in seconds.
             required property double updated
             required property string audio
@@ -143,6 +144,8 @@ Item {
                 radius: 4
                 placeholderColor: Theme.highlightLow
                 source: root.sounds ? "" : row.thumbnail
+                // Cut from the top, like the cards.
+                verticalAlignment: Image.AlignTop
                 blurred: row.nsfw
             }
 
@@ -154,7 +157,7 @@ Item {
                     leftMargin: root.sounds ? 12 : 10
                     right: root.sounds ? player.left
                          : root.showCategory ? categoryLabel.left
-                         : authorLabel.left
+                         : statsColumn.left
                     // For sounds: the player's play button is 6px in from its
                     // edge, so this ends the name 10px before the button.
                     rightMargin: root.sounds ? 4 : 10
@@ -183,7 +186,7 @@ Item {
 
                 visible: root.sounds
                 anchors {
-                    right: authorLabel.left
+                    right: statsColumn.left
                     rightMargin: 4
                     verticalCenter: parent.verticalCenter
                 }
@@ -200,7 +203,7 @@ Item {
                 id: categoryLabel
 
                 anchors {
-                    right: authorLabel.left
+                    right: statsColumn.left
                     rightMargin: 12
                     verticalCenter: parent.verticalCenter
                 }
@@ -212,19 +215,24 @@ Item {
                 elide: Text.ElideRight
             }
 
-            Label {
-                id: authorLabel
+            // A fixed width, so the counts line up from row to row.
+            Item {
+                id: statsColumn
 
                 anchors {
                     right: root.showUpdated ? updatedRow.left : parent.right
                     rightMargin: 12
-                    verticalCenter: parent.verticalCenter
+                    top: parent.top
+                    bottom: parent.bottom
                 }
-                width: 120
-                text: row.author
-                color: Theme.gold
-                font.pixelSize: 12
-                elide: Text.ElideRight
+                width: 110
+
+                ModStats {
+                    anchors.verticalCenter: parent.verticalCenter
+                    views: row.views
+                    likes: row.likes
+                    pixelSize: 12
+                }
             }
 
             Row {

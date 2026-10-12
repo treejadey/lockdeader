@@ -19,6 +19,11 @@ Rectangle {
     property var images: []
     property string audio
     property string profileUrl
+    // Unix seconds, 0 for unknown.
+    property double updated
+    // -1 for unknown, which hides them.
+    property int views: -1
+    property int likes: -1
     // Rich text (Qt's HTML subset).
     property string description
     property bool loading: false
@@ -113,7 +118,10 @@ Rectangle {
                     onClicked: root.imageClicked(0)
                 }
 
+                // Only over a picture. Sounds have none, so their text is on
+                // the panel itself.
                 TextShadow {
+                    visible: header.hasImage
                     source: headerText
                 }
 
@@ -139,7 +147,7 @@ Rectangle {
                         Label {
                             width: parent.width
                             text: root.name
-                            color: Theme.textOnPicture
+                            color: header.hasImage ? Theme.textOnPicture : Theme.text
                             font.pixelSize: 20
                             font.weight: Font.Medium
                             wrapMode: Text.Wrap
@@ -190,7 +198,7 @@ Rectangle {
                     }
                 }
 
-                Image {
+                TintedIcon {
                     anchors {
                         top: parent.top
                         right: parent.right
@@ -199,7 +207,7 @@ Rectangle {
                     width: 22
                     height: 22
                     source: "icons/open_24_regular.svg"
-                    sourceSize: Qt.size(width, height)
+                    color: header.hasImage ? Theme.textOnPicture : Theme.text
                     visible: root.profileUrl !== ""
                     opacity: externalArea.containsMouse ? 1 : 0.8
 
@@ -229,6 +237,58 @@ Rectangle {
                 source: root.audio
                 // The volume is in the bar along the top.
                 showVolume: false
+            }
+
+            // When it was updated, and its views and likes against the right.
+            Item {
+                Layout.fillWidth: true
+                Layout.leftMargin: 10
+                Layout.rightMargin: 10
+                Layout.topMargin: 10
+                implicitHeight: Math.max(updatedRow.implicitHeight, stats.implicitHeight)
+                visible: root.updated !== 0 || stats.visible
+
+                Row {
+                    id: updatedRow
+
+                    anchors {
+                        left: parent.left
+                        right: stats.visible ? stats.left : parent.right
+                        rightMargin: stats.visible ? 8 : 0
+                        verticalCenter: parent.verticalCenter
+                    }
+                    visible: root.updated !== 0
+                    spacing: 4
+
+                    TintedIcon {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 14
+                        height: 14
+                        source: "icons/calendar_ltr_24_regular.svg"
+                        color: Theme.subtle
+                    }
+
+                    Label {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width - 14 - parent.spacing
+                        text: RelativeTime.format(root.updated, RelativeTime.now)
+                        color: Theme.subtle
+                        font.pixelSize: 13
+                        elide: Text.ElideRight
+                    }
+                }
+
+                ModStats {
+                    id: stats
+
+                    anchors {
+                        right: parent.right
+                        verticalCenter: parent.verticalCenter
+                    }
+                    visible: root.views >= 0 && root.likes >= 0
+                    views: root.views
+                    likes: root.likes
+                }
             }
 
             Item {

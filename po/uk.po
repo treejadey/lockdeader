@@ -219,6 +219,18 @@ msgstr ""
 msgid "Retry"
 msgstr "Повторити"
 
+#. A count in thousands, e.g. "200K" views. %1 is the number.
+#: qml/CompactNumber.qml
+#, qt-format
+msgid "%1K"
+msgstr ""
+
+#. A count in millions, e.g. "3.4M" views. %1 is the number.
+#: qml/CompactNumber.qml
+#, qt-format
+msgid "%1M"
+msgstr ""
+
 #: qml/ImageViewer.qml
 msgid "Copy Image"
 msgstr "Скопіювати Зображення"

@@ -12,7 +12,10 @@ Item {
     property bool loading: false
     property string error: ""
     property string errorDetail: ""
-    property int cardSize: 150
+    property int cardWidth: 240
+    property int cardHeight: Math.round(cardWidth * 9 / 16)
+    // Under the picture, for the name and date.
+    property int textHeight: 48
     // The edges of the grid get at least half of it.
     property int cardSpacing: 12
     // In pixels per mouse wheel notch.
@@ -64,13 +67,18 @@ Item {
 
         // Each cell is a card plus half a gap on every side. Cell size never
         // depends on the content, so nothing moves while thumbnails load.
-        cellWidth: root.cardSize + root.cardSpacing
-        cellHeight: cellWidth
+        cellWidth: root.cardWidth + root.cardSpacing
+        cellHeight: root.cardHeight + root.textHeight + root.cardSpacing
 
         delegate: ModCard {
+            required views
+            required likes
+
             width: grid.cellWidth
             height: grid.cellHeight
-            tileSize: root.cardSize
+            tileWidth: root.cardWidth
+            tileHeight: root.cardHeight
+            textHeight: root.textHeight
             // GridView lays columns out from the left; shift every card by half
             // the unused width so the block of columns is centred.
             horizontalOffset: Math.floor((grid.width - grid.columns * grid.cellWidth) / 2)

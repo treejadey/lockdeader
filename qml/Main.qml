@@ -19,8 +19,6 @@ AppWindow {
     RowLayout {
         anchors.fill: parent
         spacing: 0
-        // Keeps text from wobbling on fractionally scaled displays.
-        transform: PixelNudge {}
 
         Sidebar {
             id: sidebar
@@ -70,8 +68,6 @@ AppWindow {
         parent: Overlay.overlay
         anchors.fill: parent
         z: 1000
-        // Popups don't get the nudge on the window's content.
-        transform: PixelNudge {}
 
         Toast {
             id: toast

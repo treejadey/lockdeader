@@ -1,3 +1,4 @@
+singleton CompactNumber 1.0 CompactNumber.qml
 singleton Motion 1.0 Motion.qml
 singleton RelativeTime 1.0 RelativeTime.qml
 singleton Theme 1.0 Theme.qml
@@ -26,8 +27,8 @@ ModConfigDialog 1.0 ModConfigDialog.qml
 ModDetailsPanel 1.0 ModDetailsPanel.qml
 ModGrid 1.0 ModGrid.qml
 ModList 1.0 ModList.qml
+ModStats 1.0 ModStats.qml
 ModsPage 1.0 ModsPage.qml
-PixelNudge 1.0 PixelNudge.qml
 PlaceholderPage 1.0 PlaceholderPage.qml
 PopupMenu 1.0 PopupMenu.qml
 PopupMenuItem 1.0 PopupMenuItem.qml

@@ -257,8 +257,7 @@ msgstr ""
 `)
 
 	po := mustParse(t, `msgid ""
-msgstr ""
-"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n<5 ? 1 : 2);\n"
+msgstr "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n<5 ? 1 : 2);\n"
 
 # Mine.
 #: old.go
@@ -284,8 +283,7 @@ msgstr[2] "c"
 	got := write(t, Update(po, template))
 
 	want := `msgid ""
-msgstr ""
-"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n<5 ? 1 : 2);\n"
+msgstr "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n<5 ? 1 : 2);\n"
 
 # Mine.
 #: a.go

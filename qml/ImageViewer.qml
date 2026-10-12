@@ -121,10 +121,6 @@ Popup {
         id: stage
 
         anchors.fill: parent
-        // Keeps text from wobbling on fractionally scaled displays. The viewer
-        // is a popup, so the nudge on the main window's content doesn't reach it.
-        transform: PixelNudge {}
-
         // The space the image may take up.
         Item {
             id: area

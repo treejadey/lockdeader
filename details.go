@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 
 	qt "github.com/mappu/miqt/qt6"
 	"github.com/mappu/miqt/qt6/mainthread"
@@ -61,6 +62,7 @@ func newModDetails(client *banana.Client, section func() banana.Section, lookup 
 	}
 
 	d.show("", banana.Submitter{}, "", banana.PreviewMedia{}, "", "", nil)
+	d.showStats(time.Unix(0, 0), -1, -1)
 	d.Select(0)
 	d.Insert("install", qt.NewQVariant43(nil))
 
@@ -144,6 +146,7 @@ func (d *modDetails) Select(id int) {
 	if mod, ok := d.lookup(id); ok {
 		d.show(mod.Name, mod.Submitter, modCategory(mod.RootCategory, mod.SubCategory),
 			mod.PreviewMedia, mod.ProfileURL, "", nil)
+		d.showStats(mod.LastUpdated(), mod.ViewCount, mod.LikeCount)
 	}
 
 	if p, ok := d.profiles[key]; ok {
@@ -186,6 +189,7 @@ func (d *modDetails) showProfile(p *banana.ModProfile) {
 	}
 
 	d.show(p.Name, p.Submitter, modCategory(p.Category, nil), p.PreviewMedia, p.ProfileURL, description, p.Files)
+	d.showStats(p.LastUpdated(), p.ViewCount, p.LikeCount)
 
 	if p.SuperCategory != nil {
 		d.Insert("category", qt.NewQVariant14(modCategory(*p.SuperCategory, &p.Category)))
@@ -211,6 +215,13 @@ func (d *modDetails) show(name string, author banana.Submitter, category string,
 
 	d.Insert("plainDescription", qt.NewQVariant14(plainText(description)))
 	d.Insert("files", fileList(files))
+}
+
+// Unix seconds, 0 for unknown; views and likes are -1 for unknown.
+func (d *modDetails) showStats(updated time.Time, views, likes int) {
+	d.Insert("updated", qt.NewQVariant6(updated.Unix()))
+	d.Insert("views", qt.NewQVariant4(views))
+	d.Insert("likes", qt.NewQVariant4(likes))
 }
 
 func (d *modDetails) setStatus(loading bool, err error) {
