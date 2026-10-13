@@ -16,7 +16,7 @@ AbstractButton {
     property int badge: 0
     // The last count, kept while the badge fades out.
     property int shownBadge: 0
-    onBadgeChanged: if (badge > 0) shownBadge = badge
+    onBadgeChanged: if (root.badge > 0) root.shownBadge = root.badge
 
     implicitHeight: 34
     leftPadding: 8
@@ -119,9 +119,9 @@ AbstractButton {
         // expressive entrance over moderate-02 (system communication), and
         // leaves with the exit curve over the same time, long enough to see it go.
         Rectangle {
-            id: badge
+            id: bubble
 
-            Layout.preferredWidth: Math.max(height, badgeLabel.implicitWidth + 10)
+            Layout.preferredWidth: Math.max(height, bubbleLabel.implicitWidth + 10)
             Layout.preferredHeight: 18
             visible: opacity > 0
             opacity: 0
@@ -134,8 +134,8 @@ AbstractButton {
                 when: root.badge > 0
 
                 PropertyChanges {
-                    badge.opacity: 1
-                    badge.scale: 1
+                    bubble.opacity: 1
+                    bubble.scale: 1
                 }
             }
 
@@ -163,7 +163,7 @@ AbstractButton {
             ]
 
             Label {
-                id: badgeLabel
+                id: bubbleLabel
 
                 anchors.centerIn: parent
                 text: root.shownBadge
