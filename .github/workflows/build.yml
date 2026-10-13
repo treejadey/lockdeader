@@ -15,10 +15,14 @@ jobs:
     name: Windows app
     runs-on: windows-latest
     # The first build compiles miqt's Qt bindings, which takes a long time.
-    # setup-go caches Go's build cache between runs, so later ones don't.
+    # Go's build cache is kept between runs (see below), so later ones don't.
     timeout-minutes: 120
     outputs:
       version: ${{ steps.build.outputs.version }}
+    # The app is built with -trimpath, and Go's build cache keys on build
+    # flags, so without it here too the tests would compile miqt again.
+    env:
+      GOFLAGS: -trimpath
     steps:
       - uses: actions/checkout@v7
 
@@ -41,10 +45,13 @@ jobs:
             mingw-w64-ucrt-x86_64-qt6-tools
             mingw-w64-ucrt-x86_64-ntldd
 
+      # Its own cache is off: it's only saved when the whole job succeeds,
+      # so a failing test would throw away the compiled miqt. Go's caches are
+      # kept by the steps below instead.
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
 
       # So go, pkg-config and windeployqt find MSYS2's gcc and Qt from
       # PowerShell.
@@ -52,10 +59,41 @@ jobs:
         shell: pwsh
         run: '"${{ steps.msys2.outputs.msys2-location }}\ucrt64\bin" | Out-File $env:GITHUB_PATH -Append'
 
+      # What's compiled is only any use with the same Go, gcc and Qt, which
+      # MSYS2 updates now and then, so they're in the key. A change to go.sum
+      # alone still starts from the last cache: Go's cache holds a package
+      # by what went into it, so miqt is reused if it hasn't changed.
+      - name: Find Go's caches
+        id: go-cache
+        shell: pwsh
+        run: |
+          $prefix = "go-windows-$(go env GOVERSION)-gcc$(gcc -dumpfullversion)-qt$(pkg-config --modversion Qt6Core)-"
+          "build=$(go env GOCACHE)", "modules=$(go env GOMODCACHE)", "prefix=$prefix", "key=$prefix${{ hashFiles('go.sum') }}" |
+              Out-File $env:GITHUB_OUTPUT -Append
+
+      - uses: actions/cache/restore@v6
+        id: restore-go-cache
+        with:
+          path: |
+            ${{ steps.go-cache.outputs.build }}
+            ${{ steps.go-cache.outputs.modules }}
+          key: ${{ steps.go-cache.outputs.key }}
+          restore-keys: ${{ steps.go-cache.outputs.prefix }}
+
       - name: Build the app
         id: build
         shell: pwsh
         run: ./packaging/windows/build.ps1 -Msys2Root '${{ steps.msys2.outputs.msys2-location }}'
+
+      # Straight after the build, which has compiled miqt, so it's kept even
+      # when the tests fail.
+      - uses: actions/cache/save@v6
+        if: steps.restore-go-cache.outputs.cache-hit != 'true'
+        with:
+          path: |
+            ${{ steps.go-cache.outputs.build }}
+            ${{ steps.go-cache.outputs.modules }}
+          key: ${{ steps.go-cache.outputs.key }}
 
       # GitHub zips the folder, so it's uploaded as it is. The zip has the
       # folder's contents at its top.
@@ -69,14 +107,43 @@ jobs:
       # only logs to a console on Windows, and the runner has none, so
       # without QT_FORCE_STDERR_LOGGING its warnings and fatal errors would
       # go unseen. -v shows which test a crash happened in.
+      #
+      # The main package's tests run from their own binary, so a crash shows
+      # its exit code: go test leaves it out when the tests printed anything,
+      # and a crash in native code (heap corruption, abort) prints nothing
+      # itself. 0xC0000374 is heap corruption, 0xC0000409 an abort or other
+      # fail-fast, 0xC0000005 an access violation.
+      #
+      # PowerShell carries on past a failing command, and the step only
+      # fails on the last one's exit code, so each is checked.
       - name: Test
         shell: pwsh
         env:
           CGO_ENABLED: '1'
           QT_FORCE_STDERR_LOGGING: '1'
         run: |
+          $failed = $false
+
           go vet ./...
-          go test -v ./...
+          if ($LASTEXITCODE -ne 0) { $failed = $true }
+
+          $main = go list .
+          $mainTests = Join-Path $env:RUNNER_TEMP 'lockdeader.test.exe'
+          go test -c -o $mainTests .
+          if ($LASTEXITCODE -ne 0) {
+              $failed = $true
+          } else {
+              & $mainTests -test.v
+              if ($LASTEXITCODE -ne 0) {
+                  Write-Host ('{0}: the tests exited with 0x{1:X8}' -f $main, $LASTEXITCODE)
+                  $failed = $true
+              }
+          }
+
+          go test -v (go list ./... | Where-Object { $_ -ne $main })
+          if ($LASTEXITCODE -ne 0) { $failed = $true }
+
+          if ($failed) { exit 1 }
 
   windows-smoke-test:
     name: Windows app runs

@@ -76,39 +76,39 @@ Translations = translations
 # windeployqt doesn't copy what Qt itself links against from MSYS2 (ICU,
 # zstd, HarfBuzz, the MinGW runtime, ...), or what the plugins do (libjpeg,
 # libwebp, ...). ntldd lists each file's imports; whatever it finds in
-# ucrt64\bin is copied next to the app, until nothing new turns up.
+# ucrt64\bin is copied next to the app, and its own imports are then looked
+# at too. Each file is read once, since starting ntldd is slow on Windows.
 Write-Host 'Collecting the libraries Qt and its plugins use'
 $copied = 0
+$toScan = [System.Collections.Generic.Queue[string]]::new()
 
-do {
-    $added = 0
-    $binaries = Get-ChildItem $appDir -Recurse -Include '*.exe', '*.dll'
+foreach ($binary in Get-ChildItem $appDir -Recurse -Include '*.exe', '*.dll') {
+    $toScan.Enqueue($binary.FullName)
+}
 
-    foreach ($binary in $binaries) {
-        $output = ntldd $binary.FullName 2>&1
+while ($toScan.Count -gt 0) {
+    $output = ntldd $toScan.Dequeue() 2>&1
 
-        foreach ($line in $output) {
-            if ("$line" -notmatch '^\s*(\S+)\s+=>\s+(.+?)\s+\(0x[0-9a-fA-F]+\)\s*$') {
-                continue
-            }
+    foreach ($line in $output) {
+        if ("$line" -notmatch '^\s*(\S+)\s+=>\s+(.+?)\s+\(0x[0-9a-fA-F]+\)\s*$') {
+            continue
+        }
 
-            $name, $path = $Matches[1], $Matches[2]
+        $name, $path = $Matches[1], $Matches[2]
 
-            if (-not $path.StartsWith($ucrt64Bin, [System.StringComparison]::OrdinalIgnoreCase)) {
-                continue
-            }
+        if (-not $path.StartsWith($ucrt64Bin, [System.StringComparison]::OrdinalIgnoreCase)) {
+            continue
+        }
 
-            $target = Join-Path $appDir $name
+        $target = Join-Path $appDir $name
 
-            if (-not (Test-Path $target)) {
-                Copy-Item $path $target
-                $added++
-            }
+        if (-not (Test-Path $target)) {
+            Copy-Item $path $target
+            $toScan.Enqueue((Resolve-Path $target).Path)
+            $copied++
         }
     }
-
-    $copied += $added
-} while ($added -gt 0)
+}
 
 Write-Host "Copied $copied more DLLs"
 
