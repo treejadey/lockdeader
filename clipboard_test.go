@@ -163,38 +163,51 @@ func TestCopyImageDownloads(t *testing.T) {
 }
 
 func TestCopyImageFromCache(t *testing.T) {
-	b := newTestBridge(t)
-
-	// Nothing listens on port 1, so this can only work from the cache.
-	const url = "http://127.0.0.1:1/cached.png"
 	data := pngBytes(t, 12, 34)
 
-	cached := mainthread.Wait2(func() bool {
-		meta := network.NewQNetworkCacheMetaData()
-		meta.SetUrl(qt.NewQUrl3(url))
-		meta.SetSaveToDisk(true)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		w.Write(data)
+	}))
+	defer srv.Close()
 
-		// Qt ignores cache entries without response headers, which real
-		// responses always have.
-		meta.SetRawHeaders([]struct{ First, Second []byte }{
-			{First: []byte("Content-Type"), Second: []byte("image/png")},
-		})
+	b := newTestBridge(t)
+	url := srv.URL + "/cached.png"
 
-		device := b.cache.Prepare(meta)
-		if device == nil {
-			return false
+	// The image gets into the cache as QML's images do, by Qt fetching it.
+	// Writing the entry directly needs QNetworkCacheMetaData.SetRawHeaders
+	// (Qt ignores entries without headers), which in miqt v0.14.0 writes past
+	// the end of its buffer and corrupts the heap. The manager owns the cache
+	// from here on, so it's never deleted.
+	reply := mainthread.Wait2(func() *network.QNetworkReply {
+		manager := network.NewQNetworkAccessManager()
+		manager.SetCache(b.cache.QAbstractNetworkCache)
+
+		return manager.Get(network.NewQNetworkRequest2(qt.NewQUrl3(url)))
+	})
+
+	deadline := time.Now().Add(5 * time.Second)
+
+	for !mainthread.Wait2(reply.IsFinished) {
+		if time.Now().After(deadline) {
+			t.Fatal("timed out waiting for Qt to fetch the image")
 		}
 
-		device.Write2(data)
-		b.cache.Insert(device)
+		time.Sleep(5 * time.Millisecond)
+	}
 
-		return true
+	cached := mainthread.Wait2(func() bool {
+		reply.DeleteLater()
+
+		return reply.Error() == network.QNetworkReply__NoError && b.cache.MetaData(qt.NewQUrl3(url)).IsValid()
 	})
 
 	if !cached {
 		t.Fatal("couldn't add the image to the cache")
 	}
 
+	// With the server gone, this can only work from the cache.
+	srv.Close()
 	mainthread.Wait(func() { b.CopyImage(url) })
 
 	if got := waitForMessage(t, b, 1); got != "Image copied" {

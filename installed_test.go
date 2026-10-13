@@ -615,9 +615,16 @@ func TestConfigure(t *testing.T) {
 	flagSHA := it.mods(t)[0].Files[1].VPKs[0].SHA256
 
 	// Picking music downloads it; only then is the flag removed.
-	mainthread.Wait(func() { it.Configure(key, []string{blue, "file:3"}) })
+	// The status is read in the same call, or the download could finish
+	// before it is.
+	var status string
 
-	if got := it.status(key); got == statusInstalled {
+	mainthread.Wait(func() {
+		it.Configure(key, []string{blue, "file:3"})
+		status = it.status(key)
+	})
+
+	if status == statusInstalled {
 		t.Error("configuring with a file to download didn't start an install")
 	}
 
