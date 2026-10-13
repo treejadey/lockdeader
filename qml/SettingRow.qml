@@ -7,6 +7,11 @@ Rectangle {
     property string text
     property string description
     property bool monospaceDescription: false
+    // Reads the description as rich text, with links that open in the browser.
+    property bool richDescription: false
+    // Lets the description be selected and copied. Not for interactive rows:
+    // presses on it select text rather than reach the row.
+    property bool selectableDescription: false
     // Why the setting couldn't be changed; "" for none.
     property string error
     // Other words that should find the setting when searched for.
@@ -72,12 +77,44 @@ Rectangle {
 
         Label {
             width: parent.width
-            visible: text !== ""
+            visible: !root.selectableDescription && text !== ""
             text: root.description
+            textFormat: root.richDescription ? Text.StyledText : Text.PlainText
             color: Theme.subtle
+            linkColor: Theme.foam
             font.family: root.monospaceDescription ? app.monospaceFont : Qt.application.font.family
             font.pixelSize: 12
             wrapMode: root.monospaceDescription ? Text.WrapAnywhere : Text.Wrap
+            onLinkActivated: (link) => Qt.openUrlExternally(link)
+
+            HoverHandler {
+                cursorShape: parent.hoveredLink !== "" ? Qt.PointingHandCursor : Qt.ArrowCursor
+            }
+        }
+
+        // Text can't be selected, so a selectable description is a TextEdit.
+        TextEdit {
+            width: parent.width
+            visible: root.selectableDescription && root.description !== ""
+            // TextEdit has no linkColor, nor StyledText, and its rich text
+            // takes links' colour from the system palette unless styled.
+            text: root.richDescription
+                ? "<style>a { color: " + Theme.foam + "; }</style>" + root.description
+                : root.description
+            textFormat: root.richDescription ? TextEdit.RichText : TextEdit.PlainText
+            readOnly: true
+            selectByMouse: true
+            color: Theme.subtle
+            selectionColor: Theme.highlightHigh
+            selectedTextColor: Theme.text
+            font.family: root.monospaceDescription ? app.monospaceFont : Qt.application.font.family
+            font.pixelSize: 12
+            wrapMode: root.monospaceDescription ? TextEdit.WrapAnywhere : TextEdit.Wrap
+            onLinkActivated: (link) => Qt.openUrlExternally(link)
+
+            HoverHandler {
+                cursorShape: parent.hoveredLink !== "" ? Qt.PointingHandCursor : Qt.IBeamCursor
+            }
         }
 
         Label {

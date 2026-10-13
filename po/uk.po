@@ -634,6 +634,14 @@ msgid "data directory location cache files backups open"
 msgstr "дани діректорія папка локація кеш файли резерв відкрити"
 
 #: qml/SettingsPage.qml
+msgid "Version"
+msgstr ""
+
+#: qml/SettingsPage.qml
+msgid "about build commit qt kernel operating system bug report"
+msgstr ""
+
+#: qml/SettingsPage.qml
 msgid "No Settings Found"
 msgstr "Налаштувань Не Знайдено"
 

@@ -269,6 +269,14 @@ Item {
                         onClicked: Qt.openUrlExternally(settings.dataDirUrl)
                     }
                 }
+
+                SettingRow {
+                    text: qsTr("Version")
+                    description: settings.buildInfo
+                    richDescription: true
+                    selectableDescription: true
+                    keywords: qsTr("about build commit qt kernel operating system bug report")
+                }
             }
         }
     }

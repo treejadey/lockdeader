@@ -27,7 +27,8 @@ import (
 //
 // Go fills in "gameFolder", Deadlock's folder ("" for none), "dataDir", the
 // path of the data directory, and URLs of both ("gameFolderUrl",
-// "dataDirUrl"), for opening them in the file manager.
+// "dataDirUrl"), for opening them in the file manager, and "buildInfo", the
+// version and what it runs on (see buildInfo), as rich text.
 //
 // All methods must be called on the Qt main thread.
 type settingsPage struct {
@@ -69,6 +70,7 @@ func newSettingsPage(browse appdata.BrowseSettings, gameSettings appdata.GameSet
 	p.showGameFolder()
 	p.Insert("dataDir", qt.NewQVariant14(dataDir))
 	p.Insert("dataDirUrl", qt.NewQVariant14(qt.QUrl_FromLocalFile(dataDir).ToString()))
+	p.Insert("buildInfo", qt.NewQVariant14(buildInfo()))
 
 	// Only fires for changes made from QML, not for our own Inserts.
 	p.OnValueChanged(func(key string, value *qt.QVariant) {
