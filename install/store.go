@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 // VPKs are named by their SHA-256, e.g. "3a7bd3e2….vpk", so two mods with the
@@ -35,6 +36,12 @@ const (
 const vpkMagic = 0x55AA1234
 
 var ErrNotVPK = errors.New("install: not a VPK file")
+
+// Two installs can add the same VPK at once. Without this, both could find
+// it missing and rename their copy to its name; on Windows the second
+// rename, which replaces the file, fails while the first install has it
+// open, or makes that install fail to open it.
+var renameMu sync.Mutex
 
 func (s Store) Path(sha256 string) string {
 	return filepath.Join(s.Dir, sha256+".vpk")
@@ -93,6 +100,9 @@ func (s Store) Add(r io.Reader) (sha string, size int64, err error) {
 
 	sha = hex.EncodeToString(hash.Sum(nil))
 	final := s.Path(sha)
+
+	renameMu.Lock()
+	defer renameMu.Unlock()
 
 	if _, statErr := os.Stat(final); statErr == nil {
 		// Already there: the same contents, as the name says. Replacing it

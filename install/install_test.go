@@ -100,6 +100,42 @@ func TestStoreAdd(t *testing.T) {
 	}
 }
 
+// Each opens the VPK once it's added, as an install does to check it, which
+// fails on Windows while another is renaming its copy over it.
+func TestStoreAddSameVPKAtOnce(t *testing.T) {
+	s := newStore(t)
+	data := vpkBytes("hello")
+	errs := make(chan error)
+
+	for range 8 {
+		go func() {
+			sha, _, err := s.Add(bytes.NewReader(data))
+			if err != nil {
+				errs <- err
+
+				return
+			}
+
+			stored, err := os.ReadFile(s.Path(sha))
+			if err == nil && !bytes.Equal(stored, data) {
+				err = errors.New("the stored VPK has the wrong contents")
+			}
+
+			errs <- err
+		}()
+	}
+
+	for range 8 {
+		if err := <-errs; err != nil {
+			t.Error(err)
+		}
+	}
+
+	if names := storeFiles(t, s); len(names) != 1 {
+		t.Errorf("store has %v, want just the VPK", names)
+	}
+}
+
 func TestStoreCleanUpAndRemove(t *testing.T) {
 	s := newStore(t)
 
