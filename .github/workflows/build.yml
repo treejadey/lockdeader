@@ -68,7 +68,7 @@ jobs:
         shell: pwsh
         run: |
           $prefix = "go-windows-$(go env GOVERSION)-gcc$(gcc -dumpfullversion)-qt$(pkg-config --modversion Qt6Core)-"
-          "build=$(go env GOCACHE)", "modules=$(go env GOMODCACHE)", "prefix=$prefix", "key=$prefix${{ hashFiles('go.sum') }}" |
+          "build=$(go env GOCACHE)", "modules=$(go env GOMODCACHE)", "prefix=$prefix", "key=${prefix}${{ hashFiles('go.sum') }}" |
               Out-File $env:GITHUB_OUTPUT -Append
 
       - uses: actions/cache/restore@v6
