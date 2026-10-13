@@ -174,6 +174,7 @@ func main() {
 	ui = newUIStateBridge(uiState, saveUISoon)
 
 	app := qml.NewQQmlPropertyMap()
+	app.Insert("version", qt.NewQVariant14(version))
 	// For numbers that shouldn't shift as they change.
 	app.Insert("monospaceFont", qt.NewQVariant14(monospaceFontFamily))
 	// Goes up by one each time another copy of the app asks to show the window.

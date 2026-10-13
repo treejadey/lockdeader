@@ -11,7 +11,7 @@ AppWindow {
     minimumWidth: sidebar.Layout.preferredWidth + modsPage.minimumWidth
     minimumHeight: 560
     visible: true
-    title: "Lockdeader"
+    title: "Lockdeader " + app.version
 
     // Reopens on the page the app was left on.
     Component.onCompleted: sidebar.currentIndex = uiState.page
