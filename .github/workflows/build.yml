@@ -133,7 +133,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
               $failed = $true
           } else {
-              & $mainTests -test.v
+              # Quoted, or PowerShell passes it as "-test" ".v".
+              & $mainTests '-test.v'
               if ($LASTEXITCODE -ne 0) {
                   Write-Host ('{0}: the tests exited with 0x{1:X8}' -f $main, $LASTEXITCODE)
                   $failed = $true
