@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"sync"
+	"time"
 
 	qt "github.com/mappu/miqt/qt6"
 	"github.com/mappu/miqt/qt6/qml"
@@ -341,6 +343,10 @@ func main() {
 		quitIfDone()
 	}
 
+	// Notifications still being sent, which quitting waits for: the install
+	// that failed is often the last one, which quits the app straight after.
+	var notifying sync.WaitGroup
+
 	installed.onFailed = func(name string) {
 		if windowOpen {
 			return
@@ -349,11 +355,11 @@ func main() {
 		title := fmt.Sprintf(tr("Couldn’t install %s"), name)
 		body := tr("Try installing it again in Lockdeader")
 
-		go func() {
+		notifying.Go(func() {
 			if err := notification.Send(title, body); err != nil {
 				slog.Warn("failed to show a notification", "err", err)
 			}
-		}()
+		})
 	}
 
 	showRequests := 0
@@ -434,6 +440,21 @@ func main() {
 		if err := appdata.BackUpSettings(dirs.SettingsFile(), startupSettings); err != nil {
 			slog.Error("failed to back up the settings", "err", err)
 		}
+	}
+
+	// Not for ever, though: a notification server that never answers
+	// mustn't keep the app running.
+	sent := make(chan struct{})
+
+	go func() {
+		notifying.Wait()
+		close(sent)
+	}()
+
+	select {
+	case <-sent:
+	case <-time.After(5 * time.Second):
+		slog.Warn("gave up waiting for a notification to be shown")
 	}
 
 	os.Exit(code)

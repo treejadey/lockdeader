@@ -12,7 +12,7 @@ func Send(title, body string) error {
 
 	// Lets the desktop show the app's name and icon, and group its
 	// notifications.
-	hints := map[string]dbus.Variant{"desktop-entry": dbus.MakeVariant("lockdeader")}
+	hints := map[string]dbus.Variant{"desktop-entry": dbus.MakeVariant("io.github.treejadey.Lockdeader")}
 
 	// The arguments are the app's name, the id of a notification to replace
 	// (none), an icon (the app's), the title and body, actions (none), the
