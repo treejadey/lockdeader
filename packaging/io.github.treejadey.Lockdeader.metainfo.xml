@@ -2,7 +2,7 @@
 <component type="desktop-application">
   <id>io.github.treejadey.Lockdeader</id>
   <name>Lockdeader</name>
-  <summary>Find, install and manage mods for Deadlock</summary>
+  <summary>Manage mods for Deadlock</summary>
   <developer id="io.github.treejadey">
     <name>Jade Kolos</name>
   </developer>
@@ -36,6 +36,11 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
-    <release version="0.1.0" date="2026-10-12"/>
+    <release version="0.2.0" date="2026-10-13">
+      <url>https://github.com/treejadey/lockdeader/releases/tag/v0.2.0</url>
+    </release>
+    <release version="0.1.0" date="2026-10-13">
+      <url>https://github.com/treejadey/lockdeader/releases/tag/v0.1.0</url>
+    </release>
   </releases>
 </component>
