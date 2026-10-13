@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -22,19 +24,36 @@ func Running() (bool, error) {
 	// tell whether OBS is running. That needs the manifest's
 	// --talk-name=org.freedesktop.Flatpak.
 	if _, err := os.Stat("/.flatpak-info"); err == nil {
-		return pgrep("flatpak-spawn", "--host", "pgrep")
+		return pgrepRunning("flatpak-spawn", "--host", "pgrep")
 	}
 
 	return running("/proc")
 }
 
-// pgrep runs command (pgrep, or something that runs it) to look for the
-// game's process by name, waiting up to a second.
-func pgrep(command ...string) (bool, error) {
+// commandLine matches, in pgrep -f's case-insensitive extended regular
+// expressions, the command line of a Wine process running the game: a
+// Windows path to its exe, then its arguments after spaces.
+var commandLine = `^[a-z]:[/\\](.*[/\\])?` + regexp.QuoteMeta(exeName) + `( |$)`
+
+// pgrepRunning looks for the game as running does, with command (pgrep, or
+// something that runs it): by the process's name, then by its command line.
+// The name alone isn't enough, since it's only the game's for a moment:
+// Wine renames the process after the game names its main thread.
+func pgrepRunning(command ...string) (bool, error) {
+	if found, err := pgrep(command, "-xi", exeName); found || err != nil {
+		return found, err
+	}
+
+	return pgrep(command, "-fi", commandLine)
+}
+
+// pgrep runs command with args, waiting up to a second, and reports
+// whether it found a process.
+func pgrep(command []string, args ...string) (bool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	err := exec.CommandContext(ctx, command[0], append(command[1:], "-xi", exeName)...).Run()
+	err := exec.CommandContext(ctx, command[0], slices.Concat(command[1:], args)...).Run()
 
 	// pgrep exits with 1 when nothing matches, and more for its own errors.
 	var exit *exec.ExitError
