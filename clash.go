@@ -289,6 +289,23 @@ func (m *installedMods) turnOffClashing(row *installedRow) {
 	m.toggled = &pendingToggle{messageID: m.messages, on: []string{row.key}, off: keys(off)}
 }
 
+// SetMerged fills in every row's "mergedWith" role from the last apply:
+// for a mod the merge of shared tables left some of its changes out, the
+// names of the mods it's merged with; otherwise "". leftOut is by key.
+func (m *installedMods) SetMerged(leftOut map[string][]string) {
+	for key, row := range m.rows {
+		var names []string
+
+		for _, other := range leftOut[key] {
+			if o := m.rows[other]; o != nil && o.mod != nil {
+				names = append(names, o.mod.Name)
+			}
+		}
+
+		row.item.SetData(qt.NewQVariant14(strings.Join(names, ", ")), roleInstalledMergedWith)
+	}
+}
+
 // ResolveClashes turns off the mods that clash with one that's on and wins
 // over them in the load order. Mods installed before Lockdeader kept clashing
 // mods apart can be on together; call it once QML is listening for messages.

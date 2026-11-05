@@ -499,3 +499,31 @@ func TestSharedTablesClashWithoutGame(t *testing.T) {
 		t.Errorf("clashes of Lash Voice with the game = %q, want none", got)
 	}
 }
+
+// The marker on a mod the merge left changes out of names the mods it's
+// merged with.
+func TestSetMerged(t *testing.T) {
+	it := newInstallTest(t)
+
+	addInstalled(t, it,
+		it.clashMod(t, 1, "Haze Voice", true, "a.vsnd_c"),
+		it.clashMod(t, 2, "Lash Voice", true, "b.vsnd_c"),
+		it.clashMod(t, 3, "Flowery", true, "c.vsnd_c"))
+
+	mergedWith := func(id int) string {
+		return it.role(installedKey(banana.SectionMods, id), roleInstalledMergedWith).ToString()
+	}
+
+	mainthread.Wait(func() { it.SetMerged(map[string][]string{"Mod/3": {"Mod/1", "Mod/2"}}) })
+
+	if mergedWith(3) != "Haze Voice, Lash Voice" || mergedWith(1) != "" || mergedWith(2) != "" {
+		t.Errorf("merged with = %q, %q, %q; want only Flowery's", mergedWith(1), mergedWith(2), mergedWith(3))
+	}
+
+	// Without a game, nothing is merged.
+	mainthread.Wait(func() { it.SetMerged(nil) })
+
+	if mergedWith(3) != "" {
+		t.Errorf("merged with after SetMerged(nil) = %q", mergedWith(3))
+	}
+}

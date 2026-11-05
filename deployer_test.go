@@ -9,6 +9,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 
@@ -235,6 +236,11 @@ func TestDeployerMergesTables(t *testing.T) {
 		table := maps.Clone(heroes)
 		table[hero] = "sounds/vo/new/" + hero + ".vsnd"
 
+		// The second's copy is out of date, with an old Haze event.
+		if hero == "Lash" {
+			table["Haze"] = "sounds/vo/haze/old.vsnd"
+		}
+
 		sha, size := addVPK(map[string][]byte{pickTable: soundTable(t, table), table[hero] + "_c": []byte(hero)})
 		shas = append(shas, sha)
 
@@ -249,10 +255,12 @@ func TestDeployerMergesTables(t *testing.T) {
 
 	var applied [][]deploy.File
 	var done []error
+	var merged []map[string][]string
 	var d *deployer
 
 	mainthread.Wait(func() {
 		d = newDeployer(db, store, func() string { return game }, func() bool { return true }, "")
+		d.onMerged = func(leftOut map[string][]string) { merged = append(merged, leftOut) }
 		d.apply = func(dir string, files []deploy.File) (deploy.Result, error) {
 			applied = append(applied, files)
 
@@ -272,6 +280,12 @@ func TestDeployerMergesTables(t *testing.T) {
 
 		if len(files) != 3 || files[1].SHA256 != shas[0] || files[2].SHA256 != shas[1] {
 			t.Fatalf("applied %v, want the merged tables, then the two mods", files)
+		}
+
+		// The second's old Haze event was left out, beside the first.
+		want := map[string][]string{"Mod/2": {"Mod/1"}}
+		if len(merged) != 2 || !maps.EqualFunc(merged[0], want, slices.Equal) {
+			t.Errorf("left out = %v, want %v after each apply", merged, want)
 		}
 
 		// The same mods make the same file.

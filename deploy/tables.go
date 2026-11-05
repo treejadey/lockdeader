@@ -57,7 +57,7 @@ func MergeTables(gameDir string, mods []Mod) (*Merged, error) {
 			set, err := ReadPaths(f.Path)
 			if err != nil {
 				if !errors.Is(err, fs.ErrNotExist) {
-					errs = append(errs, err)
+					errs = append(errs, fmt.Errorf("deploy: tables in a VPK that can't be read aren't merged: %w", err))
 				}
 
 				continue

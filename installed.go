@@ -36,6 +36,7 @@ const (
 	roleInstalledErrorDetail
 	roleInstalledVariants
 	roleInstalledClashes
+	roleInstalledMergedWith
 )
 
 var installedRoleNames = map[int][]byte{
@@ -54,6 +55,7 @@ var installedRoleNames = map[int][]byte{
 	roleInstalledErrorDetail: []byte("errorDetail"),
 	roleInstalledVariants:    []byte("variants"),
 	roleInstalledClashes:     []byte("clashes"),
+	roleInstalledMergedWith:  []byte("mergedWith"),
 }
 
 // The "status" role.
@@ -786,6 +788,7 @@ func (m *installedMods) addRow(key string) *installedRow {
 	item.SetEditable(false)
 	item.SetData(qt.NewQVariant14(key), roleInstalledKey)
 	item.SetData(qt.NewQVariant14(""), roleInstalledClashes)
+	item.SetData(qt.NewQVariant14(""), roleInstalledMergedWith)
 	m.model.AppendRow([]*qt.QStandardItem{item})
 
 	row := &installedRow{key: key, item: item}

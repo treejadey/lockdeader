@@ -11,6 +11,7 @@ import (
 	"github.com/mappu/miqt/qt6/mainthread"
 
 	"github.com/treejadey/lockdeader/appdb"
+	"github.com/treejadey/lockdeader/banana"
 	"github.com/treejadey/lockdeader/deploy"
 	"github.com/treejadey/lockdeader/install"
 )
@@ -41,6 +42,11 @@ type deployer struct {
 	// Called after each apply with how it went: nil, deploy.ErrGameRunning,
 	// or what went wrong. May be nil.
 	onDone func(err error)
+	// Called after each apply that got as far as merging the tables mods
+	// share, even while the game runs: for each mod, by key, that the merge
+	// left some changes out of, the keys of the mods it's merged with. May
+	// be nil.
+	onMerged func(leftOut map[string][]string)
 
 	timer *qt.QTimer
 	busy  bool
@@ -110,6 +116,11 @@ func (d *deployer) Idle() bool {
 func (d *deployer) Apply(then func(error)) {
 	dir := d.gameDir()
 	if dir == "" {
+		// Without the game, nothing is merged.
+		if d.onMerged != nil {
+			d.onMerged(nil)
+		}
+
 		if then != nil {
 			then(nil)
 		}
@@ -138,13 +149,15 @@ func (d *deployer) Apply(then func(error)) {
 	d.takeOutLines = false
 
 	go func() {
-		err := d.run(dir, takeOutLines)
+		leftOut, err := d.run(dir, takeOutLines)
 
-		mainthread.Start(func() { d.finish(err) })
+		mainthread.Start(func() { d.finish(leftOut, err) })
 	}()
 }
 
-func (d *deployer) run(dir string, takeOutLines bool) error {
+// run applies, and returns what the merge of shared tables left out (see
+// onMerged), or nil if it didn't get that far.
+func (d *deployer) run(dir string, takeOutLines bool) (map[string][]string, error) {
 	// Even while the game runs: it has already read gameinfo.gi. A failure
 	// is only logged, and doesn't stop the mods going in.
 	if takeOutLines {
@@ -153,18 +166,20 @@ func (d *deployer) run(dir string, takeOutLines bool) error {
 		}
 	}
 
+	mods, keys, err := d.mods()
+	if err != nil {
+		return nil, err
+	}
+
+	// Merged even while the game runs, which only reads, so what's left out
+	// is known then too.
+	files, leftOut := d.withMergedTables(dir, mods, keys)
+
 	if running, err := d.running(); err != nil {
 		slog.Warn("couldn't tell whether Deadlock is running", "err", err)
 	} else if running {
-		return deploy.ErrGameRunning
+		return leftOut, deploy.ErrGameRunning
 	}
-
-	mods, err := d.mods()
-	if err != nil {
-		return err
-	}
-
-	files := d.withMergedTables(dir, mods)
 
 	res, err := d.apply(dir, files)
 
@@ -172,21 +187,22 @@ func (d *deployer) run(dir string, takeOutLines bool) error {
 		"bundled", res.Bundled, "missing", len(res.Missing), "err", err)
 
 	if err != nil {
-		return fmt.Errorf("%w: %w", errGameFolder, err)
+		return leftOut, fmt.Errorf("%w: %w", errGameFolder, err)
 	}
 
-	return nil
+	return leftOut, nil
 }
 
 // mods lists the mods that are on, in load order, with the VPKs of theirs
-// the game should load.
-func (d *deployer) mods() ([]deploy.Mod, error) {
+// the game should load, and their keys.
+func (d *deployer) mods() ([]deploy.Mod, []string, error) {
 	mods, err := d.db.Mods(context.Background())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var on []deploy.Mod
+	var keys []string
 
 	for _, m := range mods {
 		if !m.Enabled {
@@ -204,9 +220,10 @@ func (d *deployer) mods() ([]deploy.Mod, error) {
 		}
 
 		on = append(on, mod)
+		keys = append(keys, installedKey(banana.Section(m.Section), m.GameBananaID))
 	}
 
-	return on, nil
+	return on, keys, nil
 }
 
 // withMergedTables lists the VPKs the game should load, in load order:
@@ -215,7 +232,10 @@ func (d *deployer) mods() ([]deploy.Mod, error) {
 // the mods' VPKs, by its SHA-256, so the same mods make the same file and
 // an apply that changes nothing rewrites nothing. Tables that can't be
 // merged are left to the load order, as before merging.
-func (d *deployer) withMergedTables(dir string, mods []deploy.Mod) []deploy.File {
+//
+// It also returns, for each mod by key that the merge left some changes
+// out of, the keys of the mods it's merged with.
+func (d *deployer) withMergedTables(dir string, mods []deploy.Mod, keys []string) ([]deploy.File, map[string][]string) {
 	var files []deploy.File
 
 	for _, m := range mods {
@@ -224,27 +244,39 @@ func (d *deployer) withMergedTables(dir string, mods []deploy.Mod) []deploy.File
 
 	merged, err := deploy.MergeTables(dir, mods)
 	if err != nil {
-		slog.Warn("some tables the mods share weren't merged", "err", err)
+		slog.Warn("not everything was merged that might have been", "err", err)
 	}
 
+	leftOut := map[string][]string{}
+
 	if merged.VPK == nil {
-		return files
+		return files, leftOut
 	}
 
 	sha, size, err := d.store.Add(bytes.NewReader(merged.VPK))
 	if err != nil {
 		slog.Error("failed to keep the merged tables", "err", err)
 
-		return files
+		return files, leftOut
 	}
 
 	slog.Info("merged the tables mods share", "tables", len(merged.Tables))
 
-	return append([]deploy.File{{SHA256: sha, Path: d.store.Path(sha), Size: size}}, files...)
+	for i, others := range merged.LeftOut {
+		for _, j := range others {
+			leftOut[keys[i]] = append(leftOut[keys[i]], keys[j])
+		}
+	}
+
+	return append([]deploy.File{{SHA256: sha, Path: d.store.Path(sha), Size: size}}, files...), leftOut
 }
 
-func (d *deployer) finish(err error) {
+func (d *deployer) finish(leftOut map[string][]string, err error) {
 	d.busy = false
+
+	if leftOut != nil && d.onMerged != nil {
+		d.onMerged(leftOut)
+	}
 
 	if errors.Is(err, deploy.ErrGameRunning) {
 		slog.Info("Deadlock is running, so the mods will be put into the game later")

@@ -77,6 +77,9 @@ Item {
             required property int variants
             // The mods it changes the same files as, joined; "" if none.
             required property string clashes
+            // The mods it's merged with, when that left some of its changes
+            // out, joined; "" if none.
+            required property string mergedWith
 
             readonly property bool installing: status !== ""
 
@@ -116,8 +119,8 @@ Item {
                     left: parent.left
                     leftMargin: 12
                     right: row.installing ? installStatus.left : authorLabel.left
-                    // Room for the warning after the name.
-                    rightMargin: (row.installing ? 22 : 12) + (clashWarning.visible ? clashWarning.width + 6 : 0)
+                    // Room for the markers after the name.
+                    rightMargin: (row.installing ? 22 : 12) + (markers.width > 0 ? markers.width + 6 : 0)
                     verticalCenter: parent.verticalCenter
                 }
                 text: row.name
@@ -139,12 +142,20 @@ Item {
             }
 
             // Straight after the name, however long it is.
-            ClashWarning {
-                id: clashWarning
+            Row {
+                id: markers
 
                 x: nameLabel.x + Math.min(nameLabel.implicitWidth, nameLabel.width) + 6
                 anchors.verticalCenter: parent.verticalCenter
-                clashes: row.clashes
+                spacing: 6
+
+                ClashWarning {
+                    clashes: row.clashes
+                }
+
+                MergeNotice {
+                    mergedWith: row.mergedWith
+                }
             }
 
             InstallStatus {

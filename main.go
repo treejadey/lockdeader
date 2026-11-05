@@ -206,6 +206,7 @@ func main() {
 	deployer := newDeployer(db, store, func() string { return settings.Game.Path },
 		func() bool { return settings.Game.LoadOtherMods }, dirs.GameInfoBackup())
 	installed.onChange = deployer.ApplySoon
+	deployer.onMerged = installed.SetMerged
 
 	// Mods other tools put in the game, shown until they're taken over.
 	otherMods := newOtherMods(client, store, installed, func() string { return settings.Game.Path })

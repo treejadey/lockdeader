@@ -382,6 +382,11 @@ msgstr "Повернути Назад"
 msgid "Settings"
 msgstr "Налаштування"
 
+#: qml/MergeNotice.qml
+#, qt-format
+msgid "Some of its sound changes are left out so it works alongside %1"
+msgstr ""
+
 #: qml/ModConfigDialog.qml
 msgid "Configuration"
 msgstr "Конфігурація."

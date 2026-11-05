@@ -78,6 +78,9 @@ Item {
             required property int variants
             // The mods it changes the same files as, joined; "" if none.
             required property string clashes
+            // The mods it's merged with, when that left some of its changes
+            // out, joined; "" if none.
+            required property string mergedWith
 
             readonly property bool installing: status !== ""
             // Where the tile is in the cell: centred, then shifted with the
@@ -107,14 +110,23 @@ Item {
                 onClicked: if (!cell.installing && !root.readOnly) root.enabledToggled(cell.key, !cell.modEnabled)
                 onMenuRequested: root.menuRequested(cell.key, cell.status, cell.variants)
 
-                ClashWarning {
+                Row {
                     anchors {
                         left: parent.left
                         bottom: parent.bottom
                         margins: 8
                     }
-                    onPicture: true
-                    clashes: cell.clashes
+                    spacing: 4
+
+                    ClashWarning {
+                        onPicture: true
+                        clashes: cell.clashes
+                    }
+
+                    MergeNotice {
+                        onPicture: true
+                        mergedWith: cell.mergedWith
+                    }
                 }
 
                 TickBox {
