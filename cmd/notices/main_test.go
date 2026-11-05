@@ -111,7 +111,8 @@ func TestGoLicenceUpToDate(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if string(ours) != string(shipped) {
+		// Git may check our copy out with CRLF line endings, as on Windows.
+		if lf(ours) != lf(shipped) {
 			t.Errorf("golang/%s differs from %s's; copy it again", name, goroot)
 		}
 
@@ -121,4 +122,8 @@ func TestGoLicenceUpToDate(t *testing.T) {
 	if checked == 0 {
 		t.Skipf("GOROOT (%s) has no licence files to compare with", goroot)
 	}
+}
+
+func lf(data []byte) string {
+	return strings.ReplaceAll(string(data), "\r\n", "\n")
 }
