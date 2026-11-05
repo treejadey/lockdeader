@@ -3,7 +3,7 @@ id: doc-3
 title: Distribution design
 type: specification
 created_date: '2026-11-05T09:30:00Z'
-updated_date: '2026-11-05T14:35:00Z'
+updated_date: '2026-11-05T15:03:00Z'
 ---
 How Lockdeader reaches people, and why (written 2026-10-12; decisions recorded the same day). What's built says so; work still to do is tracked as tasks labelled `distribution` (`backlog task list --labels distribution --plain`), named in each section below.
 
@@ -126,7 +126,7 @@ The workflow:
 5. **Smoke-test.** In a later job, on a clean runner without MSYS2, download the artifact and start the app with `QT_QPA_PLATFORM=offscreen` and `QT_FORCE_STDERR_LOGGING=1`. Fail if it exits early or logs a missing module or DLL. This is what catches a DLL left out.
 6. **Publish.**
    - Every push: upload the folder as a workflow artifact, for trying out.
-   - A `v*` tag: zip it and attach it to a GitHub Release, with a `.sha256` file. Built: see Releases and nightlies.
+   - A `v*` tag: zip it and attach it to a GitHub Release. Built: see Releases and nightlies.
    - Every push to main: the same, for the Nightly Release. Built: see Releases and nightlies.
 
 MSYS2's Qt is built with ICU, which adds about 30 MB. If MSYS2 turns out awkward, Qt's official MinGW build is the fallback: install it with `aqtinstall`, along with its matching MinGW. It's built without ICU, so the zip is smaller, but there's more to set up.
@@ -138,7 +138,7 @@ MSYS2's Qt is built with ICU, which adds about 30 MB. If MSYS2 turns out awkward
 
 ## Releases and nightlies
 
-**Built (TASK-11, TASK-28)**, in `.github/workflows/build.yml`. Both jobs run only once the Windows build, its smoke test on a clean machine and the Flatpak have passed, and both turn the run's artifacts into the same files with `packaging/release-files.ps1`: the Windows folder zipped, with the app's files at the top, the Flatpak bundle, and a `.sha256` file next to each, in `sha256sum`'s format.
+**Built (TASK-11, TASK-28)**, in `.github/workflows/build.yml`. Both jobs run only once the Windows build, its smoke test on a clean machine and the Flatpak have passed, and both turn the run's artifacts into the same files with `packaging/release-files.ps1`: the Windows folder zipped, with the app's files at the top, and the Flatpak bundle. There are no checksum files: GitHub shows each file's SHA-256 next to it.
 
 - **A release** starts from changing `VERSION.txt` and tagging that commit `v` plus the version. The Windows job stops at once if the two don't match. The `release` job then attaches `Lockdeader-<version>-windows-x64.zip` and `Lockdeader-<version>-linux-x86_64.flatpak` to the tag's release: one made on GitHub keeps its title and notes, and a tag pushed without one gets a draft, to name and publish by hand.
 - **The nightly** is copied from Chatterino2's. After every push to main that builds and passes, the `nightly` job replaces the files of the "Nightly Release" pre-release (tag `nightly-build`) with that build's, under names that don't change (`Lockdeader-nightly-windows-x64.zip`, `Lockdeader-nightly-linux-x86_64.flatpak`), so links to them keep working. Its notes are the commits since the last `v*` tag, the five newest shown and the rest folded away (`packaging/nightly-notes.ps1`, a port of Chatterino's `format-recent-changes.py`), and the `nightly-build` tag is force-moved to the commit. A newer push to main cancels a build still running, so an older build never replaces a newer nightly.

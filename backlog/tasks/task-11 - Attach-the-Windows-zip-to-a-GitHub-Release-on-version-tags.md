@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-05T09:33:00Z'
-updated_date: '2026-11-05T14:20:00Z'
+updated_date: '2026-11-05T15:03:00Z'
 labels:
   - distribution
 dependencies: []
@@ -24,8 +24,8 @@ CI already builds the Windows app folder on every push and uploads it as a workf
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A `v*` tag zips the Windows app folder as `Lockdeader-<version>-windows-x64.zip` and attaches it, with a `.sha256` file, to the release for that tag, or to a new draft release when there is none
-- [ ] #2 The Flatpak bundle, with its `.sha256` file, is attached to the same release
+- [ ] #1 A `v*` tag zips the Windows app folder as `Lockdeader-<version>-windows-x64.zip` and attaches it to the release for that tag, or to a new draft release when there is none
+- [ ] #2 The Flatpak bundle is attached to the same release
 - [ ] #3 The release job fails if the tag does not match `VERSION.txt`
 - [ ] #4 Tested with real tags on the repository, which are removed afterwards
 <!-- AC:END -->
@@ -39,3 +39,9 @@ CI already builds the Windows app folder on every push and uploads it as a workf
 4. Docs: doc-3 release steps, packaging/windows/README.md, CHANGELOG.
 5. Test on a throwaway branch: bump VERSION.txt, push a matching test tag (draft gets files, checksums verify), push a mismatched tag (job fails); delete tags and drafts.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Dropped the .sha256 files (asked 2026-11-05): GitHub shows each release asset's SHA-256 next to it.
+<!-- SECTION:NOTES:END -->

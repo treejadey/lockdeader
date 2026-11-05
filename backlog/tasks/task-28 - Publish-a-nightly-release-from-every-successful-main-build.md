@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-05T14:20:00Z'
-updated_date: '2026-11-05T14:20:00Z'
+updated_date: '2026-11-05T15:03:00Z'
 labels:
   - distribution
 dependencies:
@@ -23,7 +23,7 @@ People who want the newest Lockdeader without building it need a download that t
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Each successful push to main replaces the files of the "Nightly Release" pre-release (tag `nightly-build`) with that build's Windows zip and Flatpak, each with a `.sha256` file, under names that don't change between builds
+- [ ] #1 Each successful push to main replaces the files of the "Nightly Release" pre-release (tag `nightly-build`) with that build's Windows zip and Flatpak, under names that don't change between builds
 - [ ] #2 The release notes list the commits since the last v* tag, newest first, with all but the 5 newest folded away
 - [ ] #3 The `nightly-build` tag points at the commit the files were built from
 - [ ] #4 Builds not made from a v* tag show "Nightly" after the version in the window title and Settings › Advanced; tag builds and local builds look as now

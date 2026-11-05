@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 # Turns a workflow run's artifacts into the files a release offers: the
-# Windows app's folder zipped, the Flatpak bundle, and next to each a .sha256
-# file that `sha256sum -c` checks a download with.
+# Windows app's folder zipped, and the Flatpak bundle. There are no checksum
+# files: GitHub shows each file's SHA-256 next to it.
 #
 #     pwsh packaging/release-files.ps1 -ArtifactsDir artifacts -Label 0.3.0 [-OutDir release]
 #
@@ -42,13 +42,5 @@ Compress-Archive -Path (Join-Path $windows.FullName '*') -DestinationPath $zip -
 
 $bundle = Join-Path $OutDir "Lockdeader-$Label-linux-x86_64.flatpak"
 Copy-Item $flatpak.FullName $bundle
-
-foreach ($file in $zip, $bundle) {
-    $hash = (Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant()
-    $name = Split-Path $file -Leaf
-
-    # sha256sum's own format, with a Unix line ending wherever it's written.
-    Set-Content "$file.sha256" -Encoding utf8NoBOM -NoNewline -Value "$hash  $name`n"
-}
 
 Get-ChildItem $OutDir | ForEach-Object { Write-Host "$($_.Name) ($([math]::Round($_.Length / 1MB, 1)) MB)" }
