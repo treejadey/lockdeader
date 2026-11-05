@@ -3,7 +3,7 @@ import QtQuick.Controls.Fusion
 
 // Shown on an installed mod that shares sound tables with other mods that
 // are on, when merging them left some of its changes out; hovering it says
-// which mods. Quieter than ClashWarning, as nothing is wrong.
+// which mods.
 Item {
     id: root
 
@@ -16,7 +16,7 @@ Item {
     implicitHeight: implicitWidth
     visible: mergedWith !== ""
 
-    // The same badge as ClashWarning's.
+    // The same badge as ClashNotice's.
     Rectangle {
         anchors.fill: parent
         visible: root.onPicture

@@ -15,8 +15,8 @@ import (
 
 // Only one of two mods that change the same files can be on (see
 // deploy.Clashes): turning one on turns off the others, with a message that
-// offers Undo. Every installed mod that clashes with another, on or off,
-// says which in its "clashes" role.
+// offers Undo. A mod that's off for clashing with ones that are on says
+// which in its "clashes" role.
 
 // pendingToggle is mods turned on and off by turnOffClashing or
 // ResolveClashes, which Undo turns back.
@@ -225,17 +225,25 @@ func vpkKey(row *installedRow) string {
 	return strings.Join(shas, ",")
 }
 
-// updateClashes fills in every row's "clashes" role: the names of the
-// installed mods it clashes with, or "".
+// updateClashes fills in every row's "clashes" role: for a mod that's off,
+// the names of the mods that are on that it clashes with, which keep it
+// off; otherwise "". A mod that's on is fine, and so is one that only
+// clashes with mods that are off, so they show nothing.
 func (m *installedMods) updateClashes() {
 	rows, clashes := m.clashes()
 	names := make(map[*installedRow]string, len(rows))
 
 	for i, row := range rows {
+		if row.mod.Enabled {
+			continue
+		}
+
 		var list []string
 
 		for _, j := range clashes[i] {
-			list = append(list, rows[j].mod.Name)
+			if rows[j].mod.Enabled {
+				list = append(list, rows[j].mod.Name)
+			}
 		}
 
 		names[row] = strings.Join(list, ", ")

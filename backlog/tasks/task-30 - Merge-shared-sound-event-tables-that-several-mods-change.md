@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-05T17:29:00Z'
-updated_date: '2026-11-05T19:33:00Z'
+updated_date: '2026-11-05T20:04:00Z'
 labels:
   - mod-support
 dependencies:
@@ -33,18 +33,18 @@ Unknowns: whether the game accepts a table written in an older or uncompressed K
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Mods whose only shared files are sound event tables can be on together, unless an event is a real conflict (#2), and each keeps the events that use its own sounds
-- [ ] #2 An event that two mods that are on both change, each with sound files it ships, and differently, is still a clash as under TASK-1
-- [ ] #3 In a table that two or more mods that are on share: a changed event comes from a mod only if it refers to a sound file that mod ships; events a mod adds are taken; everything else comes from the game's current copy, so an out-of-date copy no longer removes or reverts other heroes' events. Numbers compare at KV3 text precision (6 decimals)
-- [ ] #4 A table that only one mod that's on has is used as the mod ships it, as now
+- [x] #1 Mods whose only shared files are sound event tables can be on together, unless an event is a real conflict (#2), and each keeps the events that use its own sounds
+- [x] #2 An event that two mods that are on both change, each with sound files it ships, and differently, is still a clash as under TASK-1
+- [x] #3 In a table that two or more mods that are on share: a changed event comes from a mod only if it refers to a sound file that mod ships; events a mod adds are taken; everything else comes from the game's current copy, so an out-of-date copy no longer removes or reverts other heroes' events. Numbers compare at KV3 text precision (6 decimals)
+- [x] #4 A table that only one mod that's on has is used as the mod ships it, as now
 - [ ] #5 A mod whose changes a merge leaves out shows an information marker on its card and list row, where ClashWarning sits, with a tooltip naming the mods it's merged with (proposed: "Some of its changes are left out so it works alongside %1"); a mod the merge leaves nothing out of shows nothing
-- [ ] #6 The merged table is rebuilt when the mods that are on change or the game updates its own copy
-- [ ] #7 Tests cover merging, a real conflict, an out-of-date mod table, a lone mod's table and a table that can't be read
+- [x] #6 The merged table is rebuilt when the mods that are on change or the game updates its own copy
+- [x] #7 Tests cover merging, a real conflict, an out-of-date mod table, a lone mod's table and a table that can't be read
 <!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Checked in the game with Hatchling, Ted and Flowery on together: each hero's pick line plays
+- [x] #1 Checked in the game with Hatchling, Ted and Flowery on together: each hero's pick line plays
 <!-- DOD:END -->
 
 ## Implementation Plan
@@ -75,4 +75,10 @@ Step 3 done: package merge, SoundEvents. On the real mods (Hatchling hatchdaniel
 Step 4 done: deploy.Clashes takes a mergeable callback; installedMods.merges answers it for .vsndevts_c by running merge.SoundEventConflicts on the pair over the game's copy (deploy.Base, which keeps pak01's directory until an update replaces it), cached per game version and the mods' VPKs. No game folder, or a copy that can't be read: they clash, as before. Conflicts now need both versions to use their mod's own sounds (two stale copies adding the same old event differently aren't a clash). vpk.Dir.ReadFile now opens the _dir.vpk by path for data kept in it, so no file stays open (an open pak01 would get in Steam's way on Windows). Switched off in the app until step 5: main.go doesn't set installed.gameFolder, since without merged tables in the game, letting such mods be on together would lose one mod's changes.
 
 Step 5 done: deploy.MergeTables merges every .vsndevts_c that two or more mods that are on have different copies of, over the game's (deploy.Base), into one VPK; deployer.withMergedTables keeps it in the store by SHA-256 and puts it first in the load order (pak01), so it wins those tables and nothing else. Tables that can't be merged, a VPK that can't be read, or no game: logged, and left to the load order. Clash detection's merging (step 4) is switched on in main.go with it. Dry run with the real Hatchling, Ted and Flowery VPKs into a fake game folder linking the real pak01: pak01 held the merged death, pick and vote-reveal tables, then the three mods; a second apply placed nothing; left out: Flowery only.
+
+Step 7 (in-game check) done 2026-11-05: Hatchling (hatchdanielupdated), Ted (ted_over_rem_2_) and Flowery (flowery_apollo) installed through the app all stayed on together; with Play With Mods, Rem and Apollo played their mods' lines, and Deadman Danny played Hatchling's lines for the 3 of 10 select lines (02, 03, 07) and 2 of 10 unselect lines it replaces, the rest vanilla, as the mod is made. The merged pak01 held Hatchling's versions of Danny's events. Without merging, Flowery's out-of-date table would leave Danny no pick line at all.
+
+Step 6 done: MergeNotice (Fluent info_24_regular in Theme.subtle, on the same badge as ClashWarning over pictures) beside ClashWarning in InstalledGrid and InstalledList, from the mergedWith role; tooltip, as the user chose: "Some of its sound changes are left out so it works alongside %1". The deployer's merge returns what it left out per mod (deploy.Merged.LeftOut), and onMerged (installed.SetMerged) sets the role after each apply, even while the game runs; no game folder clears it. Headless run (offscreen, scratch data dir, fake game folder linking the real pak01) with the user's mods, in grid and list view: no QML warnings, 3 tables merged. Evidence for the criteria: #1 and #2 TestSharedTablesMerge and the in-game check; #3 merge tests and the real Hatchling/Ted/Flowery merge; #4 TestMergeTablesNothingToMerge; #6 every apply merges afresh over a newly read pak01 (TestBase covers noticing an update) and the same mods give the same VPK; #7 merge, deploy and root tests. #5 waits on the user seeing the marker in the app.
+
+Follow-up from the user's look at the app (2026-11-05): (1) bug: installedMods worked out clashes while loading, before main.go gave it the game folder, so mods sharing tables showed as clashing after a restart; the folder now comes with newInstalledMods (TestSharedTablesMergeOnStartup). (2) The user found the gold clash warning on every clashing mod confusing for non-technical users, as clashing is a handled state. Decided: only a mod that's off because mods that are on change the same files shows a marker, ClashNotice (was ClashWarning), the same muted info icon as MergeNotice, tooltip "Can’t be on at the same time as %1: they change the same files"; a mod that's on shows nothing. Recomputed in installedMods.changed after every change to which mods are on. warning_24_regular.svg removed (unused). doc-2 updated.
 <!-- SECTION:NOTES:END -->

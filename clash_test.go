@@ -113,8 +113,9 @@ func TestTurningOnTurnsOffClashingMods(t *testing.T) {
 	click := it.clashMod(t, 3, "Click Sound", true, "sounds/click.vsnd_c")
 	addInstalled(t, it, gold, chrome, click)
 
-	if got := it.clashesOf(1); got != "Abrams Chrome" {
-		t.Errorf("clashes of Abrams Gold = %q", got)
+	// Only the one that's off says so, naming the one that's on.
+	if got := it.clashesOf(1); got != "" {
+		t.Errorf("clashes of Abrams Gold, which is on = %q, want none", got)
 	}
 
 	if got := it.clashesOf(2); got != "Abrams Gold" {
@@ -137,6 +138,11 @@ func TestTurningOnTurnsOffClashingMods(t *testing.T) {
 		t.Error("Abrams Gold's row still shows it on")
 	}
 
+	// The note moves to the one that's off now.
+	if it.clashesOf(1) != "Abrams Chrome" || it.clashesOf(2) != "" {
+		t.Errorf("clashes = %q and %q, want Abrams Gold's naming Abrams Chrome", it.clashesOf(1), it.clashesOf(2))
+	}
+
 	if got := it.message(); got != "Turned off Abrams Gold, which changes the same files" {
 		t.Errorf("message = %q", got)
 	}
@@ -147,6 +153,10 @@ func TestTurningOnTurnsOffClashingMods(t *testing.T) {
 	want = map[string]bool{"Abrams Gold": true, "Abrams Chrome": false, "Click Sound": true}
 	if got := it.enabled(t); !maps.Equal(got, want) {
 		t.Errorf("after Undo: %v, want %v", got, want)
+	}
+
+	if it.clashesOf(1) != "" || it.clashesOf(2) != "Abrams Gold" {
+		t.Errorf("clashes after Undo = %q and %q, want Abrams Chrome's naming Abrams Gold", it.clashesOf(1), it.clashesOf(2))
 	}
 
 	// Turning one off, or on when nothing it clashes with is on, says nothing.
@@ -176,8 +186,8 @@ func TestTurningOnTurnsOffSeveral(t *testing.T) {
 		t.Errorf("message = %q", got)
 	}
 
-	if got := it.clashesOf(3); got != "Red, Blue" {
-		t.Errorf("clashes of Both = %q", got)
+	if it.clashesOf(1) != "Both" || it.clashesOf(2) != "Both" || it.clashesOf(3) != "" {
+		t.Errorf("clashes = %q, %q, %q; want Red's and Blue's naming Both", it.clashesOf(1), it.clashesOf(2), it.clashesOf(3))
 	}
 
 	// Once the message has gone, so has its Undo.
@@ -322,8 +332,8 @@ func TestVPKPathsReadOnce(t *testing.T) {
 
 	mainthread.Wait(func() { it.updateClashes() })
 
-	if got := it.clashesOf(1); got != "B" {
-		t.Errorf("clashes of A after its VPK went = %q, want B", got)
+	if got := it.clashesOf(2); got != "A" {
+		t.Errorf("clashes of B after its VPK went = %q, want A", got)
 	}
 }
 
@@ -474,8 +484,9 @@ func TestSharedTablesMerge(t *testing.T) {
 		t.Errorf("after turning on Lash Voice: %v, want %v", got, want)
 	}
 
-	if it.clashesOf(1) != "Other Haze Voice" || it.clashesOf(2) != "" {
-		t.Errorf("clashes = %q and %q, want only Haze's with the other Haze voice", it.clashesOf(1), it.clashesOf(2))
+	if it.clashesOf(1) != "" || it.clashesOf(2) != "" || it.clashesOf(3) != "Haze Voice" {
+		t.Errorf("clashes = %q, %q, %q; want only the other Haze voice's, naming Haze Voice",
+			it.clashesOf(1), it.clashesOf(2), it.clashesOf(3))
 	}
 
 	// Both change Haze's event with their own sounds: a real clash.

@@ -75,7 +75,8 @@ Item {
             required property string error
             required property string errorDetail
             required property int variants
-            // The mods it changes the same files as, joined; "" if none.
+            // The mods that are on that keep it off, as they change the
+            // same files, joined; "" if none.
             required property string clashes
             // The mods it's merged with, when that left some of its changes
             // out, joined; "" if none.
@@ -149,7 +150,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 6
 
-                ClashWarning {
+                ClashNotice {
                     clashes: row.clashes
                 }
 

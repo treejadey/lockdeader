@@ -723,7 +723,11 @@ func (m *installedMods) FinishUninstall() {
 	m.changed()
 }
 
+// changed is for after a change to which mods are on, or what they are.
 func (m *installedMods) changed() {
+	// Which mods are kept off by ones that are on may have changed.
+	m.updateClashes()
+
 	if m.onChange != nil {
 		m.onChange()
 	}

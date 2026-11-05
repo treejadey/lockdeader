@@ -226,9 +226,9 @@ msgstr ""
 msgid "Retry"
 msgstr ""
 
-#: qml/ClashWarning.qml
+#: qml/ClashNotice.qml
 #, qt-format
-msgid "Changes the same files as %1"
+msgid "Can’t be on at the same time as %1: they change the same files"
 msgstr ""
 
 #. A count in thousands, e.g. "200K" views. %1 is the number.

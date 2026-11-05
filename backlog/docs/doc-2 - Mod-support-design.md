@@ -3,7 +3,7 @@ id: doc-2
 title: Mod support design
 type: specification
 created_date: '2026-11-05T09:30:00Z'
-updated_date: '2026-11-05T10:13:00Z'
+updated_date: '2026-11-05T20:02:00Z'
 ---
 How Lockdeader's mod support works, why, and where it's going (written 2026-10-10 and 2026-10-11, as sections 1 and 2 were built). doc-1, *How Deadlock modding works*, describes how the game loads mods and how Deadlock Mod Manager (DMM) works; this builds on it.
 
@@ -156,7 +156,7 @@ Built as `deploy.ScanOtherMods` and `othermods.go`.
 
 ## 3. Mods that change the same files
 
-**First step: tell the user, and let only one of them be on.** Built (TASK-1) as `deploy.Clashes` and `clash.go`. Each installed VPK's file list is read from the store (`deploy.ReadPaths`, only the directory, so it's instant) once per run and kept in memory by SHA-256; store files never change, so it can't go stale, and no schema change was needed. Two mods that change any of the same files conflict: turning one on (or installing, taking over or reconfiguring one that's on) turns the others off, with a message offering Undo. Mods already on together from before are sorted out on startup: the one that wins in the load order stays on. The installed page shows a warning icon on every mod that clashes with another, with a tooltip naming them. For bundled slots (see 1) this also means the allocator never has to split a bundle. DMM's noise list applies: `addoninfo.txt`, `modinfo.json`, readmes, `panorama/image_compiler.vdata_c` and `materials/default/default_*` don't count.
+**First step: tell the user, and let only one of them be on.** Built (TASK-1) as `deploy.Clashes` and `clash.go`. Each installed VPK's file list is read from the store (`deploy.ReadPaths`, only the directory, so it's instant) once per run and kept in memory by SHA-256; store files never change, so it can't go stale, and no schema change was needed. Two mods that change any of the same files conflict: turning one on (or installing, taking over or reconfiguring one that's on) turns the others off, with a message offering Undo. Mods already on together from before are sorted out on startup: the one that wins in the load order stays on. The installed page shows a muted info marker on a mod that's off because mods that are on change the same files, with a tooltip naming them; a mod that's on shows nothing. It was a gold warning icon on every clashing mod at first, but that read as something being wrong, when only one being on is how it should be (changed 2026-11-05). For bundled slots (see 1) this also means the allocator never has to split a bundle. DMM's noise list applies: `addoninfo.txt`, `modinfo.json`, readmes, `panorama/image_compiler.vdata_c` and `materials/default/default_*` don't count.
 
 **Later: per-file resolution** (TASK-10).
 
