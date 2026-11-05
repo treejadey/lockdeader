@@ -3,7 +3,7 @@ id: doc-3
 title: Distribution design
 type: specification
 created_date: '2026-11-05T09:30:00Z'
-updated_date: '2026-11-05T09:34:00Z'
+updated_date: '2026-11-05T10:36:00Z'
 ---
 How Lockdeader reaches people, and why (written 2026-10-12; decisions recorded the same day). What's built says so; work still to do is tracked as tasks labelled `distribution` (`backlog task list --labels distribution --plain`), named in each section below.
 
@@ -70,9 +70,11 @@ Looking for `qml/` next to the executable, then in the install prefix, was the a
 
 ### Third-party notices
 
-Not built yet: TASK-12.
+**Built (TASK-12).** Every build writes `THIRD-PARTY-NOTICES.txt` with `go run ./cmd/notices`, for the platform it builds for, so it's never out of date and isn't in the repository: the Go standard library, every module `go list -deps` says is compiled in (with all its LICENSE, COPYING, NOTICE, PATENTS and AUTHORS files; a module without one stops the build), and what's vendored (the fonts, the Fluent icons, miniaudio and stb_vorbis).
 
-A `THIRD-PARTY-NOTICES` file (or a folder of licences) listing what's bundled, with the licence texts. Every channel ships it.
+- **Windows** adds a section for the MSYS2 packages its DLLs come from (Qt and what it uses): each one's version, licence and where its source is, which the LGPL asks for, with their licence files in `licenses/`. `pacman` says which package owns each DLL.
+- **The Flatpak** installs it next to `LICENSE` in `/app/share/licenses/<app-id>/`. Qt comes with the KDE runtime, which carries its own licences.
+- **OBS packages** will do the same as the Flatpak (TASK-16).
 
 ## Windows: a zip from GitHub Actions
 
@@ -91,8 +93,9 @@ Lockdeader-1.2.3-windows-x64.zip
 │                           (the app's own QML is in the .exe)
 ├── translations/           Qt's own (qt_*.qm), which the app loads for Qt's text
 ├── qt.conf                 where those are; MSYS2's Qt looks in share\qt6\ otherwise
-├── LICENSE
-└── THIRD-PARTY-NOTICES
+├── LICENSE.txt
+├── THIRD-PARTY-NOTICES.txt  licences of what's compiled in, and of the MSYS2 packages
+└── licenses/               the MSYS2 packages' licence files
 ```
 
 Unzip and run. It's portable, apart from the data in `%LOCALAPPDATA%\Lockdeader`, which `appdata` already puts there. Toast notifications register the app under the user's registry key the first time (`notification_windows.go`), which a portable app can do.

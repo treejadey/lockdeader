@@ -36,5 +36,12 @@ GitHub zips as `Lockdeader-<version>-windows-x64.zip`.
 - **`qt.conf`**, which tells Qt where those are. Without it, MSYS2's Qt
   looks for its QML modules and translations in `share\qt6\` next to the
   app, finds no `QtQuick`, and the app quits before its window opens.
-- **`LICENSE.txt`.** Licences for what's bundled are still to come
-  (Backlog TASK-12).
+- **`LICENSE.txt`**, Lockdeader's own licence.
+- **`THIRD-PARTY-NOTICES.txt`**: the licences of the Go modules compiled
+  in and of the fonts, icons and audio code in the repository, written by
+  `go run ./cmd/notices` for this build, then a list of the MSYS2 packages
+  the DLLs came from, with each one's version, licence and where its source
+  is. `pacman` says which package owns each DLL.
+- **`licenses/`**: those packages' licence files, from MSYS2's
+  `ucrt64\share\licenses`. A package without any shows up as a warning in
+  the build's log.

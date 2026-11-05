@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unversioned
+- Minor: Builds include the licences of the software they bundle (THIRD-PARTY-NOTICES.txt).
 - Minor: Only one of two mods that change the same files can be on. Turning one on turns the other off, with Undo, and a warning shows which mods clash.
 
 ## 0.2.0

@@ -114,6 +114,100 @@ Write-Host "Copied $copied more DLLs"
 
 Copy-Item LICENSE (Join-Path $appDir 'LICENSE.txt')
 
+# The licences of what's compiled into the app: the Go modules and the fonts,
+# icons and audio code in the repository.
+Write-Host 'Writing the licence notices'
+$notices = Join-Path $appDir 'THIRD-PARTY-NOTICES.txt'
+go run ./cmd/notices -o $notices
+
+# Everything else in the folder is a DLL from an MSYS2 package: Qt and what
+# it uses. Each file is traced back to where it came from (see qt.conf for
+# where windeployqt puts Qt's plugins and QML modules), pacman says which
+# packages own those, and each package's licence files are copied into
+# licenses\.
+Write-Host 'Collecting the licences of the bundled libraries'
+$ucrt64 = Join-Path $Msys2Root 'ucrt64'
+$pacman = Join-Path $Msys2Root 'usr' 'bin' 'pacman.exe'
+$licensesDir = Join-Path $appDir 'licenses'
+$sources = @()
+
+foreach ($dll in Get-ChildItem $appDir -Recurse -File -Filter '*.dll') {
+    $relative = [System.IO.Path]::GetRelativePath($appDir, $dll.FullName)
+    $parts = $relative -split '[\\/]', 2
+
+    # Where in MSYS2 a file in the folder can have come from: next to the
+    # app, from ucrt64\bin; in a folder, a Qt plugin or a QML module.
+    $candidates = if ($parts.Count -eq 1) {
+        @(Join-Path $ucrt64 'bin' $relative)
+    } else {
+        @(
+            (Join-Path $ucrt64 'share' 'qt6' 'plugins' $relative)
+            (Join-Path $ucrt64 'share' 'qt6' 'qml' $relative)
+            (Join-Path $ucrt64 'share' 'qt6' 'qml' $parts[1])
+        )
+    }
+
+    $source = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+    if (-not $source) {
+        throw "Can't tell which MSYS2 package $relative came from: it's in none of $($candidates -join ', ')."
+    }
+
+    # pacman knows files by their path inside MSYS2.
+    $sources += '/' + [System.IO.Path]::GetRelativePath($Msys2Root, $source).Replace('\', '/')
+}
+
+$packages = & $pacman -Qqo @sources | Sort-Object -Unique
+
+$section = @(
+    ''
+    '=' * 78
+    'Libraries from MSYS2'
+    'https://www.msys2.org'
+    ''
+    'Qt, and the libraries it and the app use, are DLLs from the MSYS2 packages'
+    'below, linked dynamically, so they can be replaced with other builds. Each'
+    "package's licence texts are in the licenses folder next to this file, and"
+    'its source code is at https://github.com/msys2/MINGW-packages and'
+    'https://repo.msys2.org/mingw/sources/.'
+    ''
+)
+
+foreach ($package in $packages) {
+    $info = & $pacman -Qi $package
+    $version = ($info | Select-String '^Version\s*:\s*(.+)$').Matches[0].Groups[1].Value.Trim()
+    $licence = ($info | Select-String '^Licenses\s*:\s*(.+)$').Matches[0].Groups[1].Value.Trim()
+
+    # A package's files under share/licenses, without the folders.
+    $prefix = '/ucrt64/share/licenses/'
+    $files = & $pacman -Qlq $package | Where-Object { $_.StartsWith($prefix) -and -not $_.EndsWith('/') }
+    $folders = @()
+
+    foreach ($file in $files) {
+        $inLicenses = $file.Substring($prefix.Length)
+        $target = Join-Path $licensesDir $inLicenses
+        New-Item -ItemType Directory -Path (Split-Path $target) -Force | Out-Null
+        Copy-Item (Join-Path $Msys2Root $file.TrimStart('/')) $target
+        $folders += 'licenses/' + $inLicenses.Split('/')[0]
+    }
+
+    $where = if ($folders) {
+        ($folders | Sort-Object -Unique) -join ', '
+    } else {
+        # Not a reason to stop the build, but someone should look.
+        Write-Host "::warning::The MSYS2 package $package has no licence files."
+
+        'no licence file in the package'
+    }
+
+    $section += "$package $version"
+    $section += "    Licence: $licence ($where)"
+}
+
+$section | Out-File $notices -Encoding utf8NoBOM -Append
+
+Write-Host "Collected the licences of $($packages.Count) packages"
+
 $size = [math]::Round((Get-ChildItem $appDir -Recurse -File | Measure-Object Length -Sum).Sum / 1MB)
 Write-Host "Wrote $appDir ($size MB)"
 
