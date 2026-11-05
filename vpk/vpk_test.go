@@ -7,6 +7,9 @@ import (
 	"errors"
 	"hash/crc32"
 	"io"
+	"io/fs"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -295,5 +298,110 @@ func TestReadDirNoTree(t *testing.T) {
 
 	if len(d.Entries) != 0 {
 		t.Errorf("got %d entries", len(d.Entries))
+	}
+}
+
+// TestReadFile reads files of a directory whose data is in chunks next to
+// it, as the base game's is.
+func TestReadFile(t *testing.T) {
+	type spec struct {
+		name, preload, data string
+		archive             uint16
+		crc                 uint32 // 0: the data's own
+	}
+
+	chunk := "....chunked data...more"
+	specs := []spec{
+		{name: "embedded", preload: "em", data: "bedded", archive: embedded},
+		{name: "chunked", preload: "pre", data: "chunked data", archive: 1},
+		{name: "missing", data: "x", archive: 2},
+		{name: "cut", data: "more than the chunk has", archive: 1},
+		{name: "wrong", data: "more", archive: 1, crc: 1},
+	}
+
+	var tree, data []byte
+
+	add := func(s string) { tree = append(tree, s...); tree = append(tree, 0) }
+
+	add("txt")
+	add(" ")
+
+	for _, s := range specs {
+		add(s.name)
+
+		crc := s.crc
+		if crc == 0 {
+			crc = crc32.ChecksumIEEE([]byte(s.preload + s.data))
+		}
+
+		offset := uint32(len(data))
+
+		if s.archive != embedded {
+			offset = uint32(strings.Index(chunk, s.data))
+			if s.name == "cut" {
+				offset = uint32(len(chunk) - 4)
+			}
+		} else {
+			data = append(data, s.data...)
+		}
+
+		tree = binary.LittleEndian.AppendUint32(tree, crc)
+		tree = binary.LittleEndian.AppendUint16(tree, uint16(len(s.preload)))
+		tree = binary.LittleEndian.AppendUint16(tree, s.archive)
+		tree = binary.LittleEndian.AppendUint32(tree, offset)
+		tree = binary.LittleEndian.AppendUint32(tree, uint32(len(s.data)))
+		tree = binary.LittleEndian.AppendUint16(tree, terminator)
+		tree = append(tree, s.preload...)
+	}
+
+	add("")
+	add("")
+	add("")
+
+	dir := t.TempDir()
+	dirPath := filepath.Join(dir, "pak01_dir.vpk")
+
+	if err := os.WriteFile(dirPath, file(tree, string(data)), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(filepath.Join(dir, "pak01_001.vpk"), []byte(chunk), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	f, err := os.Open(dirPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer f.Close()
+
+	d, err := ReadDir(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]struct {
+		data string
+		err  error
+	}{
+		"embedded.txt": {"embedded", nil},
+		"chunked.txt":  {"prechunked data", nil},
+		"missing.txt":  {"", fs.ErrNotExist},
+		"cut.txt":      {"", ErrCorrupt},
+		"wrong.txt":    {"", ErrChecksum},
+	}
+
+	for _, e := range d.Entries {
+		w := want[e.Path]
+
+		got, err := d.ReadFile(e, dirPath)
+		if !errors.Is(err, w.err) || string(got) != w.data {
+			t.Errorf("ReadFile(%s) = %q, %v; want %q, %v", e.Path, got, err, w.data, w.err)
+		}
+	}
+
+	if _, err := d.ReadFile(d.Entries[1], filepath.Join(dir, "pak01.vpk")); err == nil {
+		t.Error("ReadFile found chunks for a VPK not named _dir.vpk")
 	}
 }

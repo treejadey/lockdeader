@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-05T17:29:00Z'
-updated_date: '2026-11-05T19:07:00Z'
+updated_date: '2026-11-05T19:10:00Z'
 labels:
   - mod-support
 dependencies:
@@ -67,4 +67,6 @@ Survey of 125 mods (2026-11-05) in doc-4, Merging files that mods share: sound e
 Decided with the user 2026-11-05: the own sounds rule (doc-4) applies only when two or more mods that are on share a table; a lone mod's table is used as it is. A merge that leaves out some of a mod's changes shows a quiet marker on that mod (tooltip, no toast or info bar), only when something is actually left out. Wording of the tooltip still to be confirmed when it's built.
 
 Step 1 done: kv3.Encode and resource.Write. Re-encoding the game's pick table decodes identically (ours and Source2Viewer's), and resource.Write reproduces an unchanged file byte for byte. In-game test (2026-11-05): the game's pick table re-encoded by Lockdeader, with Abrams' Pick/Remove/Avoided events pointed at Haze's files, in addons/pak50_dir.vpk via Play With Mods: Abrams said Haze's lines. So the game accepts KV3 v5 uncompressed tables Lockdeader writes, with the game's own RED2 block.
+
+Step 2 done: vpk.Dir.ReadFile reads a file whole, from the base game's chunk archives too, checked against its CRC (the CRCs of all files in 20 mod VPKs checked were right). On the game: pak01's directory (158,644 entries) reads in about 100 ms, and all 160 sound event tables read and check in about 140 ms.
 <!-- SECTION:NOTES:END -->

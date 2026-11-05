@@ -11,7 +11,9 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"hash/crc32"
 	"io"
+	"os"
 	"strings"
 )
 
@@ -36,6 +38,10 @@ var (
 	ErrNotVPK  = errors.New("vpk: not a VPK file")
 	ErrVersion = errors.New("vpk: not a version 2 VPK")
 	ErrCorrupt = errors.New("vpk: the file's directory is damaged")
+	// ErrChecksum is returned by ReadFile for data that doesn't match the
+	// directory's checksum, e.g. a chunk that a game update changed after
+	// the directory was read.
+	ErrChecksum = errors.New("vpk: a file's data doesn't match its checksum")
 	// ErrDuplicate is returned by Write for two sources with the same path.
 	ErrDuplicate = errors.New("vpk: the same path is given twice")
 	// ErrTooBig is returned by Write when the data wouldn't fit the format's
@@ -52,8 +58,10 @@ type Entry struct {
 	// game is split that way; a mod never is.
 	External bool
 
-	// The start of the data is kept in the tree, the rest after it.
+	// The start of the data is kept in the tree, the rest after it, or in
+	// chunk archive number archive.
 	preload        []byte
+	archive        uint16
 	offset, length uint32
 }
 
@@ -203,6 +211,7 @@ func (p *treeParser) readEntry() (Entry, error) {
 	e := Entry{
 		CRC32:    binary.LittleEndian.Uint32(b),
 		External: archive != embedded,
+		archive:  archive,
 		offset:   binary.LittleEndian.Uint32(b[8:]),
 		length:   binary.LittleEndian.Uint32(b[12:]),
 	}
@@ -264,4 +273,44 @@ func (d *Dir) Open(e Entry) io.Reader {
 
 	return io.MultiReader(bytes.NewReader(e.preload),
 		io.NewSectionReader(d.r, d.dataStart+int64(e.offset), int64(e.length)))
+}
+
+// ReadFile returns the whole of one of d's files, checked against its
+// checksum. An External entry's data is read from its chunk archive, next to
+// the _dir.vpk at dirPath: pak01_dir.vpk's chunks are pak01_000.vpk,
+// pak01_001.vpk and so on.
+func (d *Dir) ReadFile(e Entry, dirPath string) ([]byte, error) {
+	r := d.Open(e)
+
+	if e.External {
+		base, ok := strings.CutSuffix(dirPath, "_dir.vpk")
+		if !ok {
+			return nil, fmt.Errorf("vpk: %s has no chunks, as its name doesn't end in _dir.vpk", dirPath)
+		}
+
+		f, err := os.Open(fmt.Sprintf("%s_%03d.vpk", base, e.archive))
+		if err != nil {
+			return nil, fmt.Errorf("vpk: %w", err)
+		}
+
+		defer f.Close()
+
+		r = io.MultiReader(bytes.NewReader(e.preload), io.NewSectionReader(f, int64(e.offset), int64(e.length)))
+	}
+
+	data := make([]byte, e.Size)
+
+	if _, err := io.ReadFull(r, data); err != nil {
+		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+			return nil, fmt.Errorf("%w: %s is cut off", ErrCorrupt, e.Path)
+		}
+
+		return nil, fmt.Errorf("vpk: %w", err)
+	}
+
+	if crc32.ChecksumIEEE(data) != e.CRC32 {
+		return nil, fmt.Errorf("%w: %s", ErrChecksum, e.Path)
+	}
+
+	return data, nil
 }
