@@ -12,7 +12,11 @@ import (
 // mods carry for their own sake, which the game doesn't care which copy it
 // gets of, don't count (see noise), and nor do files two mods have exactly
 // the same copy of, such as the note DeadlockForge puts in every VPK.
-func Clashes(mods []PathSet) [][]int {
+//
+// mergeable, if not nil, is asked about the files two mods have different
+// copies of: when it says the two copies can be merged instead (see package
+// merge), that file isn't a clash.
+func Clashes(mods []PathSet, mergeable func(path string, a, b int) bool) [][]int {
 	// Which mods have each file, so it takes one pass over the paths rather
 	// than comparing every mod with every other.
 	owners := make(map[string][]int)
@@ -34,7 +38,11 @@ func Clashes(mods []PathSet) [][]int {
 
 		for _, i := range ids {
 			for _, j := range ids {
-				if i == j || mods[i][p] == mods[j][p] {
+				if i == j || mods[i][p] == mods[j][p] || clashing[i][j] {
+					continue
+				}
+
+				if mergeable != nil && mergeable(p, min(i, j), max(i, j)) {
 					continue
 				}
 

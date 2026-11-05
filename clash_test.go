@@ -10,6 +10,8 @@ import (
 	"io"
 	"maps"
 	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -18,6 +20,9 @@ import (
 
 	"github.com/treejadey/lockdeader/appdb"
 	"github.com/treejadey/lockdeader/banana"
+	"github.com/treejadey/lockdeader/deploy"
+	"github.com/treejadey/lockdeader/kv3"
+	"github.com/treejadey/lockdeader/resource"
 	"github.com/treejadey/lockdeader/vpk"
 )
 
@@ -26,20 +31,23 @@ import (
 func (it *installTest) clashMod(t *testing.T, id int, name string, enabled bool, paths ...string) appdb.Mod {
 	t.Helper()
 
-	var sources []vpk.Source
-
 	// Each mod has its own copy of its files: ones exactly the same as
 	// another's don't clash.
+	files := make(map[string][]byte, len(paths))
+
 	for _, p := range paths {
-		data := []byte(name + ":" + p)
-		sources = append(sources, vpk.Source{
-			Path: p, CRC32: crc32.ChecksumIEEE(data), Size: uint32(len(data)),
-			Open: func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(data)), nil },
-		})
+		files[p] = []byte(name + ":" + p)
 	}
 
+	return it.modWithFiles(t, id, name, enabled, files)
+}
+
+// modWithFiles is a mod with one VPK holding files, already in the store.
+func (it *installTest) modWithFiles(t *testing.T, id int, name string, enabled bool, files map[string][]byte) appdb.Mod {
+	t.Helper()
+
 	var b bytes.Buffer
-	if err := vpk.Write(&b, sources); err != nil {
+	if err := vpk.Write(&b, vpkSources(files)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -56,6 +64,19 @@ func (it *installTest) clashMod(t *testing.T, id int, name string, enabled bool,
 			VPKs: []appdb.VPK{{Path: "pak01_dir.vpk", SHA256: sha, Size: size, Enabled: true}},
 		}},
 	}
+}
+
+func vpkSources(files map[string][]byte) []vpk.Source {
+	var sources []vpk.Source
+
+	for p, data := range files {
+		sources = append(sources, vpk.Source{
+			Path: p, CRC32: crc32.ChecksumIEEE(data), Size: uint32(len(data)),
+			Open: func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(data)), nil },
+		})
+	}
+
+	return sources
 }
 
 func (it *installTest) enabled(t *testing.T) map[string]bool {
@@ -360,5 +381,121 @@ func TestInstallTurnsOffClashing(t *testing.T) {
 
 	if got := it.clashesOf(1); got != "New" {
 		t.Errorf("clashes of Old = %q", got)
+	}
+}
+
+// soundTable compiles a sound event table: one event per hero, each
+// playing the file given.
+func soundTable(t *testing.T, heroes map[string]string) []byte {
+	t.Helper()
+
+	root := kv3.Value{Type: kv3.TypeObject}
+
+	for _, hero := range slices.Sorted(maps.Keys(heroes)) {
+		root.Object = append(root.Object, kv3.Member{Key: "Generated." + hero + ".Hero.Pick.VO", Value: kv3.Value{
+			Type: kv3.TypeObject, Object: kv3.Object{{Key: "vsnd_files", Value: kv3.Value{
+				Type: kv3.TypeString, String: heroes[hero]}}},
+		}})
+	}
+
+	data, err := kv3.Encode(&kv3.Document{Format: kv3.FormatGeneric, Root: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return resource.Write(&resource.Resource{Version: 1, Blocks: []resource.Block{{Type: "DATA", Data: data}}})
+}
+
+const pickTable = "soundevents/generated_vo_hero_pick_vo.vsndevts_c"
+
+// fakeGame makes a game folder whose pak01_dir.vpk has the game's pick
+// table, and has the mods merge over it.
+func (it *installTest) fakeGame(t *testing.T) {
+	t.Helper()
+
+	dir := t.TempDir()
+	pak := deploy.BasePak(dir)
+
+	var b bytes.Buffer
+	if err := vpk.Write(&b, vpkSources(map[string][]byte{pickTable: soundTable(t, map[string]string{
+		"Haze": "sounds/vo/haze/select.vsnd", "Lash": "sounds/vo/lash/select.vsnd", "Fencer": "sounds/vo/fencer/select.vsnd",
+	})})); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.MkdirAll(filepath.Dir(pak), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(pak, b.Bytes(), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	mainthread.Wait(func() { it.gameFolder = func() string { return dir } })
+}
+
+// voiceMod is a voice mod for one hero: its own sound, and its copy of the
+// pick table pointing that hero's event at it.
+func (it *installTest) voiceMod(t *testing.T, id int, name string, enabled bool, hero, sound string) appdb.Mod {
+	t.Helper()
+
+	table := map[string]string{"Haze": "sounds/vo/haze/select.vsnd", "Lash": "sounds/vo/lash/select.vsnd", "Fencer": "sounds/vo/fencer/select.vsnd"}
+	table[hero] = sound
+
+	return it.modWithFiles(t, id, name, enabled, map[string][]byte{
+		pickTable:    soundTable(t, table),
+		sound + "_c": []byte(name),
+	})
+}
+
+// Voice mods for different heroes share the pick table, but merge rather
+// than clash.
+func TestSharedTablesMerge(t *testing.T) {
+	it := newInstallTest(t)
+	it.fakeGame(t)
+
+	haze := it.voiceMod(t, 1, "Haze Voice", true, "Haze", "sounds/vo/haze/new.vsnd")
+	lash := it.voiceMod(t, 2, "Lash Voice", false, "Lash", "sounds/vo/lash/new.vsnd")
+	alsoHaze := it.voiceMod(t, 3, "Other Haze Voice", false, "Haze", "sounds/vo/haze/other.vsnd")
+	addInstalled(t, it, haze, lash, alsoHaze)
+
+	mainthread.Wait(func() { it.SetEnabled(installedKey(banana.SectionMods, 2), true) })
+
+	want := map[string]bool{"Haze Voice": true, "Lash Voice": true, "Other Haze Voice": false}
+	if got := it.enabled(t); !maps.Equal(got, want) {
+		t.Errorf("after turning on Lash Voice: %v, want %v", got, want)
+	}
+
+	if it.clashesOf(1) != "Other Haze Voice" || it.clashesOf(2) != "" {
+		t.Errorf("clashes = %q and %q, want only Haze's with the other Haze voice", it.clashesOf(1), it.clashesOf(2))
+	}
+
+	// Both change Haze's event with their own sounds: a real clash.
+	mainthread.Wait(func() { it.SetEnabled(installedKey(banana.SectionMods, 3), true) })
+
+	want = map[string]bool{"Haze Voice": false, "Lash Voice": true, "Other Haze Voice": true}
+	if got := it.enabled(t); !maps.Equal(got, want) {
+		t.Errorf("after turning on Other Haze Voice: %v, want %v", got, want)
+	}
+}
+
+// Without the game's copy to merge over, mods that share a table clash.
+func TestSharedTablesClashWithoutGame(t *testing.T) {
+	it := newInstallTest(t)
+
+	addInstalled(t, it,
+		it.voiceMod(t, 1, "Haze Voice", true, "Haze", "sounds/vo/haze/new.vsnd"),
+		it.voiceMod(t, 2, "Lash Voice", false, "Lash", "sounds/vo/lash/new.vsnd"))
+
+	if got := it.clashesOf(2); got != "Haze Voice" {
+		t.Errorf("clashes of Lash Voice without a game = %q, want Haze Voice", got)
+	}
+
+	// Once the game is known, they merge.
+	it.fakeGame(t)
+	mainthread.Wait(func() { it.updateClashes() })
+
+	if got := it.clashesOf(2); got != "" {
+		t.Errorf("clashes of Lash Voice with the game = %q, want none", got)
 	}
 }

@@ -276,11 +276,12 @@ func (d *Dir) Open(e Entry) io.Reader {
 }
 
 // ReadFile returns the whole of one of d's files, checked against its
-// checksum. An External entry's data is read from its chunk archive, next to
-// the _dir.vpk at dirPath: pak01_dir.vpk's chunks are pak01_000.vpk,
-// pak01_001.vpk and so on.
+// checksum. It reads the files on disk by name, not through the reader d
+// was read from, so that needn't stay open: the data is in the _dir.vpk at
+// dirPath, or for an External entry in its chunk archive next to it
+// (pak01_dir.vpk's chunks are pak01_000.vpk, pak01_001.vpk and so on).
 func (d *Dir) ReadFile(e Entry, dirPath string) ([]byte, error) {
-	r := d.Open(e)
+	path, offset := dirPath, d.dataStart+int64(e.offset)
 
 	if e.External {
 		base, ok := strings.CutSuffix(dirPath, "_dir.vpk")
@@ -288,16 +289,17 @@ func (d *Dir) ReadFile(e Entry, dirPath string) ([]byte, error) {
 			return nil, fmt.Errorf("vpk: %s has no chunks, as its name doesn't end in _dir.vpk", dirPath)
 		}
 
-		f, err := os.Open(fmt.Sprintf("%s_%03d.vpk", base, e.archive))
-		if err != nil {
-			return nil, fmt.Errorf("vpk: %w", err)
-		}
-
-		defer f.Close()
-
-		r = io.MultiReader(bytes.NewReader(e.preload), io.NewSectionReader(f, int64(e.offset), int64(e.length)))
+		path, offset = fmt.Sprintf("%s_%03d.vpk", base, e.archive), int64(e.offset)
 	}
 
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("vpk: %w", err)
+	}
+
+	defer f.Close()
+
+	r := io.MultiReader(bytes.NewReader(e.preload), io.NewSectionReader(f, offset, int64(e.length)))
 	data := make([]byte, e.Size)
 
 	if _, err := io.ReadFull(r, data); err != nil {

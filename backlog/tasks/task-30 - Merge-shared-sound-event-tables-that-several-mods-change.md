@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-05T17:29:00Z'
-updated_date: '2026-11-05T19:16:00Z'
+updated_date: '2026-11-05T19:23:00Z'
 labels:
   - mod-support
 dependencies:
@@ -71,4 +71,6 @@ Step 1 done: kv3.Encode and resource.Write. Re-encoding the game's pick table de
 Step 2 done: vpk.Dir.ReadFile reads a file whole, from the base game's chunk archives too, checked against its CRC (the CRCs of all files in 20 mod VPKs checked were right). On the game: pak01's directory (158,644 entries) reads in about 100 ms, and all 160 sound event tables read and check in about 140 ms.
 
 Step 3 done: package merge, SoundEvents. On the real mods (Hatchling hatchdanielupdated, Ted ted_2, Flowery Flowery_apollo) over the game's tables: no conflicts; the merged pick table has all 180 of the game's events with exactly Hatchling's 2 Deadpack, Ted's 2 Familiar and Flowery's 3 Fencer events changed, plus Flowery's stale Generated.Boho.Hero.Pick.VO added (an old hero name, harmless). Left out: Hatchling and Ted nothing; Flowery 112 pick events, 37 death events and Vo.VoteReveal, all its out-of-date versions of other heroes' events, so Flowery would show the marker.
+
+Step 4 done: deploy.Clashes takes a mergeable callback; installedMods.merges answers it for .vsndevts_c by running merge.SoundEventConflicts on the pair over the game's copy (deploy.Base, which keeps pak01's directory until an update replaces it), cached per game version and the mods' VPKs. No game folder, or a copy that can't be read: they clash, as before. Conflicts now need both versions to use their mod's own sounds (two stale copies adding the same old event differently aren't a clash). vpk.Dir.ReadFile now opens the _dir.vpk by path for data kept in it, so no file stays open (an open pak01 would get in Steam's way on Windows). Switched off in the app until step 5: main.go doesn't set installed.gameFolder, since without merged tables in the game, letting such mods be on together would lose one mod's changes.
 <!-- SECTION:NOTES:END -->

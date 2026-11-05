@@ -199,6 +199,8 @@ func main() {
 	}
 
 	installed := newInstalledMods(client, db, store)
+	// installed.gameFolder stays unset, so shared tables still clash, until
+	// the deployer puts merged tables into the game (TASK-30).
 	details := newModDetails(client, mods.Section, mods.Lookup, installed.Install)
 
 	// Puts the mods that are on into the game after each change to them.
@@ -257,6 +259,8 @@ func main() {
 		if changedFolder {
 			deployer.ApplySoon()
 			otherMods.Scan()
+			// Mods that share tables merge only over the game's copies.
+			installed.updateClashes()
 		}
 	})
 

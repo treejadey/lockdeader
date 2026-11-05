@@ -374,12 +374,13 @@ func TestReadFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	defer f.Close()
-
 	d, err := ReadDir(f)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// ReadFile opens the files itself.
+	f.Close()
 
 	want := map[string]struct {
 		data string

@@ -4,12 +4,15 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"slices"
 	"strings"
 
 	qt "github.com/mappu/miqt/qt6"
 
 	"github.com/treejadey/lockdeader/deploy"
+	"github.com/treejadey/lockdeader/merge"
+	"github.com/treejadey/lockdeader/vpk"
 )
 
 // Only one of two mods that change the same files can be on (see
@@ -102,7 +105,153 @@ func (m *installedMods) clashes() ([]*installedRow, [][]int) {
 		sets[i] = m.modPaths(row)
 	}
 
-	return rows, deploy.Clashes(sets)
+	mergeable := func(path string, a, b int) bool {
+		return m.merges(path, rows[a], rows[b], sets[a], sets[b])
+	}
+
+	return rows, deploy.Clashes(sets, mergeable)
+}
+
+// merges says whether two mods' different copies of a sound event table
+// merge without a conflict (see merge.SoundEvents), so they don't clash over
+// it. Without the game's own copy to merge over, or with a copy that can't
+// be read, they do. The answer is kept for the game version and the mods'
+// VPKs, which decide it.
+func (m *installedMods) merges(path string, a, b *installedRow, setA, setB deploy.PathSet) bool {
+	if !strings.HasSuffix(path, ".vsndevts_c") {
+		return false
+	}
+
+	base := m.gameBase()
+	if base == nil {
+		return false
+	}
+
+	key := strings.Join([]string{base.Stamp(), path, vpkKey(a), vpkKey(b)}, "|")
+
+	if ok, seen := m.mergeable[key]; seen {
+		return ok
+	}
+
+	ok := m.mergeCleanly(base, path, []*installedRow{a, b}, []deploy.PathSet{setA, setB})
+	m.mergeable[key] = ok
+
+	return ok
+}
+
+func (m *installedMods) mergeCleanly(base *deploy.Base, path string, rows []*installedRow, sets []deploy.PathSet) bool {
+	game, _, err := base.File(path)
+	if err != nil {
+		slog.Warn("couldn't read the game's copy of a table, so mods that change it clash", "path", path, "err", err)
+
+		return false
+	}
+
+	copies := make([]merge.Copy, len(rows))
+
+	for i, row := range rows {
+		data, err := m.modFile(row, path)
+		if err != nil {
+			slog.Warn("couldn't read a mod's copy of a table, so it clashes with others that change it",
+				"mod", row.key, "path", path, "err", err)
+
+			return false
+		}
+
+		copies[i] = merge.Copy{Data: data, Ships: func(p string) bool { _, ok := sets[i][p]; return ok }}
+	}
+
+	conflicts, err := merge.SoundEventConflicts(game, copies)
+	if err != nil {
+		slog.Warn("couldn't merge mods' copies of a table, so they clash", "path", path, "err", err)
+
+		return false
+	}
+
+	return len(conflicts) == 0
+}
+
+// gameBase is the base game, read again after an update, or nil without a
+// game folder.
+func (m *installedMods) gameBase() *deploy.Base {
+	if m.gameFolder == nil {
+		return nil
+	}
+
+	folder := m.gameFolder()
+	if folder == "" {
+		return nil
+	}
+
+	if m.base != nil && m.base.Current(folder) {
+		return m.base
+	}
+
+	base, err := deploy.ReadBase(folder)
+	if err != nil {
+		slog.Warn("couldn't read the base game, so mods that change the same tables clash", "err", err)
+	}
+
+	m.base = base
+
+	return base
+}
+
+// modFile reads a file from the first of a mod's VPKs that has it.
+func (m *installedMods) modFile(row *installedRow, path string) ([]byte, error) {
+	for _, f := range row.mod.Files {
+		for _, v := range f.VPKs {
+			if !v.Enabled {
+				continue
+			}
+
+			if _, ok := m.vpkPaths(v.SHA256)[path]; ok {
+				return readVPKFile(m.store.Path(v.SHA256), path)
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("no VPK of the mod has %s", path)
+}
+
+func readVPKFile(vpkPath, path string) ([]byte, error) {
+	f, err := os.Open(vpkPath)
+	if err != nil {
+		return nil, err
+	}
+
+	d, err := vpk.ReadDir(f)
+
+	// ReadFile opens the file itself, and an open file can't be deleted on
+	// Windows.
+	f.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, e := range d.Entries {
+		if strings.ToLower(e.Path) == path {
+			return d.ReadFile(e, vpkPath)
+		}
+	}
+
+	return nil, fmt.Errorf("%s has no %s", vpkPath, path)
+}
+
+// vpkKey names what a mod is made of: its VPKs that are used.
+func vpkKey(row *installedRow) string {
+	var shas []string
+
+	for _, f := range row.mod.Files {
+		for _, v := range f.VPKs {
+			if v.Enabled {
+				shas = append(shas, v.SHA256)
+			}
+		}
+	}
+
+	return strings.Join(shas, ",")
 }
 
 // updateClashes fills in every row's "clashes" role: the names of the

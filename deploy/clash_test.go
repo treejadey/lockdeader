@@ -39,7 +39,7 @@ func TestClashes(t *testing.T) {
 
 	want := [][]int{{1, 5}, {0, 5}, nil, nil, nil, {0, 1}, nil}
 
-	got := Clashes(mods)
+	got := Clashes(mods, nil)
 	if !slices.EqualFunc(got, want, slices.Equal) {
 		t.Errorf("Clashes = %v, want %v", got, want)
 	}
@@ -59,15 +59,15 @@ func TestClashesIdenticalCopies(t *testing.T) {
 
 	want := [][]int{{2}, {2}, {0, 1}}
 
-	got := Clashes([]PathSet{cape, skin, other})
+	got := Clashes([]PathSet{cape, skin, other}, nil)
 	if !slices.EqualFunc(got, want, slices.Equal) {
 		t.Errorf("Clashes = %v, want %v", got, want)
 	}
 }
 
 func TestClashesNone(t *testing.T) {
-	if got := Clashes(nil); len(got) != 0 {
-		t.Errorf("Clashes(nil) = %v, want none", got)
+	if got := Clashes(nil, nil); len(got) != 0 {
+		t.Errorf("Clashes(nil, nil) = %v, want none", got)
 	}
 }
 
@@ -106,5 +106,38 @@ func TestReadPathsNotAVPK(t *testing.T) {
 
 	if _, err := ReadPaths(f.Path); err == nil {
 		t.Error("ReadPaths read a broken VPK")
+	}
+}
+
+func TestClashesMergeable(t *testing.T) {
+	table := "soundevents/hero/haze.vsndevts_c"
+	mods := []PathSet{
+		modFiles(1, table, "sounds/a.vsnd_c"),
+		modFiles(2, table, "sounds/b.vsnd_c"),
+		modFiles(3, table, "models/c.vmdl_c"),
+		// Also changes a model the third does: still a clash.
+		modFiles(4, "models/c.vmdl_c"),
+	}
+
+	var asked [][2]int
+
+	// The first two copies of the table merge; the third's conflicts with
+	// both. The model isn't a table, so it can't merge.
+	mergeable := func(path string, a, b int) bool {
+		asked = append(asked, [2]int{a, b})
+
+		return path == table && b < 2
+	}
+
+	want := [][]int{{2}, {2}, {0, 1, 3}, {2}}
+
+	if got := Clashes(mods, mergeable); !slices.EqualFunc(got, want, slices.Equal) {
+		t.Errorf("Clashes = %v, want %v", got, want)
+	}
+
+	for _, pair := range asked {
+		if pair[0] >= pair[1] {
+			t.Errorf("asked about %v, want the earlier mod first", pair)
+		}
 	}
 }

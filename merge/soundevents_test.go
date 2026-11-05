@@ -283,3 +283,39 @@ func TestMergeUnreadable(t *testing.T) {
 		t.Errorf("SoundEvents with a list = %v, want ErrNotTable", err)
 	}
 }
+
+// Old copies that add the same event differently, neither with sounds its
+// mod ships, aren't a conflict: the first is taken.
+func TestMergeStaleAddsDontConflict(t *testing.T) {
+	a := Copy{Data: table(t, "a", ev{"Boho.Pick", event(1, "sounds/vo/boho/boho_select_01.vsnd")}), Ships: ships()}
+	b := Copy{Data: table(t, "b", ev{"Boho.Pick", event(2, "sounds/vo/boho/boho_select_01.vsnd")}), Ships: ships()}
+
+	res, err := SoundEvents(gameTable(t), []Copy{a, b})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(res.Conflicts) != 0 || !slices.Equal(res.LeftOut[1], []string{"Boho.Pick"}) {
+		t.Errorf("conflicts %v, left out %v; want none, and b's Boho.Pick", res.Conflicts, res.LeftOut)
+	}
+}
+
+func TestSoundEventConflicts(t *testing.T) {
+	own := ships("sounds/vo/haze/haze_select_01.vsnd_c")
+	a := Copy{Data: table(t, "a", ev{"Haze.Pick", event(1, "sounds/vo/haze/haze_select_01.vsnd")}), Ships: own}
+	b := Copy{Data: table(t, "b", ev{"Haze.Pick", event(2, "sounds/vo/haze/haze_select_01.vsnd")}), Ships: own}
+	c := Copy{Data: table(t, "c", ev{"Fencer.Pick", newFencer}), Ships: ships("sounds/vo/fencer/fencer_select_01.vsnd_c")}
+
+	got, err := SoundEventConflicts(gameTable(t), []Copy{a, b})
+	if err != nil || len(got) != 1 || got[0].Event != "Haze.Pick" {
+		t.Errorf("conflicts of a and b = %v, %v; want Haze.Pick", got, err)
+	}
+
+	if got, err := SoundEventConflicts(gameTable(t), []Copy{a, c}); err != nil || len(got) != 0 {
+		t.Errorf("conflicts of a and c = %v, %v; want none", got, err)
+	}
+
+	if got, err := SoundEventConflicts(gameTable(t), []Copy{a, a}); err != nil || len(got) != 0 {
+		t.Errorf("conflicts of identical copies = %v, %v; want none", got, err)
+	}
+}

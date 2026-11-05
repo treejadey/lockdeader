@@ -133,6 +133,12 @@ type installedMods struct {
 	toggled *pendingToggle
 	// The files each VPK in the store has, by SHA-256, once read.
 	paths map[string]deploy.PathSet
+	// The game folder, to merge the tables mods share over the game's own
+	// copies (see merges). Nil, or "", and they clash instead.
+	gameFolder func() string
+	base       *deploy.Base
+	// Whether two mods' copies of a table merge cleanly, by merges' key.
+	mergeable map[string]bool
 
 	// Called when an install fails, and when the last install still going
 	// finishes. Either may be nil.
@@ -204,6 +210,7 @@ func newInstalledMods(client *banana.Client, db *appdb.DB, store install.Store) 
 		lookingUp:       make(map[string]bool),
 		lookupSlots:     make(chan struct{}, 2),
 		paths:           make(map[string]deploy.PathSet),
+		mergeable:       make(map[string]bool),
 	}
 
 	m.model.SetItemRoleNames(installedRoleNames)

@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/treejadey/lockdeader/kv3"
@@ -32,9 +33,9 @@ type Result struct {
 	Conflicts []Conflict
 }
 
-// A Conflict is an event that copies change differently, each with sounds
-// its mod ships: a real clash, which the merge can't settle, so the first
-// of them in the load order wins.
+// A Conflict is an event that copies change or add differently, each with
+// sounds its mod ships: a real clash, which the merge can't settle, so the
+// first of them in the load order wins.
 type Conflict struct {
 	Event  string
 	Copies []int
@@ -66,16 +67,76 @@ var ErrNotTable = errors.New("merge: not a table of named entries")
 // Copies that are all the same are nothing to merge: the result is that
 // copy, unchanged.
 func SoundEvents(game []byte, copies []Copy) (*Result, error) {
-	res := &Result{LeftOut: make([][]string, len(copies))}
+	m, err := analyze(game, copies)
+	if err != nil {
+		return nil, err
+	}
 
+	if m == nil {
+		return &Result{Data: copies[0].Data, LeftOut: make([][]string, len(copies))}, nil
+	}
+
+	merged := make(kv3.Object, 0, len(m.base.Root.Object)+len(m.added))
+
+	for _, e := range m.base.Root.Object {
+		if v, ok := m.resolve(e.Key); ok {
+			e.Value = v
+		}
+
+		merged = append(merged, e)
+	}
+
+	for _, key := range m.added {
+		v, _ := m.resolve(key)
+		merged = append(merged, kv3.Member{Key: key, Value: v})
+	}
+
+	data, err := kv3.Encode(&kv3.Document{Format: m.base.Format, Root: kv3.Value{Type: kv3.TypeObject, Object: merged}})
+	if err != nil {
+		return nil, fmt.Errorf("merge: %w", err)
+	}
+
+	out := &resource.Resource{Version: m.template.Version}
+
+	for _, b := range m.template.Blocks {
+		if b.Type == "DATA" {
+			b.Data = data
+		}
+
+		out.Blocks = append(out.Blocks, b)
+	}
+
+	m.res.Data = resource.Write(out)
+
+	return m.res, nil
+}
+
+// SoundEventConflicts returns the conflicts SoundEvents would find,
+// without writing the merged table.
+func SoundEventConflicts(game []byte, copies []Copy) ([]Conflict, error) {
+	m, err := analyze(game, copies)
+	if m == nil {
+		return nil, err
+	}
+
+	for key := range m.picks {
+		m.resolve(key)
+	}
+
+	slices.SortFunc(m.res.Conflicts, func(a, b Conflict) int { return strings.Compare(a.Event, b.Event) })
+
+	return m.res.Conflicts, nil
+}
+
+// analyze reads the tables and collects each copy's changes, or returns
+// nil when the copies are all the same.
+func analyze(game []byte, copies []Copy) (*merger, error) {
 	if len(copies) == 0 {
 		return nil, errors.New("merge: no copies")
 	}
 
 	if allSame(copies) {
-		res.Data = copies[0].Data
-
-		return res, nil
+		return nil, nil
 	}
 
 	docs := make([]*kv3.Document, len(copies))
@@ -108,45 +169,18 @@ func SoundEvents(game []byte, copies []Copy) (*Result, error) {
 		template, base = r, doc
 	}
 
-	m := &merger{res: res, base: base.Root.Object, picks: map[string][]pick{}}
+	m := &merger{
+		res:      &Result{LeftOut: make([][]string, len(copies))},
+		base:     base,
+		template: template,
+		picks:    map[string][]pick{},
+	}
 
 	for i, doc := range docs {
 		m.collect(i, doc.Root.Object, copies[i].Ships)
 	}
 
-	merged := make(kv3.Object, 0, len(m.base)+len(m.added))
-
-	for _, e := range m.base {
-		if v, ok := m.resolve(e.Key); ok {
-			e.Value = v
-		}
-
-		merged = append(merged, e)
-	}
-
-	for _, key := range m.added {
-		v, _ := m.resolve(key)
-		merged = append(merged, kv3.Member{Key: key, Value: v})
-	}
-
-	data, err := kv3.Encode(&kv3.Document{Format: base.Format, Root: kv3.Value{Type: kv3.TypeObject, Object: merged}})
-	if err != nil {
-		return nil, fmt.Errorf("merge: %w", err)
-	}
-
-	out := &resource.Resource{Version: template.Version}
-
-	for _, b := range template.Blocks {
-		if b.Type == "DATA" {
-			b.Data = data
-		}
-
-		out.Blocks = append(out.Blocks, b)
-	}
-
-	res.Data = resource.Write(out)
-
-	return res, nil
+	return m, nil
 }
 
 func allSame(copies []Copy) bool {
@@ -192,9 +226,10 @@ type pick struct {
 }
 
 type merger struct {
-	res   *Result
-	base  kv3.Object
-	picks map[string][]pick
+	res      *Result
+	base     *kv3.Document
+	template *resource.Resource
+	picks    map[string][]pick
 	// Events the game doesn't have, in the order copies first add them.
 	added []string
 }
@@ -202,7 +237,7 @@ type merger struct {
 func (m *merger) collect(i int, events kv3.Object, ships func(string) bool) {
 	for _, e := range events {
 		t := text(e.Value)
-		g, inGame := m.base.Get(e.Key)
+		g, inGame := m.base.Root.Object.Get(e.Key)
 
 		if inGame && text(*g) == t {
 			continue
@@ -262,7 +297,9 @@ func (m *merger) resolve(key string) (kv3.Value, bool) {
 		}
 	}
 
-	if len(conflict.Copies) > 1 {
+	// Only versions that use their mods' own sounds conflict: the others are
+	// old copies' leftovers, which no mod is about.
+	if len(conflict.Copies) > 1 && winner.own {
 		m.res.Conflicts = append(m.res.Conflicts, conflict)
 	}
 
