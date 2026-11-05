@@ -75,6 +75,8 @@ Item {
             required property string error
             required property string errorDetail
             required property int variants
+            // The mods it changes the same files as, joined; "" if none.
+            required property string clashes
 
             readonly property bool installing: status !== ""
 
@@ -114,7 +116,8 @@ Item {
                     left: parent.left
                     leftMargin: 12
                     right: row.installing ? installStatus.left : authorLabel.left
-                    rightMargin: row.installing ? 22 : 12
+                    // Room for the warning after the name.
+                    rightMargin: (row.installing ? 22 : 12) + (clashWarning.visible ? clashWarning.width + 6 : 0)
                     verticalCenter: parent.verticalCenter
                 }
                 text: row.name
@@ -133,6 +136,15 @@ Item {
                     text: nameLabel.text
                     width: Math.min(implicitWidth, 360)
                 }
+            }
+
+            // Straight after the name, however long it is.
+            ClashWarning {
+                id: clashWarning
+
+                x: nameLabel.x + Math.min(nameLabel.implicitWidth, nameLabel.width) + 6
+                anchors.verticalCenter: parent.verticalCenter
+                clashes: row.clashes
             }
 
             InstallStatus {

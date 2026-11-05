@@ -8,13 +8,13 @@ import (
 
 // fakeFiles makes n files, each with its own path, plus the shared ones
 // given: shared maps a file's index to extra paths.
-func fakeFiles(n int, shared map[int][]string) ([]File, func(File) (pathSet, error)) {
+func fakeFiles(n int, shared map[int][]string) ([]File, func(File) (PathSet, error)) {
 	files := make([]File, n)
-	sets := make(map[string]pathSet, n)
+	sets := make(map[string]PathSet, n)
 
 	for i := range files {
 		files[i] = File{SHA256: fmt.Sprintf("f%d", i)}
-		set := pathSet{fmt.Sprintf("own/%d", i): {}}
+		set := PathSet{fmt.Sprintf("own/%d", i): {}}
 
 		for _, p := range shared[i] {
 			set[p] = struct{}{}
@@ -23,7 +23,7 @@ func fakeFiles(n int, shared map[int][]string) ([]File, func(File) (pathSet, err
 		sets[files[i].SHA256] = set
 	}
 
-	return files, func(f File) (pathSet, error) { return sets[f.SHA256], nil }
+	return files, func(f File) (PathSet, error) { return sets[f.SHA256], nil }
 }
 
 func sizes(slots [][]File) []int {
@@ -39,7 +39,7 @@ func sizes(slots [][]File) []int {
 func TestAllocateSingles(t *testing.T) {
 	files, _ := fakeFiles(99, nil)
 
-	slots, err := allocate(files, func(File) (pathSet, error) {
+	slots, err := allocate(files, func(File) (PathSet, error) {
 		t.Error("read a VPK with nothing to bundle")
 
 		return nil, nil
@@ -150,7 +150,7 @@ func TestAllocatePathsError(t *testing.T) {
 	files, _ := fakeFiles(100, nil)
 	boom := errors.New("boom")
 
-	if _, err := allocate(files, func(File) (pathSet, error) { return nil, boom }); !errors.Is(err, boom) {
+	if _, err := allocate(files, func(File) (PathSet, error) { return nil, boom }); !errors.Is(err, boom) {
 		t.Errorf("err = %v", err)
 	}
 }

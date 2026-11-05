@@ -9,11 +9,11 @@ import (
 	"github.com/treejadey/lockdeader/vpk"
 )
 
-// pathSet is the files a VPK has, by path in lower case: the game doesn't
+// A PathSet is the files a VPK has, by path in lower case: the game doesn't
 // care about case.
-type pathSet map[string]struct{}
+type PathSet map[string]struct{}
 
-func (s pathSet) overlaps(other pathSet) bool {
+func (s PathSet) overlaps(other PathSet) bool {
 	for p := range other {
 		if _, ok := s[p]; ok {
 			return true
@@ -23,15 +23,19 @@ func (s pathSet) overlaps(other pathSet) bool {
 	return false
 }
 
-func (s pathSet) add(other pathSet) {
+func (s PathSet) add(other PathSet) {
 	for p := range other {
 		s[p] = struct{}{}
 	}
 }
 
-// readPaths lists the files in the VPK at f.Path, reading only its directory.
-func readPaths(f File) (pathSet, error) {
-	r, err := os.Open(f.Path)
+func readPaths(f File) (PathSet, error) {
+	return ReadPaths(f.Path)
+}
+
+// ReadPaths lists the files in the VPK at path, reading only its directory.
+func ReadPaths(path string) (PathSet, error) {
+	r, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("deploy: %w", err)
 	}
@@ -40,10 +44,10 @@ func readPaths(f File) (pathSet, error) {
 
 	d, err := vpk.ReadDir(r)
 	if err != nil {
-		return nil, fmt.Errorf("deploy: %s: %w", f.SHA256, err)
+		return nil, fmt.Errorf("deploy: %s: %w", path, err)
 	}
 
-	set := make(pathSet, len(d.Entries))
+	set := make(PathSet, len(d.Entries))
 
 	for _, e := range d.Entries {
 		set[strings.ToLower(e.Path)] = struct{}{}
@@ -60,7 +64,7 @@ func readPaths(f File) (pathSet, error) {
 // the slot numbers, so the bundles are split wherever a file would overlap
 // one already in the bundle. paths says which files a VPK has; it's only
 // called when there's bundling to do.
-func allocate(files []File, paths func(File) (pathSet, error)) ([][]File, error) {
+func allocate(files []File, paths func(File) (PathSet, error)) ([][]File, error) {
 	singles := func(files []File) [][]File {
 		slots := make([][]File, len(files))
 
@@ -75,7 +79,7 @@ func allocate(files []File, paths func(File) (pathSet, error)) ([][]File, error)
 		return singles(files), nil
 	}
 
-	sets := make([]pathSet, len(files))
+	sets := make([]PathSet, len(files))
 
 	for i, f := range files {
 		set, err := paths(f)
@@ -100,16 +104,16 @@ func allocate(files []File, paths func(File) (pathSet, error)) ([][]File, error)
 
 // bundle groups consecutive files, starting a new group whenever a file
 // overlaps one already in the group.
-func bundle(files []File, sets []pathSet) [][]File {
+func bundle(files []File, sets []PathSet) [][]File {
 	var bundles [][]File
 	var current []File
-	used := pathSet{}
+	used := PathSet{}
 
 	for i, f := range files {
 		if len(current) > 0 && used.overlaps(sets[i]) {
 			bundles = append(bundles, current)
 			current = nil
-			used = pathSet{}
+			used = PathSet{}
 		}
 
 		current = append(current, f)

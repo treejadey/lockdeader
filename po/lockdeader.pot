@@ -9,6 +9,28 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
+#: clash.go
+msgid "Turned off %s, which changes the same files"
+msgstr ""
+
+#: clash.go
+#, qt-plural-format
+msgid "Turned off %n mod that changes the same files"
+msgid_plural "Turned off %n mods that change the same files"
+msgstr[0] ""
+msgstr[1] ""
+
+#: clash.go
+msgid "Turned off %s, which changes the same files as another mod"
+msgstr ""
+
+#: clash.go
+#, qt-plural-format
+msgid "Turned off %n mod that changes the same files as others"
+msgid_plural "Turned off %n mods that change the same files as others"
+msgstr[0] ""
+msgstr[1] ""
+
 #: clipboard.go
 msgid "Link copied"
 msgstr ""
@@ -202,6 +224,11 @@ msgstr ""
 #: qml/CategoryNav.qml qml/InstalledPage.qml qml/LoadMoreFooter.qml
 #: qml/ModsPage.qml
 msgid "Retry"
+msgstr ""
+
+#: qml/ClashWarning.qml
+#, qt-format
+msgid "Changes the same files as %1"
 msgstr ""
 
 #. A count in thousands, e.g. "200K" views. %1 is the number.

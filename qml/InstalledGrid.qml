@@ -76,6 +76,8 @@ Item {
             required property string error
             required property string errorDetail
             required property int variants
+            // The mods it changes the same files as, joined; "" if none.
+            required property string clashes
 
             readonly property bool installing: status !== ""
             // Where the tile is in the cell: centred, then shifted with the
@@ -104,6 +106,16 @@ Item {
                 dimmed: cell.installing || !cell.modEnabled
                 onClicked: if (!cell.installing && !root.readOnly) root.enabledToggled(cell.key, !cell.modEnabled)
                 onMenuRequested: root.menuRequested(cell.key, cell.status, cell.variants)
+
+                ClashWarning {
+                    anchors {
+                        left: parent.left
+                        bottom: parent.bottom
+                        margins: 8
+                    }
+                    onPicture: true
+                    clashes: cell.clashes
+                }
 
                 TickBox {
                     id: check

@@ -14,6 +14,30 @@ msgstr ""
 "Last-Translator: Jade <me@jadey.net>\n"
 "X-Generator: Gtranslator 50.0\n"
 
+#: clash.go
+msgid "Turned off %s, which changes the same files"
+msgstr ""
+
+#: clash.go
+#, qt-plural-format
+msgid "Turned off %n mod that changes the same files"
+msgid_plural "Turned off %n mods that change the same files"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: clash.go
+msgid "Turned off %s, which changes the same files as another mod"
+msgstr ""
+
+#: clash.go
+#, qt-plural-format
+msgid "Turned off %n mod that changes the same files as others"
+msgid_plural "Turned off %n mods that change the same files as others"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
 #: clipboard.go
 msgid "Link copied"
 msgstr "Посилання скопійовано"
@@ -218,6 +242,11 @@ msgstr ""
 #: qml/ModsPage.qml
 msgid "Retry"
 msgstr "Повторити"
+
+#: qml/ClashWarning.qml
+#, qt-format
+msgid "Changes the same files as %1"
+msgstr ""
 
 #. A count in thousands, e.g. "200K" views. %1 is the number.
 #: qml/CompactNumber.qml

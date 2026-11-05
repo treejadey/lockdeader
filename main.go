@@ -299,6 +299,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Now that QML shows the message it sends.
+	installed.ResolveClashes()
+
 	// The root object is the window: QObject is QWindow's first base, so the
 	// pointer is the same. Folder dialogs open over it where the platform
 	// allows.

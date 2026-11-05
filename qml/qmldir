@@ -7,6 +7,7 @@ AppDialog 1.0 AppDialog.qml
 AppWindow 1.0 AppWindow.qml
 Breadcrumbs 1.0 Breadcrumbs.qml
 CategoryNav 1.0 CategoryNav.qml
+ClashWarning 1.0 ClashWarning.qml
 ContentSwitcher 1.0 ContentSwitcher.qml
 DisabledFill 1.0 DisabledFill.qml
 DownloadProgress 1.0 DownloadProgress.qml

@@ -14,6 +14,7 @@ import (
 
 	"github.com/treejadey/lockdeader/appdb"
 	"github.com/treejadey/lockdeader/banana"
+	"github.com/treejadey/lockdeader/deploy"
 	"github.com/treejadey/lockdeader/install"
 )
 
@@ -34,6 +35,7 @@ const (
 	roleInstalledError
 	roleInstalledErrorDetail
 	roleInstalledVariants
+	roleInstalledClashes
 )
 
 var installedRoleNames = map[int][]byte{
@@ -51,6 +53,7 @@ var installedRoleNames = map[int][]byte{
 	roleInstalledError:       []byte("error"),
 	roleInstalledErrorDetail: []byte("errorDetail"),
 	roleInstalledVariants:    []byte("variants"),
+	roleInstalledClashes:     []byte("clashes"),
 }
 
 // The "status" role.
@@ -73,12 +76,14 @@ const maxRunningInstalls = 2
 // writing to these keys:
 //
 //	query:      lists only the mods with this in their name
-//	setEnabled: {key, enabled}: turns a mod on or off
+//	setEnabled: {key, enabled}: turns a mod on or off; turning one on turns
+//	            off those that change the same files (see clash.go)
 //	cancel:     key: stops installing a mod, or forgets a failed install
 //	retry:      key: tries a failed install again
 //	uninstall:  key: removes an installed mod, which can be undone until
 //	            its message goes
-//	undo:       messageId: puts back the mod uninstalled with that message
+//	undo:       messageId: puts back the mod uninstalled with that message,
+//	            or the mods turned off
 //	messageGone: messageId: that message is no longer shown, so its undo
 //	            is too late
 //	configure:  key: fills in "configuration" (see configure) for the mod
@@ -123,6 +128,11 @@ type installedMods struct {
 	// An uninstall that can still be undone. The mod stays in the database
 	// until it can't.
 	uninstalling *pendingUninstall
+	// Mods turned off for clashing with one turned on, which can still be
+	// turned back.
+	toggled *pendingToggle
+	// The files each VPK in the store has, by SHA-256, once read.
+	paths map[string]deploy.PathSet
 
 	// Called when an install fails, and when the last install still going
 	// finishes. Either may be nil.
@@ -193,6 +203,7 @@ func newInstalledMods(client *banana.Client, db *appdb.DB, store install.Store) 
 		available:       make(map[string][]banana.File),
 		lookingUp:       make(map[string]bool),
 		lookupSlots:     make(chan struct{}, 2),
+		paths:           make(map[string]deploy.PathSet),
 	}
 
 	m.model.SetItemRoleNames(installedRoleNames)
@@ -230,6 +241,7 @@ func newInstalledMods(client *banana.Client, db *appdb.DB, store install.Store) 
 		m.show(row)
 	}
 
+	m.updateClashes()
 	m.updateCounts()
 
 	// Only fires for changes made from QML, not for our own Inserts.
@@ -468,6 +480,7 @@ func (m *installedMods) finish(row *installedRow, job *installJob, files []appdb
 
 	row.job = nil
 	m.show(row)
+	m.settle(row)
 	m.lookUp(row)
 	m.changed()
 
@@ -538,6 +551,7 @@ func (m *installedMods) AddInstalled(mod appdb.Mod) error {
 	row := m.addRow(installedKey(banana.Section(mod.Section), mod.GameBananaID))
 	row.mod = &mod
 	m.show(row)
+	m.settle(row)
 	m.updateCounts()
 	m.lookUp(row)
 	m.changed()
@@ -607,14 +621,14 @@ func (m *installedMods) SetEnabled(key string, enabled bool) {
 		return
 	}
 
-	if err := m.db.SetModEnabled(context.Background(), row.mod.ID, enabled); err != nil {
-		slog.Error("failed to turn a mod on or off", "mod", key, "err", err)
-
+	if !m.writeEnabled(row, enabled) {
 		return
 	}
 
-	row.mod.Enabled = enabled
-	row.item.SetData(qt.NewQVariant8(enabled), roleInstalledEnabled)
+	if enabled {
+		m.turnOffClashing(row)
+	}
+
 	m.changed()
 }
 
@@ -634,6 +648,7 @@ func (m *installedMods) Uninstall(key string) {
 	index := row.item.Row()
 	m.model.TakeRow(index)
 	delete(m.rows, key)
+	m.updateClashes()
 	m.updateCounts()
 
 	m.notifyUndoable(fmt.Sprintf(tr("%s was uninstalled"), row.mod.Name))
@@ -641,6 +656,13 @@ func (m *installedMods) Uninstall(key string) {
 }
 
 func (m *installedMods) Undo(messageID int) {
+	if t := m.toggled; t != nil && t.messageID == messageID {
+		m.toggled = nil
+		m.undoToggle(t)
+
+		return
+	}
+
 	p := m.uninstalling
 	if p == nil || p.messageID != messageID {
 		return
@@ -653,6 +675,10 @@ func (m *installedMods) Undo(messageID int) {
 }
 
 func (m *installedMods) messageGone(messageID int) {
+	if m.toggled != nil && m.toggled.messageID == messageID {
+		m.toggled = nil
+	}
+
 	if m.uninstalling != nil && m.uninstalling.messageID == messageID {
 		m.FinishUninstall()
 	}
@@ -703,6 +729,7 @@ func (m *installedMods) SetApplyError(err error) {
 func (m *installedMods) putBack(p *pendingUninstall) {
 	m.model.InsertRow(min(p.index, m.model.RowCount(qt.NewQModelIndex())), []*qt.QStandardItem{p.row.item})
 	m.rows[p.row.key] = p.row
+	m.updateClashes()
 	m.updateCounts()
 }
 
@@ -738,7 +765,9 @@ func (m *installedMods) notifyUndoable(message string) {
 	m.sendMessage(message, true)
 }
 
+// A new message replaces the one before, whose Undo is then out of reach.
 func (m *installedMods) sendMessage(message string, undoable bool) {
+	m.toggled = nil
 	m.messages++
 	m.Insert("message", qt.NewQVariant14(message))
 	m.Insert("messageUndoable", qt.NewQVariant8(undoable))
@@ -749,6 +778,7 @@ func (m *installedMods) addRow(key string) *installedRow {
 	item := qt.NewQStandardItem()
 	item.SetEditable(false)
 	item.SetData(qt.NewQVariant14(key), roleInstalledKey)
+	item.SetData(qt.NewQVariant14(""), roleInstalledClashes)
 	m.model.AppendRow([]*qt.QStandardItem{item})
 
 	row := &installedRow{key: key, item: item}

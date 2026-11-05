@@ -249,6 +249,7 @@ func (m *installedMods) Configure(key string, ids []string) {
 		}
 
 		m.show(row)
+		m.settle(row)
 		m.publishConfiguration(row, nil)
 
 		return

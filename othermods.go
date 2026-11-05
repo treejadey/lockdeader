@@ -257,6 +257,7 @@ func (o *otherMods) showRow(row *otherRow) {
 	item.SetData(qt.NewQVariant14(""), roleInstalledError)
 	item.SetData(qt.NewQVariant14(""), roleInstalledErrorDetail)
 	item.SetData(qt.NewQVariant4(0), roleInstalledVariants)
+	item.SetData(qt.NewQVariant14(""), roleInstalledClashes)
 }
 
 // lookUp asks GameBanana what a mod is, by the id in Deadlock Mod Manager's
