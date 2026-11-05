@@ -10,6 +10,18 @@ on:
   pull_request:
   workflow_dispatch:
 
+# A newer push to the same branch or tag takes over from a build still
+# running, as in Chatterino's workflow. On main, that also keeps an older
+# build from replacing a newer one as the nightly.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Every build that isn't from a v* tag is a nightly, as Chatterino's "auto"
+  # build type has it. The app says so (version.go).
+  NIGHTLY: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+
 jobs:
   windows:
     name: Windows app
@@ -25,6 +37,18 @@ jobs:
       GOFLAGS: -trimpath
     steps:
       - uses: actions/checkout@v7
+
+      # Before anything slow: a release's tag has to name the version the app
+      # says it is.
+      - name: Check the tag matches VERSION.txt
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $version = (Get-Content VERSION.txt -Raw).Trim()
+
+          if ($env:GITHUB_REF_NAME -ne "v$version") {
+            throw "The tag is $env:GITHUB_REF_NAME, but VERSION.txt says $version, so the tag should be v$version."
+          }
 
       # cgo can't use MSVC, so Qt and the compiler come from MSYS2's UCRT64
       # environment. windeployqt is in qt6-base, and needs qt6-tools'
@@ -83,7 +107,7 @@ jobs:
       - name: Build the app
         id: build
         shell: pwsh
-        run: ./packaging/windows/build.ps1 -Msys2Root '${{ steps.msys2.outputs.msys2-location }}'
+        run: ./packaging/windows/build.ps1 -Msys2Root '${{ steps.msys2.outputs.msys2-location }}' -Nightly:([bool]::Parse($env:NIGHTLY))
 
       # Straight after the build, which has compiled miqt, so it's kept even
       # when the tests fail.
@@ -194,7 +218,7 @@ jobs:
       - name: Build the Flatpak
         id: build
         shell: pwsh
-        run: ./packaging/flatpak/build.ps1
+        run: ./packaging/flatpak/build.ps1 -Nightly:([bool]::Parse($env:NIGHTLY))
 
       # One file, so it's uploaded as it is rather than zipped; the
       # artifact takes the file's name.
@@ -203,3 +227,90 @@ jobs:
           path: ${{ steps.build.outputs.bundle }}
           archive: false
           if-no-files-found: error
+
+  # Attaches what a v* tag built to its release: one made on GitHub for the
+  # tag keeps its title and notes, and a tag pushed without one gets a draft,
+  # to name and publish by hand.
+  release:
+    name: Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [windows, windows-smoke-test, flatpak]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      - name: Make the release's files
+        shell: pwsh
+        run: ./packaging/release-files.ps1 -ArtifactsDir artifacts -Label '${{ needs.windows.outputs.version }}'
+
+      - name: Attach them to the release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $files = (Get-ChildItem release -File).FullName
+
+          gh release view $tag --json tagName *> $null
+
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag @files --clobber
+          } else {
+            gh release create $tag @files --draft --verify-tag --generate-notes
+          }
+
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+  # Chatterino's nightly: after every push to main that builds and passes,
+  # the "Nightly Release" pre-release gets that build's files in place of the
+  # last one's, its notes list the commits since the last release, and the
+  # nightly-build tag moves to the commit.
+  nightly:
+    name: Nightly release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [windows, windows-smoke-test, flatpak]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the notes list the commits since the last v* tag
+          persist-credentials: true # to move the nightly-build tag
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      # Named the same every time, so links to them keep working.
+      - name: Make the release's files
+        shell: pwsh
+        run: ./packaging/release-files.ps1 -ArtifactsDir artifacts -Label nightly
+
+      - name: Write the notes
+        shell: pwsh
+        run: ./packaging/nightly-notes.ps1 | Out-File nightly-notes.md -Encoding utf8NoBOM
+
+      - name: Update the release
+        uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1.21.0
+        with:
+          replacesArtifacts: true
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          artifacts: release/*
+          bodyFile: nightly-notes.md
+          prerelease: true
+          name: Nightly Release
+          tag: nightly-build
+          commit: ${{ github.sha }}
+
+      - name: Move the nightly-build tag
+        run: |
+          git tag -f nightly-build
+          git push -f origin nightly-build

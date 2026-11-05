@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unversioned
+- Minor: Every change to the main branch is published as the Nightly Release on GitHub, and nightly builds say "Nightly" after their version.
+- Minor: Releases come with SHA-256 checksums of their downloads.
 - Minor: Builds include the licences of the software they bundle (THIRD-PARTY-NOTICES.txt).
 - Minor: Only one of two mods that change the same files can be on. Turning one on turns the other off, with Undo, and a warning shows which mods clash.
 

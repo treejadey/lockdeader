@@ -3,7 +3,7 @@ id: doc-3
 title: Distribution design
 type: specification
 created_date: '2026-11-05T09:30:00Z'
-updated_date: '2026-11-05T10:36:00Z'
+updated_date: '2026-11-05T14:35:00Z'
 ---
 How Lockdeader reaches people, and why (written 2026-10-12; decisions recorded the same day). What's built says so; work still to do is tracked as tasks labelled `distribution` (`backlog task list --labels distribution --plain`), named in each section below.
 
@@ -15,7 +15,7 @@ The Linux channels depend on others accepting us: Flathub's reviewers, and openS
 ## Principles
 
 - **Same app everywhere.** Every channel ships the same source with the same features. Where a channel needs the app to behave differently (e.g. the Flatpak sandbox), the app works it out at run time; the channels don't patch it.
-- **Every channel builds from a tagged release.** CI runs on every push to catch breakage early, but what users download always comes from a tag.
+- **Every channel builds from a tagged release.** CI runs on every push to catch breakage early, but releases always come from a tag. The one exception is the Nightly Release, a pre-release that says what it is, in its name and in the app.
 - **Licences travel with the app.** Lockdeader is GPL-3.0. What we bundle comes with its own licences, which every package must include:
   - Qt: LGPL-3.0, dynamically linked so users can swap it;
   - the fonts: OFL;
@@ -102,7 +102,7 @@ Unzip and run. It's portable, apart from the data in `%LOCALAPPDATA%\Lockdeader`
 
 ### Building it
 
-**Built:** `packaging/windows/build.ps1` and `smoke-test.ps1`, run by the `windows` and `windows-smoke-test` jobs of `.github/workflows/build.yml`, which upload the app's folder as an artifact (GitHub zips it, so the build doesn't). Attaching it to a release on a tag is TASK-11. The build scripts are PowerShell on both platforms, since both runners ship it. What follows is the reasoning.
+**Built:** `packaging/windows/build.ps1` and `smoke-test.ps1`, run by the `windows` and `windows-smoke-test` jobs of `.github/workflows/build.yml`, which upload the app's folder as an artifact (GitHub zips it, so the build doesn't). The `release` job attaches it to the tag's release (see Releases and nightlies). The build scripts are PowerShell on both platforms, since both runners ship it. What follows is the reasoning.
 
 cgo can't use MSVC, so Qt has to be a MinGW build. Which one doesn't matter much; use whichever is more convenient. That's likely **MSYS2's UCRT64 environment**:
 
@@ -126,7 +126,8 @@ The workflow:
 5. **Smoke-test.** In a later job, on a clean runner without MSYS2, download the artifact and start the app with `QT_QPA_PLATFORM=offscreen` and `QT_FORCE_STDERR_LOGGING=1`. Fail if it exits early or logs a missing module or DLL. This is what catches a DLL left out.
 6. **Publish.**
    - Every push: upload the folder as a workflow artifact, for trying out.
-   - A `v*` tag: zip it and attach it to a GitHub Release, with a `.sha256` file.
+   - A `v*` tag: zip it and attach it to a GitHub Release, with a `.sha256` file. Built: see Releases and nightlies.
+   - Every push to main: the same, for the Nightly Release. Built: see Releases and nightlies.
 
 MSYS2's Qt is built with ICU, which adds about 30 MB. If MSYS2 turns out awkward, Qt's official MinGW build is the fallback: install it with `aqtinstall`, along with its matching MinGW. It's built without ICU, so the zip is smaller, but there's more to set up.
 
@@ -134,6 +135,14 @@ MSYS2's Qt is built with ICU, which adds about 30 MB. If MSYS2 turns out awkward
 
 - **Code signing** (TASK-23). Without it, SmartScreen warns about the `.exe` until it has a reputation. The SignPath Foundation signs open-source projects for free.
 - **Package managers** (TASK-24). winget and Scoop manifests can point at the release zip.
+
+## Releases and nightlies
+
+**Built (TASK-11, TASK-28)**, in `.github/workflows/build.yml`. Both jobs run only once the Windows build, its smoke test on a clean machine and the Flatpak have passed, and both turn the run's artifacts into the same files with `packaging/release-files.ps1`: the Windows folder zipped, with the app's files at the top, the Flatpak bundle, and a `.sha256` file next to each, in `sha256sum`'s format.
+
+- **A release** starts from changing `VERSION.txt` and tagging that commit `v` plus the version. The Windows job stops at once if the two don't match. The `release` job then attaches `Lockdeader-<version>-windows-x64.zip` and `Lockdeader-<version>-linux-x86_64.flatpak` to the tag's release: one made on GitHub keeps its title and notes, and a tag pushed without one gets a draft, to name and publish by hand.
+- **The nightly** is copied from Chatterino2's. After every push to main that builds and passes, the `nightly` job replaces the files of the "Nightly Release" pre-release (tag `nightly-build`) with that build's, under names that don't change (`Lockdeader-nightly-windows-x64.zip`, `Lockdeader-nightly-linux-x86_64.flatpak`), so links to them keep working. Its notes are the commits since the last `v*` tag, the five newest shown and the rest folded away (`packaging/nightly-notes.ps1`, a port of Chatterino's `format-recent-changes.py`), and the `nightly-build` tag is force-moved to the commit. A newer push to main cancels a build still running, so an older build never replaces a newer nightly.
+- **In the app:** every build that isn't from a `v*` tag is a nightly (Chatterino's "auto" build type), built with `-Nightly`, which sets `buildType` through `-ldflags -X`. It shows "Nightly" after the version in the window title and Settings › Advanced. Local builds look like releases. The Flatpak also gets its commit that way (`buildCommit`), since it builds from a copy without `.git`; `flatpak-builder` can't pass values in, so `packaging/flatpak/build.ps1` writes them to a git-ignored `build-flags` file that the manifest's `go build` reads.
 
 ## Linux: openSUSE's Open Build Service
 

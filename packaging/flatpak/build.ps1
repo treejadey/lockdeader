@@ -13,7 +13,10 @@ param(
     [string]$OutDir = 'dist',
     # flatpak-builder's cache: downloads, built stages and ccache's
     # compiled objects, which make the next build much faster.
-    [string]$StateDir = '.flatpak-builder'
+    [string]$StateDir = '.flatpak-builder',
+    # Marks the app as a nightly build, as CI does for every build that
+    # isn't from a v* tag (see version.go).
+    [switch]$Nightly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -36,6 +39,24 @@ $repo = Join-Path $OutDir 'repo'
 $bundle = Join-Path (Resolve-Path $OutDir) "Lockdeader-$version-linux-x86_64.flatpak"
 
 Write-Host "Building Lockdeader $version"
+
+# What the manifest's go build passes to -ldflags (see version.go): the
+# commit, which Go can't read from the copy flatpak-builder builds, and
+# whether it's a nightly. Written every time, so a stale one never lingers.
+$flags = @()
+
+# Left out, rather than failing the build, outside a Git checkout.
+$commit = try { git rev-parse HEAD 2>$null } catch { $null }
+
+if ($commit) {
+    $flags += "-X main.buildCommit=$commit"
+}
+
+if ($Nightly) {
+    $flags += '-X main.buildType=nightly'
+}
+
+Set-Content (Join-Path 'packaging' 'flatpak' 'build-flags') -Encoding utf8NoBOM -NoNewline -Value ($flags -join ' ')
 
 # The runtime and SDK come from Flathub, into the user's installation.
 flatpak remote-add --user --if-not-exists flathub $flathub

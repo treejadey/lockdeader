@@ -28,10 +28,10 @@ const commitURL = "https://github.com/treejadey/lockdeader/commit/"
 //
 // It isn't translated, so it reads the same in any bug report it's pasted into.
 func buildInfo() string {
-	build := "Lockdeader " + html.EscapeString(version)
+	build := "Lockdeader " + html.EscapeString(displayVersion())
 
 	// Go stamps the commit when it builds from a Git checkout. The Flatpak
-	// builds from a copy without .git, so it has none.
+	// builds from a copy without .git, so its build script passes it in.
 	if commit, modified := vcsRevision(); commit != "" {
 		short := commit[:min(9, len(commit))]
 		link := fmt.Sprintf(`<a href="%s">%s</a>`, html.EscapeString(commitURL+commit), html.EscapeString(short))
@@ -61,7 +61,7 @@ func buildInfo() string {
 func vcsRevision() (commit string, modified bool) {
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
-		return "", false
+		return buildCommit, false
 	}
 
 	for _, setting := range info.Settings {
@@ -71,6 +71,10 @@ func vcsRevision() (commit string, modified bool) {
 		case "vcs.modified":
 			modified = setting.Value == "true"
 		}
+	}
+
+	if commit == "" {
+		commit = buildCommit
 	}
 
 	return commit, modified

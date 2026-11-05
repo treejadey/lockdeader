@@ -42,7 +42,10 @@ modules:
       build-args:
         - --share=network
     build-commands:
-      - go build -trimpath -o /app/bin/lockdeader .
+      # build.ps1 writes build-flags: flatpak-builder has no way to pass
+      # values in, and Go can't read the commit from this copy, which has no
+      # .git.
+      - go build -trimpath -ldflags "$(cat packaging/flatpak/build-flags 2>/dev/null)" -o /app/bin/lockdeader .
       - install -Dm644 packaging/io.github.treejadey.Lockdeader.desktop -t /app/share/applications
       - install -Dm644 packaging/io.github.treejadey.Lockdeader.metainfo.xml -t /app/share/metainfo
       - install -Dm644 assets/logo.svg /app/share/icons/hicolor/scalable/apps/io.github.treejadey.Lockdeader.svg

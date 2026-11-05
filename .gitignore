@@ -3,3 +3,4 @@ lockdeader
 flatpak-build/
 flatpak-repo/
 dist/
+packaging/flatpak/build-flags

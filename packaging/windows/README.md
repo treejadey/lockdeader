@@ -21,6 +21,9 @@ GitHub zips as `Lockdeader-<version>-windows-x64.zip`.
    ./packaging/windows/smoke-test.ps1 -AppDir dist\Lockdeader
    ```
 
+   `-Nightly` marks the app as a nightly build, as CI does for every build
+   that isn't from a `v*` tag.
+
 ## What's in the folder, and how it's found
 
 - **`Lockdeader.exe`**, built without a console window. The QML is inside

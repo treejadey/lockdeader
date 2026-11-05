@@ -4,7 +4,7 @@
 # Needs MSYS2's UCRT64 packages (see .github/workflows/build.yml for the
 # list) and Go.
 #
-#     pwsh packaging/windows/build.ps1 [-Msys2Root C:\msys64] [-OutDir dist]
+#     pwsh packaging/windows/build.ps1 [-Msys2Root C:\msys64] [-OutDir dist] [-Nightly]
 #
 # Writes dist/Lockdeader, and tells GitHub Actions its path and the app's
 # version as the step's "dir" and "version" outputs. GitHub zips the folder
@@ -14,7 +14,10 @@
 param(
     # Where MSYS2 is installed; its ucrt64\bin goes on the PATH.
     [string]$Msys2Root = 'C:\msys64',
-    [string]$OutDir = 'dist'
+    [string]$OutDir = 'dist',
+    # Marks the app as a nightly build, as CI does for every build that
+    # isn't from a v* tag (see version.go).
+    [switch]$Nightly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -50,7 +53,13 @@ Write-Host "Building Lockdeader $version"
 # No console window, and no symbol table or DWARF, which the zip doesn't
 # need.
 $env:CGO_ENABLED = '1'
-go build -trimpath -ldflags '-s -w -H windowsgui' -o $exe .
+$ldflags = '-s -w -H windowsgui'
+
+if ($Nightly) {
+    $ldflags += ' -X main.buildType=nightly'
+}
+
+go build -trimpath -ldflags $ldflags -o $exe .
 
 # Qt's DLLs, plugins and the QML modules the app imports (found by scanning
 # qml/), and Qt's own translations, which translations.go looks for next to

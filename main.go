@@ -51,7 +51,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	slog.Info("starting Lockdeader", "version", version)
+	slog.Info("starting Lockdeader", "version", displayVersion())
 	slog.Info("using data directory", "path", dirs.Root)
 
 	// Set once the window is up.
@@ -174,7 +174,7 @@ func main() {
 	ui = newUIStateBridge(uiState, saveUISoon)
 
 	app := qml.NewQQmlPropertyMap()
-	app.Insert("version", qt.NewQVariant14(version))
+	app.Insert("version", qt.NewQVariant14(displayVersion()))
 	// For numbers that shouldn't shift as they change.
 	app.Insert("monospaceFont", qt.NewQVariant14(monospaceFontFamily))
 	// Goes up by one each time another copy of the app asks to show the window.
