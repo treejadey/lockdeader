@@ -4,7 +4,7 @@ title: Merge shared sound event tables that several mods change
 status: To Do
 assignee: []
 created_date: '2026-11-05T17:29:00Z'
-updated_date: '2026-11-05T18:27:00Z'
+updated_date: '2026-11-05T18:47:00Z'
 labels:
   - mod-support
 dependencies:
@@ -32,11 +32,13 @@ Unknowns: whether the game accepts a table written in an older or uncompressed K
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Mods whose only shared files are sound event tables, and which change different events in them, can be on together, and each keeps its own events in the game
-- [ ] #2 An event changed differently by two mods that are on is still a clash, as under TASK-1
-- [ ] #3 Events a mod's copy leaves out or leaves unchanged from the game's copy come from the game's current copy, so an out-of-date table no longer removes other heroes' lines
-- [ ] #4 The merged table is rebuilt when the mods that are on change or the game updates its own copy
-- [ ] #5 Tests cover merging, a real conflict, an out-of-date mod table and a table that can't be read
+- [ ] #1 Mods whose only shared files are sound event tables can be on together, unless an event is a real conflict (#2), and each keeps the events that use its own sounds
+- [ ] #2 An event that two mods that are on both change, each with sound files it ships, and differently, is still a clash as under TASK-1
+- [ ] #3 In a table that two or more mods that are on share: a changed event comes from a mod only if it refers to a sound file that mod ships; events a mod adds are taken; everything else comes from the game's current copy, so an out-of-date copy no longer removes or reverts other heroes' events. Numbers compare at KV3 text precision (6 decimals)
+- [ ] #4 A table that only one mod that's on has is used as the mod ships it, as now
+- [ ] #5 A mod whose changes a merge leaves out shows an information marker on its card and list row, where ClashWarning sits, with a tooltip naming the mods it's merged with (proposed: "Some of its changes are left out so it works alongside %1"); a mod the merge leaves nothing out of shows nothing
+- [ ] #6 The merged table is rebuilt when the mods that are on change or the game updates its own copy
+- [ ] #7 Tests cover merging, a real conflict, an out-of-date mod table, a lone mod's table and a table that can't be read
 <!-- AC:END -->
 
 ## Definition of Done
@@ -48,4 +50,6 @@ Unknowns: whether the game accepts a table written in an older or uncompressed K
 
 <!-- SECTION:NOTES:BEGIN -->
 Survey of 125 mods (2026-11-05) in doc-4, Merging files that mods share: sound event tables are mergeable per event; vdata only for added entries; per-hero panorama CSS and localization later, with their own readers; HUD panorama and assets not. Compare numbers at KV3 text precision (6 decimals), since mods recompile decompiled tables. Open: telling a mod's own changes from a stale copy's.
+
+Decided with the user 2026-11-05: the own sounds rule (doc-4) applies only when two or more mods that are on share a table; a lone mod's table is used as it is. A merge that leaves out some of a mod's changes shows a quiet marker on that mod (tooltip, no toast or info bar), only when something is actually left out. Wording of the tooltip still to be confirmed when it's built.
 <!-- SECTION:NOTES:END -->

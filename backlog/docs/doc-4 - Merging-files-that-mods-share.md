@@ -3,7 +3,7 @@ id: doc-4
 title: Merging files that mods share
 type: specification
 created_date: '2026-11-05T18:27:00Z'
-updated_date: '2026-11-05T18:27:00Z'
+updated_date: '2026-11-05T18:47:00Z'
 ---
 Which files that several mods ship could be merged rather than kept apart (TASK-1 turns all but one off), and what merging them takes. Written 2026-11-05 for TASK-30, from a survey of 125 mods. Raw data was kept outside the repository; the findings below are what matters.
 
@@ -34,11 +34,27 @@ These rules follow from what the mods' copies actually look like.
 - **Compare against the game's current copy**, read from `pak01` at every apply, so a game update is picked up. In the survey, 10 or more mods shipped out-of-date copies of tables, missing whole heroes' events or rules. Example: Flowery - Apollo ships a pick table of 116 events where the game has 180.
 - **Compare numbers at the precision KV3 text keeps (six decimals)**, not bit for bit. Mods appear to be made by decompiling the game's file to text, editing it and compiling it again, which turns the game's 5.5773921012878418 (5.577392 as a single-precision float) into exactly 5.577392. Compared bit for bit, mod 664127 changes 173 of 180 pick events; compared as text, it changes 6.
 - **An event the mod's copy lacks comes from the game.** Missing events are almost always staleness, not deletion.
-- **An event the mod adds is taken.**
+- **An event the mod adds is taken**, whatever it refers to. QOL Lock (650634) adds 3,092 events that play the game's own sounds. Events only a stale copy has are old names nothing plays, so taking them does no harm.
 - **An event two mods change differently is a clash**, as now.
-- **Open question: telling a mod's change from a stale copy.** An out-of-date copy also has events that differ from the game's in ways the mod didn't mean. Mod 664127 changes 3 Nano events on purpose, but its copy also has old versions of Artist's pick event and Ratking's and Viscous's reveal events. Taking those would revert the game's changes.
-  - One rule that fits the data: an event counts as the mod's own only if it refers to a sound file the mod ships.
-  - That rule would drop deliberate edits that use the game's own sounds, such as the 8 sound mods that change `Base.Ability`'s pitch in `soundevents/base/citadel_base_events.vsndevts_c`.
+- **A changed event is the mod's only if it refers to a sound file the mod ships** (the "own sounds" rule). An out-of-date copy also has events that differ from the game's in ways the mod didn't mean, and taking those reverts the game's changes. For example, mod 664127 changes 3 Nano events on purpose, but its copy also has old versions of Artist's pick event and Ratking's and Viscous's reveal events.
+
+### What the own sounds rule does to the surveyed mods
+
+This was measured on all 118 sound event tables in the survey, against the game's copies. 68 of the 70 tables mods ship exist in the game.
+
+- **Kept:** 4,911 changed events refer to the mod's own sounds and are taken.
+- **Dropped:** 3,136 changed events don't. Almost all of them are stale:
+  - 83629 (Yes King, Abrams voice) ships an old copy of Holliday's voice table, not Abrams', with 1,463 changed events. Today it reverts Holliday's lines.
+  - 85147 (Frank) has 1,075 changed events, and 664127 has 377 in `generated_vo_misc`.
+  - Smaller stale copies have old `base` templates (`Base.Movement` where the game now has `Base.Movement.Slide`), old `context_name` values, and lists of the game's files from an earlier patch.
+- **Lost with them:** deliberate edits that involve no file of the mod's own. These are a few dozen events in about a dozen mods:
+  - **Template tweaks.** 8 of the 55 sound mods set `Base.Ability`'s pitch range to 1.0–1.0 in `soundevents/base/citadel_base_events.vsndevts_c`, so the game stops pitching their ability sounds at random between 0.85 and 1.5. Under the rule their sounds get the random pitch back.
+  - **Muted lines.** 736655 (Cockroach King) empties `vsnd_files` of 10 Ratking voice lines. Under the rule those lines play again.
+  - **Volume and timing changes to the game's own sounds.** These are mixed in with stale changes in the same copies and can't be told apart, e.g. 87879's 31 music events and 664127's 15 Nano events.
+- **Stale fields still come through own events, as they do today:** the rule takes an own event whole. 383 own events have an old `context_name` (306 of them Frank's), as Flowery's Apollo events do ("fencer" for "hero_fencer"). Taking only the file fields of own events wouldn't fix this without a loss: 664127 deliberately adds a `volume` to 1,410 of its own events.
+- **"Trust copies that have every event the game has" doesn't work as an alternative.** It would keep the template tweaks and muted lines, but also let through stale changes: the old `Stinger.Rejuvinator.Descent` in two music mods, and 664127's 377 `generated_vo_misc` events.
+- **Decided (2026-11-05): the rule applies only when two or more mods that are on share a table.** A lone mod's table is used as it ships, deliberate edits and staleness alike, so turning merging on makes no mod worse than before. Applying it always would also have fixed lone stale mods (Flowery alone still removes 65 of the pick table's 180 events), at the cost of their deliberate edits.
+- **Decided (2026-11-05): a mod whose changes a merge leaves out shows a quiet marker**, an information icon on its card and list row where `ClashWarning` sits, whose tooltip names the mods it's merged with. There's no toast or info bar. The marker shows only when something of the mod is actually left out, so two voice mods for different heroes show nothing.
 
 ## Formats seen
 
