@@ -1,11 +1,11 @@
 ---
 id: TASK-11
 title: Attach the Windows zip to a GitHub Release on version tags
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-05T09:33:00Z'
-updated_date: '2026-11-05T15:03:00Z'
+updated_date: '2026-11-05T16:05:00Z'
 labels:
   - distribution
 dependencies: []
@@ -24,10 +24,10 @@ CI already builds the Windows app folder on every push and uploads it as a workf
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A `v*` tag zips the Windows app folder as `Lockdeader-<version>-windows-x64.zip` and attaches it to the release for that tag, or to a new draft release when there is none
-- [ ] #2 The Flatpak bundle is attached to the same release
-- [ ] #3 The release job fails if the tag does not match `VERSION.txt`
-- [ ] #4 Tested with real tags on the repository, which are removed afterwards
+- [x] #1 A `v*` tag zips the Windows app folder as `Lockdeader-<version>-windows-x64.zip` and attaches it to the release for that tag, or to a new draft release when there is none
+- [x] #2 The Flatpak bundle is attached to the same release
+- [x] #3 The release job fails if the tag does not match `VERSION.txt`
+- [x] #4 Tested with real tags on the repository, which are removed afterwards
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -45,3 +45,11 @@ CI already builds the Windows app folder on every push and uploads it as a workf
 <!-- SECTION:NOTES:BEGIN -->
 Dropped the .sha256 files (asked 2026-11-05): GitHub shows each release asset's SHA-256 next to it.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+v* tags now publish their builds. The release job (after the Windows build, its smoke test and the Flatpak pass) zips the Windows folder with packaging/release-files.ps1 and attaches Lockdeader-<version>-windows-x64.zip and the Flatpak to the tag's release with gh release upload --clobber, or creates a draft (--generate-notes) when there's none. No .sha256 files: GitHub shows each asset's SHA-256. A separate Version job checks the tag against VERSION.txt before anything builds.
+
+Tested 2026-11-05 with real tags: v0.2.99 (matching) created a draft with both files, and on a rerun updated the files of that existing draft; v0.2.98 (mismatched) failed in the Version job in 10 s with every other job skipped. The smoke test's app reported 0.2.99 without "Nightly". All test tags and releases were deleted (git push --delete hit a GitHub server error for two tags; the REST API deleted them).
+<!-- SECTION:FINAL_SUMMARY:END -->
