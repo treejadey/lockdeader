@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-05T17:29:00Z'
-updated_date: '2026-11-05T19:10:00Z'
+updated_date: '2026-11-05T19:16:00Z'
 labels:
   - mod-support
 dependencies:
@@ -69,4 +69,6 @@ Decided with the user 2026-11-05: the own sounds rule (doc-4) applies only when 
 Step 1 done: kv3.Encode and resource.Write. Re-encoding the game's pick table decodes identically (ours and Source2Viewer's), and resource.Write reproduces an unchanged file byte for byte. In-game test (2026-11-05): the game's pick table re-encoded by Lockdeader, with Abrams' Pick/Remove/Avoided events pointed at Haze's files, in addons/pak50_dir.vpk via Play With Mods: Abrams said Haze's lines. So the game accepts KV3 v5 uncompressed tables Lockdeader writes, with the game's own RED2 block.
 
 Step 2 done: vpk.Dir.ReadFile reads a file whole, from the base game's chunk archives too, checked against its CRC (the CRCs of all files in 20 mod VPKs checked were right). On the game: pak01's directory (158,644 entries) reads in about 100 ms, and all 160 sound event tables read and check in about 140 ms.
+
+Step 3 done: package merge, SoundEvents. On the real mods (Hatchling hatchdanielupdated, Ted ted_2, Flowery Flowery_apollo) over the game's tables: no conflicts; the merged pick table has all 180 of the game's events with exactly Hatchling's 2 Deadpack, Ted's 2 Familiar and Flowery's 3 Fencer events changed, plus Flowery's stale Generated.Boho.Hero.Pick.VO added (an old hero name, harmless). Left out: Hatchling and Ted nothing; Flowery 112 pick events, 37 death events and Vo.VoteReveal, all its out-of-date versions of other heroes' events, so Flowery would show the marker.
 <!-- SECTION:NOTES:END -->
