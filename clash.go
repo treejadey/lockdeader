@@ -63,8 +63,8 @@ func (m *installedMods) modPaths(row *installedRow) deploy.PathSet {
 	all := deploy.PathSet{}
 
 	for _, set := range sets {
-		for p := range set {
-			all[p] = struct{}{}
+		for p, c := range set {
+			all[p] = c
 		}
 	}
 

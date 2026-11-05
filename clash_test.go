@@ -28,8 +28,10 @@ func (it *installTest) clashMod(t *testing.T, id int, name string, enabled bool,
 
 	var sources []vpk.Source
 
+	// Each mod has its own copy of its files: ones exactly the same as
+	// another's don't clash.
 	for _, p := range paths {
-		data := []byte(p)
+		data := []byte(name + ":" + p)
 		sources = append(sources, vpk.Source{
 			Path: p, CRC32: crc32.ChecksumIEEE(data), Size: uint32(len(data)),
 			Open: func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(data)), nil },
@@ -202,6 +204,29 @@ func TestNoiseDoesntClash(t *testing.T) {
 	}
 }
 
+func TestIdenticalCopiesDontClash(t *testing.T) {
+	it := newInstallTest(t)
+
+	one := it.clashMod(t, 1, "One", true, "one.vmat_c")
+	two := it.clashMod(t, 2, "Two", true, "two.vmat_c")
+
+	// Both made with the same tool, which puts the same note in each.
+	note := it.clashMod(t, 3, "Note", false, "deadlockforge/made_with_dlf.txt")
+	one.Files = append(one.Files, appdb.ModFile{GameBananaID: 11, Name: "note.zip", VPKs: note.Files[0].VPKs})
+	two.Files = append(two.Files, appdb.ModFile{GameBananaID: 21, Name: "note.zip", VPKs: note.Files[0].VPKs})
+
+	addInstalled(t, it, one, two)
+
+	want := map[string]bool{"One": true, "Two": true}
+	if got := it.enabled(t); !maps.Equal(got, want) {
+		t.Errorf("mods sharing only identical files: %v, want %v", got, want)
+	}
+
+	if it.clashesOf(1) != "" || it.clashesOf(2) != "" {
+		t.Errorf("clashes = %q and %q, want none", it.clashesOf(1), it.clashesOf(2))
+	}
+}
+
 // Mods on together from before clashing mods were kept apart: the winner in
 // the load order stays on.
 func TestResolveClashesOnStartup(t *testing.T) {
@@ -296,7 +321,7 @@ func TestInstallTurnsOffClashing(t *testing.T) {
 	sources := []vpk.Source{}
 
 	for _, p := range []string{"a.vmat_c", "b.vmat_c"} {
-		data := []byte(p)
+		data := []byte("New:" + p)
 		sources = append(sources, vpk.Source{
 			Path: p, CRC32: crc32.ChecksumIEEE(data), Size: uint32(len(data)),
 			Open: func() (io.ReadCloser, error) { return io.NopCloser(bytes.NewReader(data)), nil },

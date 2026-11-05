@@ -9,9 +9,16 @@ import (
 	"github.com/treejadey/lockdeader/vpk"
 )
 
-// A PathSet is the files a VPK has, by path in lower case: the game doesn't
-// care about case.
-type PathSet map[string]struct{}
+// A PathSet is the files a VPK has, by path in lower case (the game doesn't
+// care about case), with what each holds.
+type PathSet map[string]Content
+
+// Content tells files apart by what they hold, as a VPK's directory records
+// it, without reading their data.
+type Content struct {
+	CRC32 uint32
+	Size  uint32
+}
 
 func (s PathSet) overlaps(other PathSet) bool {
 	for p := range other {
@@ -24,8 +31,8 @@ func (s PathSet) overlaps(other PathSet) bool {
 }
 
 func (s PathSet) add(other PathSet) {
-	for p := range other {
-		s[p] = struct{}{}
+	for p, c := range other {
+		s[p] = c
 	}
 }
 
@@ -50,7 +57,7 @@ func ReadPaths(path string) (PathSet, error) {
 	set := make(PathSet, len(d.Entries))
 
 	for _, e := range d.Entries {
-		set[strings.ToLower(e.Path)] = struct{}{}
+		set[strings.ToLower(e.Path)] = Content{e.CRC32, e.Size}
 	}
 
 	return set, nil

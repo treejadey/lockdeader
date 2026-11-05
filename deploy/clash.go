@@ -10,7 +10,8 @@ import (
 // on, or the one higher in the load order would win every file they share,
 // which for mods that overlap only partly leaves a broken mix. Files that
 // mods carry for their own sake, which the game doesn't care which copy it
-// gets of, don't count (see noise).
+// gets of, don't count (see noise), and nor do files two mods have exactly
+// the same copy of, such as the note DeadlockForge puts in every VPK.
 func Clashes(mods []PathSet) [][]int {
 	// Which mods have each file, so it takes one pass over the paths rather
 	// than comparing every mod with every other.
@@ -26,14 +27,14 @@ func Clashes(mods []PathSet) [][]int {
 
 	clashing := make([]map[int]bool, len(mods))
 
-	for _, ids := range owners {
+	for p, ids := range owners {
 		if len(ids) < 2 {
 			continue
 		}
 
 		for _, i := range ids {
 			for _, j := range ids {
-				if i == j {
+				if i == j || mods[i][p] == mods[j][p] {
 					continue
 				}
 

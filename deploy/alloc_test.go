@@ -17,7 +17,7 @@ func fakeFiles(n int, shared map[int][]string) ([]File, func(File) (PathSet, err
 		set := PathSet{fmt.Sprintf("own/%d", i): {}}
 
 		for _, p := range shared[i] {
-			set[p] = struct{}{}
+			set[p] = Content{}
 		}
 
 		sets[files[i].SHA256] = set
