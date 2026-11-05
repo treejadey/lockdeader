@@ -8,9 +8,11 @@ require (
 	git.sr.ht/~jackmordaunt/go-toast/v2 v2.0.3
 	github.com/bodgit/sevenzip v1.6.5
 	github.com/godbus/dbus/v5 v5.1.0
+	github.com/klauspost/compress v1.19.0
 	github.com/ncruces/zenity v0.10.15
 	github.com/nwaples/rardecode/v2 v2.4.3
 	github.com/pelletier/go-toml/v2 v2.4.3
+	github.com/pierrec/lz4/v4 v4.1.27
 	github.com/rymdport/portal v0.4.2
 	golang.org/x/sys v0.48.0
 	modernc.org/sqlite v1.60.1
@@ -27,10 +29,8 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/josephspurrier/goversioninfo v1.7.0 // indirect
-	github.com/klauspost/compress v1.19.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
-	github.com/pierrec/lz4/v4 v4.1.27 // indirect
 	github.com/randall77/makefat v0.0.0-20260406194835-1b91746796b7 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/spf13/afero v1.15.0 // indirect
