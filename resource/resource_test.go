@@ -97,3 +97,33 @@ func TestReadDamaged(t *testing.T) {
 		t.Errorf("Read with a block outside the file = %v, want ErrCorrupt", err)
 	}
 }
+
+func TestWrite(t *testing.T) {
+	want := &Resource{Version: 1, Blocks: []Block{{"RED2", []byte("edit info")}, {"DATA", []byte("the data")}}}
+	data := Write(want)
+
+	got, err := Read(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got.Version != want.Version || len(got.Blocks) != 2 {
+		t.Fatalf("Read(Write) = version %d, %d blocks", got.Version, len(got.Blocks))
+	}
+
+	for i, b := range got.Blocks {
+		if b.Type != want.Blocks[i].Type || !bytes.Equal(b.Data, want.Blocks[i].Data) {
+			t.Errorf("block %d = %q %q, want %q %q", i, b.Type, b.Data, want.Blocks[i].Type, want.Blocks[i].Data)
+		}
+
+		// Each block starts on a 16-byte boundary, as the resource compiler
+		// writes them.
+		if at := bytes.Index(data, b.Data); at%16 != 0 {
+			t.Errorf("block %d starts at %d", i, at)
+		}
+	}
+
+	if size := binary.LittleEndian.Uint32(data); int(size) != len(data) {
+		t.Errorf("size field %d, want %d", size, len(data))
+	}
+}

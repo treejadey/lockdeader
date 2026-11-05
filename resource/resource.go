@@ -86,3 +86,44 @@ func (r *Resource) Block(typ string) ([]byte, bool) {
 
 	return nil, false
 }
+
+// Write lays out a resource as Source 2's resource compiler does: the
+// header, the block list, then each block's data, starting on a 16-byte
+// boundary.
+func Write(r *Resource) []byte {
+	le := binary.LittleEndian
+
+	var out []byte
+
+	out = le.AppendUint32(out, 0) // the file's size, filled in at the end
+	out = le.AppendUint16(out, headerVersion)
+	out = le.AppendUint16(out, r.Version)
+	out = le.AppendUint32(out, 8) // the block list follows, 8 bytes on
+	out = le.AppendUint32(out, uint32(len(r.Blocks)))
+
+	list := len(out)
+	out = append(out, make([]byte, 12*len(r.Blocks))...)
+
+	for i, b := range r.Blocks {
+		out = pad(out, 16)
+
+		at := list + 12*i
+		copy(out[at:], b.Type)
+		le.PutUint32(out[at+4:], uint32(len(out)-(at+4)))
+		le.PutUint32(out[at+8:], uint32(len(b.Data)))
+
+		out = append(out, b.Data...)
+	}
+
+	le.PutUint32(out, uint32(len(out)))
+
+	return out
+}
+
+func pad(b []byte, n int) []byte {
+	for len(b)%n != 0 {
+		b = append(b, 0)
+	}
+
+	return b
+}
