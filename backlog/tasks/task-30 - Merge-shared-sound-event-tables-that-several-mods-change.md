@@ -1,10 +1,11 @@
 ---
 id: TASK-30
 title: Merge shared sound event tables that several mods change
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-05T17:29:00Z'
-updated_date: '2026-11-05T18:47:00Z'
+updated_date: '2026-11-05T19:07:00Z'
 labels:
   - mod-support
 dependencies:
@@ -46,10 +47,24 @@ Unknowns: whether the game accepts a table written in an older or uncompressed K
 - [ ] #1 Checked in the game with Hatchling, Ted and Flowery on together: each hero's pick line plays
 <!-- DOD:END -->
 
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Write binary KV3 (kv3.Encode, v5 uncompressed like the game's own uncompressed files) and compiled files (resource.Write). Check in the game that it accepts a table Lockdeader writes.
+2. Read the game's own copy of a table out of pak01's chunk archives (vpk can't yet).
+3. The merge: per event, numbers compared at 6 decimals, the own sounds rule only when a table is shared, added events taken, real conflicts found, and which mods had changes left out.
+4. Clash detection: for sound event tables, look inside (cached per VPK, as file lists are) and clash only on real event conflicts.
+5. Deploy: merged tables in a generated VPK that loads ahead of the mods', in the manifest; rebuilt when the enabled mods or the game's copy change.
+6. The marker on mods whose changes a merge leaves out (role, QML like ClashWarning, tooltip wording confirmed with the user, translations).
+7. Check in the game with Hatchling, Ted and Flowery on together.
+<!-- SECTION:PLAN:END -->
+
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Survey of 125 mods (2026-11-05) in doc-4, Merging files that mods share: sound event tables are mergeable per event; vdata only for added entries; per-hero panorama CSS and localization later, with their own readers; HUD panorama and assets not. Compare numbers at KV3 text precision (6 decimals), since mods recompile decompiled tables. Open: telling a mod's own changes from a stale copy's.
 
 Decided with the user 2026-11-05: the own sounds rule (doc-4) applies only when two or more mods that are on share a table; a lone mod's table is used as it is. A merge that leaves out some of a mod's changes shows a quiet marker on that mod (tooltip, no toast or info bar), only when something is actually left out. Wording of the tooltip still to be confirmed when it's built.
+
+Step 1 done: kv3.Encode and resource.Write. Re-encoding the game's pick table decodes identically (ours and Source2Viewer's), and resource.Write reproduces an unchanged file byte for byte. In-game test (2026-11-05): the game's pick table re-encoded by Lockdeader, with Abrams' Pick/Remove/Avoided events pointed at Haze's files, in addons/pak50_dir.vpk via Play With Mods: Abrams said Haze's lines. So the game accepts KV3 v5 uncompressed tables Lockdeader writes, with the game's own RED2 block.
 <!-- SECTION:NOTES:END -->

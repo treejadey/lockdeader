@@ -4,6 +4,7 @@ title: Install mods whose VPKs vpk.ReadDir turns down
 status: To Do
 assignee: []
 created_date: '2026-11-05T18:32:00Z'
+updated_date: '2026-11-05T19:07:00Z'
 labels:
   - mod-support
 dependencies: []
@@ -31,3 +32,9 @@ Other users of vpk.Dir have to cope too: clash detection (deploy.ReadPaths), and
 - [ ] #4 Entries that really point outside the data are still turned down
 - [ ] #5 Tests build both kinds in code
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Already in a user's store: THAT BIRD THAT I HATE - Grey Talon Sound Mod (sha256 cffff1ce…) is a version 1 VPK installed before the version check existed. deploy.ReadPaths fails on it, so clash detection counts it as having no files (clash.go vpkPaths logs a warning).
+<!-- SECTION:NOTES:END -->
