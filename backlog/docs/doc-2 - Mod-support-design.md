@@ -1,6 +1,13 @@
-# Plan: better mod support
+---
+id: doc-2
+title: Mod support design
+type: specification
+created_date: '2026-11-05T09:30:00Z'
+updated_date: '2026-11-05T10:13:00Z'
+---
+How Lockdeader's mod support works, why, and where it's going (written 2026-10-10 and 2026-10-11, as sections 1 and 2 were built). doc-1, *How Deadlock modding works*, describes how the game loads mods and how Deadlock Mod Manager (DMM) works; this builds on it.
 
-How Lockdeader's mod support should improve on the current approach (2026-10-10, updated 2026-10-11 as sections 1 and 2 were built). [deadlock-modding.md](deadlock-modding.md) describes how the game loads mods and how Deadlock Mod Manager (DMM) works; this builds on it.
+Work still to do is tracked as tasks labelled `mod-support` (`backlog task list --labels mod-support --plain`); each section below names its tasks.
 
 ## What's on GameBanana
 
@@ -12,7 +19,7 @@ Checked on 2026-10-11, by sampling archives from every category in the app (Mods
 | Loose compiled files (`sounds/**.vsnd_c`, `soundevents/*.vsndevts_c`) and no VPK | Sounds made with DLForge, several in every sound category | Packed into one VPK at install (`install.Extract`, with `vpk.Write`) |
 | Cursor bitmaps to overwrite `game/citadel/resource/cursors/*.bmp` | HUD › Cursors, 6 mods | Not supported: it would mean overwriting the game's own files |
 | Config files: whole `gameinfo.gi` replacements, `autoexec.cfg`, `video.txt` | Quality of Life › FPS configs | Not supported: a replaced `gameinfo.gi` would fight our own edit, and the rest aren't mods |
-| Archives inside the archive (`rolls/*.zip`) | Gameplay › Randomised Abilities | Not supported yet |
+| Archives inside the archive (`rolls/*.zip`) | Gameplay › Randomised Abilities | Not supported yet (TASK-9) |
 
 ## What's wrong with the current approach
 
@@ -77,7 +84,7 @@ The choice depends on the drive layout, not the OS, and nothing in the UI mentio
 
 Reflinks come for free: Go's `io.Copy` between files uses `copy_file_range`, which btrfs and XFS turn into one. There's no reflink code of our own.
 
-**Open question: where the store lives.** On Windows, the Steam library is often on another drive (`D:\SteamLibrary`) while our data dir is on `C:`. That puts many Windows users on the copy fallback.
+**Open question: where the store lives** (TASK-7). On Windows, the Steam library is often on another drive (`D:\SteamLibrary`) while our data dir is on `C:`. That puts many Windows users on the copy fallback.
 
 - Option: when the game is on another volume, keep the store on that volume, e.g. `<library>\Lockdeader\`.
 - Downside: one more place where Lockdeader keeps files.
@@ -98,7 +105,7 @@ Built as `deploy.EnableMods`/`DisableMods`.
 - **Checked before writing:** the edited text still parses, has our line exactly once, and differs from the original in nothing but our lines. It's written to a temporary file, flushed and renamed over the original.
 - **Windows quirks:** the read-only attribute that some guides tell users to set is cleared, and the file is backed up in our data dir (`gameinfo.gi.bak`) before the first write.
 - **Profiles never touch this file** (see 1).
-- **DMM** replaces the whole `SearchPaths` block, which removes our lines. Our line still goes in, above DMM's `Game citadel`, so a user moving from DMM isn't stuck; its `// Deadlock Mod Manager` markers are detected (`deploy.State.DMM`) but nothing tells the user yet.
+- **DMM** replaces the whole `SearchPaths` block, which removes our lines. Our line still goes in, above DMM's `Game citadel`, so a user moving from DMM isn't stuck; its `// Deadlock Mod Manager` markers are detected (`deploy.State.DMM`) but nothing tells the user yet (TASK-8).
 
 ## Crash safety
 
@@ -136,7 +143,7 @@ Built as `deploy.EnableMods`/`DisableMods`.
 ### Mods that crash the game
 
 - **Launching vanilla is instant:** it's just removing our lines from `gameinfo.gi`.
-- **Last known good:**
+- **Last known good** (TASK-5):
   - Record which setup was applied at each launch.
   - If the game exits abnormally soon after starting, offer to go back to the last setup that ran without a crash, and show which mods changed since then.
 
@@ -149,9 +156,9 @@ Built as `deploy.ScanOtherMods` and `othermods.go`.
 
 ## 3. Mods that change the same files
 
-**First step: tell the user, and let only one of them be on.** Read each installed VPK's file list (`vpk.ReadDir`, which reads only the directory, so it's instant) and keep it with the mod. Two mods that change any of the same files conflict: turning one on turns the other off (or is refused), and the installed page shows which mods clash. For bundled slots (see 1) this also means the allocator never has to split a bundle. DMM's noise list applies: `addoninfo.txt`, `modinfo.json`, readmes, `panorama/image_compiler.vdata_c` and `materials/default/default_*` don't count.
+**First step: tell the user, and let only one of them be on.** Built (TASK-1) as `deploy.Clashes` and `clash.go`. Each installed VPK's file list is read from the store (`deploy.ReadPaths`, only the directory, so it's instant) once per run and kept in memory by SHA-256; store files never change, so it can't go stale, and no schema change was needed. Two mods that change any of the same files conflict: turning one on (or installing, taking over or reconfiguring one that's on) turns the others off, with a message offering Undo. Mods already on together from before are sorted out on startup: the one that wins in the load order stays on. The installed page shows a warning icon on every mod that clashes with another, with a tooltip naming them. For bundled slots (see 1) this also means the allocator never has to split a bundle. DMM's noise list applies: `addoninfo.txt`, `modinfo.json`, readmes, `panorama/image_compiler.vdata_c` and `materials/default/default_*` don't count.
 
-**Later: per-file resolution.**
+**Later: per-file resolution** (TASK-10).
 
 DMM's mod higher in the load order wins every file the two mods share. When they overlap only partly, the result is a broken mix, e.g. one mod's model with the other's materials.
 
@@ -161,9 +168,11 @@ The fix: generate a small `pak01_dir.vpk` that holds only the contested files, u
 - Default choices follow load order. Users only touch the files they want to change.
 - Warn about partial overlaps: when mod A wins some of the files it shares with B and loses others.
 
-This needs a Go VPK reader and writer (see 7).
+This needs a Go VPK reader and writer (see 7), which now exist.
 
 ## 4. Warn when a game update may have broken a mod
+
+Planned: TASK-4.
 
 **Locally, for installed mods:**
 
@@ -175,6 +184,8 @@ This needs a Go VPK reader and writer (see 7).
 **Before downloading.** Answering "does this mod still work with the current game?" for mods not yet downloaded needs our own API (see Future).
 
 ## 5. Work out what a mod is from its contents
+
+Planned: TASK-3.
 
 Reading a VPK means downloading it first. So this improves installed mods, not browsing. Before download, we're stuck with GameBanana's metadata, as DMM is.
 
@@ -189,6 +200,8 @@ Showing any of this while browsing needs our own API (see Future).
 
 ## 6. Integrity check
 
+Planned: TASK-2.
+
 A "check integrity" action, like Steam's "Verify integrity of game files", that confirms every installed mod is intact and repairs any that aren't, without the user having to reinstall anything. The database already stores what it needs.
 
 - **Check** each VPK in the store against the SHA-256 recorded in `mod_vpks`. A file that's missing or has a different hash is damaged. Record each pass in `mod_vpks.verified_at`.
@@ -200,11 +213,13 @@ A "check integrity" action, like Steam's "Verify integrity of game files", that 
 ## 7. Smaller things
 
 - **VPK reader and writer in Go.** Built as package `vpk`. The reader (`ReadDir`) reads only the directory; the writer (`Write`) streams the data of the files given to it. Every VPK is checked with the reader when installed, so one the game can't load never reaches it. Items 3, 4 and 5 use the reader; bundling and loose-file packing use the writer.
-- **Updates.** Use the file id and `_sMd5Checksum` from `DownloadPage` instead of comparing timestamps. Verify the MD5 after each download.
-- **Chunked VPKs** (`_000.vpk`). Detect them and reject them with a clear error, instead of breaking them the way DMM would.
+- **Updates** (TASK-6). Use the file id and `_sMd5Checksum` from `DownloadPage` instead of comparing timestamps. Verify the MD5 after each download.
+- **Chunked VPKs** (`_000.vpk`). Detected and rejected with a clear error (`install.ErrChunkedVPK`), instead of breaking them the way DMM would.
 - **Mod limit.** There isn't one: see Slots under 1. The only way to run out is 100 or more mods that all change the same files as one another, which can't share slots; then `deploy.ErrTooMany` says so.
 
 ## Future: our own API
+
+An idea, not committed to: DRAFT-1.
 
 The insights from 4 and 5 only help while browsing if someone has already downloaded and indexed the mods. A small service could:
 
@@ -215,14 +230,4 @@ The insights from 4 and 5 only help while browsing if someone has already downlo
 
 DMM's backend already does something similar (`/api/v2/vpk-analyse-hashes`). This is noted for later and isn't needed for 1–3.
 
-In addition to the api I think it would also be fair if we provided our own caching in front of the gamebanana servers to make their life a bit easier.
-
-## Order of work
-
-1. ~~Downloading, MD5 checks and extraction into the store, recorded in the database.~~ Done.
-2. ~~The VPK reader and writer.~~ Done.
-3. ~~The manifest and apply for our folder (1), the `gameinfo.gi` edit (2), and startup recovery (Crash safety).~~ Done.
-4. Conflicts: only one of two mods that change the same files can be on (3, first step).
-5. The integrity check (6).
-6. Mod details from contents (5), then update warnings (4) and last known good.
-7. Per-file conflict resolution (3).
+The same service could cache in front of GameBanana's servers, to make their life a bit easier.

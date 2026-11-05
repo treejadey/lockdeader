@@ -1,6 +1,11 @@
-# Plan: distributing Lockdeader
-
-How Lockdeader should reach people (2026-10-12; decisions recorded the same day). Nothing here is built yet.
+---
+id: doc-3
+title: Distribution design
+type: specification
+created_date: '2026-11-05T09:30:00Z'
+updated_date: '2026-11-05T09:34:00Z'
+---
+How Lockdeader reaches people, and why (written 2026-10-12; decisions recorded the same day). What's built says so; work still to do is tracked as tasks labelled `distribution` (`backlog task list --labels distribution --plain`), named in each section below.
 
 - **Windows:** a `.zip` with everything the app needs to run, built by GitHub Actions.
 - **Linux:** packages built on openSUSE's Open Build Service (OBS), and a Flatpak on Flathub later.
@@ -43,11 +48,11 @@ Looking for `qml/` next to the executable, then in the install prefix, was the a
 - **Where the app uses it:** in the user agent it sends to GameBanana, and in the log at startup.
 - **To release:** change `VERSION.txt` and tag the commit `v` plus that version. CI can check that the two agree.
 - **Packaging:** manifests and spec files are updated by hand for each release, and can read the version from `VERSION.txt` where their tools allow.
-- **Still to do:** showing it on the settings page, and in AppStream's release notes.
+- **Shown** in the window title and on Settings › Advanced. Release notes in AppStream are TASK-14.
 
 ### Desktop integration files
 
-**Built in `packaging/`:** the desktop file, the metainfo (summary, description, screenshot, OARS, `GPL-3.0-or-later`), and the scalable icon (`assets/logo.svg`, installed under the app ID). The window sets its desktop file name. Still to do: the PNG sizes, the Windows `.ico` and `.syso`, and release notes. What each needs:
+**Built in `packaging/`:** the desktop file, the metainfo (summary, description, screenshot, OARS, `GPL-3.0-or-later`), and the scalable icon (`assets/logo.svg`, installed under the app ID). The window sets its desktop file name. Still to do: the PNG sizes and the Windows `.ico` and `.syso` (TASK-13), and release notes (TASK-14). What each needs:
 
 - **App ID: `io.github.treejadey.Lockdeader`.** Flathub verifies it through the GitHub account. It names the desktop file, metainfo, icons and Flatpak.
 - **`<app-id>.desktop`:** name, icon, categories (`Game;Utility;`), and `StartupWMClass` so the window groups with its launcher.
@@ -62,9 +67,10 @@ Looking for `qml/` next to the executable, then in the install prefix, was the a
   Flathub requires it, software centres show it for OBS packages, and `appstreamcli validate` checks it in CI.
 - **Icons:** the app icon as SVG (`assets/logo.svg`), plus PNGs at the sizes the interface guidelines ask for (16 to 128 px, each drawn for its size). Windows gets an `.ico` built from the same, embedded in the `.exe` with a `.syso` resource (`goversioninfo`, which also sets the file's version and description).
 
-The window should also set its desktop file name (`QGuiApplication::setDesktopFileName`), so Wayland compositors match it to its icon.
 
 ### Third-party notices
+
+Not built yet: TASK-12.
 
 A `THIRD-PARTY-NOTICES` file (or a folder of licences) listing what's bundled, with the licence texts. Every channel ships it.
 
@@ -93,7 +99,7 @@ Unzip and run. It's portable, apart from the data in `%LOCALAPPDATA%\Lockdeader`
 
 ### Building it
 
-**Built:** `packaging/windows/build.ps1` and `smoke-test.ps1`, run by the `windows` and `windows-smoke-test` jobs of `.github/workflows/build.yml`, which upload the app's folder as an artifact (GitHub zips it, so the build doesn't). Attaching it to a release on a tag is still to do. The build scripts are PowerShell on both platforms, since both runners ship it. What follows is the reasoning.
+**Built:** `packaging/windows/build.ps1` and `smoke-test.ps1`, run by the `windows` and `windows-smoke-test` jobs of `.github/workflows/build.yml`, which upload the app's folder as an artifact (GitHub zips it, so the build doesn't). Attaching it to a release on a tag is TASK-11. The build scripts are PowerShell on both platforms, since both runners ship it. What follows is the reasoning.
 
 cgo can't use MSVC, so Qt has to be a MinGW build. Which one doesn't matter much; use whichever is more convenient. That's likely **MSYS2's UCRT64 environment**:
 
@@ -123,14 +129,16 @@ MSYS2's Qt is built with ICU, which adds about 30 MB. If MSYS2 turns out awkward
 
 ### Later
 
-- **Code signing.** Without it, SmartScreen warns about the `.exe` until it has a reputation. The SignPath Foundation signs open-source projects for free.
-- **Package managers.** winget and Scoop manifests can point at the release zip.
+- **Code signing** (TASK-23). Without it, SmartScreen warns about the `.exe` until it has a reputation. The SignPath Foundation signs open-source projects for free.
+- **Package managers** (TASK-24). winget and Scoop manifests can point at the release zip.
 
 ## Linux: openSUSE's Open Build Service
 
 OBS builds packages from a spec file in a clean chroot, for openSUSE and for other distributions too (Fedora, Arch, Debian/Ubuntu), and hosts repositories users can add.
 
 ### Steps
+
+Not built yet: TASK-16 (Tumbleweed), TASK-15 (oldest Qt), TASK-17 (other distributions), TASK-18 (openSUSE Factory).
 
 1. **A home project**, `home:<user>:lockdeader` or just `home:<user>`, needs no approval. It gives us Tumbleweed packages and a repository straight away.
 2. **More distributions** go in the same project, as far as their Qt is new enough. The app is developed against Qt 6.11; the oldest Qt it builds and runs with still has to be found, by building against older ones. That decides which releases (Leap, Fedora's, Ubuntu's) can be built at all.
@@ -161,8 +169,8 @@ The same spec can cover Fedora with a few conditionals. Debian and Ubuntu need t
 
 **Built: `packaging/flatpak/io.github.treejadey.Lockdeader.yml`** builds this checkout for trying out (see its README). Two things in it aren't ready for Flathub:
 
-- it lets Go download the modules during the build;
-- Steam libraries on other drives aren't reachable.
+- it lets Go download the modules during the build (TASK-19);
+- Steam libraries on other drives aren't reachable (TASK-20).
 
 - **Runtime:** `org.kde.Platform` and `org.kde.Sdk`, on the branch with the Qt we need. They provide Qt 6 with Qt Quick, so we don't bundle Qt.
 - **Go:** `org.freedesktop.Sdk.Extension.golang`. Flathub builds without the network, so the Go modules are listed as sources, generated with `flatpak-builder-tools`' Go module tool, or come vendored in a release tarball.
@@ -175,7 +183,7 @@ The same spec can cover Fedora with a few conditionals. Debian and Ubuntu need t
 | Finds Deadlock in Steam's libraries (`game.Find`, `steamRoots`) and writes to its folder (`deploy.Apply`, `gameinfo.gi`) | Can't see the home folder | Static permissions for where Steam keeps games: `--filesystem=xdg-data/Steam`, `--filesystem=~/.steam`, and `~/.var/app/com.valvesoftware.Steam` for Steam's Flatpak. Libraries on other drives need `/mnt`, `/run/media` and so on, or a folder the user picks |
 | The user picks the game folder (`filedialog`, through the portal) | Works, but a folder without a static permission arrives as a document portal path (`/run/user/…/doc/…`) | Hard links from the store fail there, and `deploy` already falls back to copying. Check `Check`, `ReadGameInfo` and the addons scan through such a path |
 | Tells whether Deadlock is running (`deploy.Running`, through `/proc`) | **Can't see the game:** the sandbox has its own process namespace | Ask the host instead, as Chatterino does (see below), with `--talk-name=org.freedesktop.Flatpak` |
-| Starts Deadlock (`game.Launch`) | No `steam` command in the sandbox | The `steam://` link fallback (`SteamURL`), which opens through the OpenURI portal. Check that Flatpak'd and native Steam both take it |
+| Starts Deadlock (`game.Launch`) | No `steam` command in the sandbox | The `steam://` link fallback (`SteamURL`), which opens through the OpenURI portal. Check that Flatpak'd and native Steam both take it (TASK-21) |
 | Desktop notifications (`notification_linux.go`, D-Bus) | Blocked unless allowed | `--talk-name=org.freedesktop.Notifications`, which Flathub accepts, or the notification portal |
 | Plays sounds (miniaudio) | Needs the sound server | `--socket=pulseaudio` (PipeWire serves it too) |
 | Everything else | | `--share=network`, `--socket=wayland`, `--socket=fallback-x11`, `--device=dri` |
@@ -195,12 +203,14 @@ Lockdeader copies that, inside a Flatpak only (built):
 - **The check.** It runs `flatpak-spawn --host pgrep -xi deadlock.exe`, with a one-second timeout.
 - **Exit codes.** 0 means running and 1 means not. Anything else, or a timeout, is an error, which the callers already treat as not knowing: the game watcher keeps its last answer, and applying goes ahead.
 - **Outside a Flatpak**, it keeps reading `/proc`, which needs no other program.
-- **Check with the real game under Proton:** that its process name, which `pgrep -x` matches, is `deadlock.exe`. The `/proc` code also accepts the first word of the command line, which `pgrep` would need `-f` and a pattern for.
+- **Check with the real game under Proton** (TASK-21): that its process name, which `pgrep -x` matches, is `deadlock.exe`. The `/proc` code also accepts the first word of the command line, which `pgrep` would need `-f` and a pattern for.
 - **Flathub's reviewers.** `org.freedesktop.Flatpak` lets the app run anything on the host, so they'll ask why it's needed. The manifest should say: it's to tell whether the game is running, as Chatterino's does for OBS.
 
 The data directory moves to `~/.var/app/<app-id>/data/Lockdeader`, since Flatpak sets `XDG_DATA_HOME`; `appdata` follows it already. It's usually on the same file system as Steam's library in the home folder, so hard links still work.
 
 ### Getting onto Flathub
+
+TASK-22, once the tasks it depends on are done.
 
 - **Submission.** Submit the manifest as a pull request to `flathub/flathub`. Reviewers check:
   - the app ID and our right to it;
@@ -209,14 +219,6 @@ The data directory moves to `~/.var/app/<app-id>/data/Lockdeader`, since Flatpak
   - that the app's name and description don't suggest it's Valve's.
 - **Once accepted.** The app lives in its own repository under `flathub/`, which Flathub's bot updates from our tags if we set up `x-checker-data`.
 - **Before submitting:** build and run the manifest ourselves, and ship it from GitHub Releases as a `.flatpakref` or bundle. Nothing about the Flatpak has to wait for Flathub. **Built:** the `flatpak` job of `.github/workflows/build.yml` runs `packaging/flatpak/build.ps1`, which makes a single-file bundle and uploads it as an artifact; ccache keeps miqt's compiled C++ between runs.
-
-## Order of work
-
-1. **Shared groundwork:** the app ID, embedding the QML, the desktop file, icons, metainfo and third-party notices.
-2. **The Windows workflow:** build, collect DLLs, smoke-test, release. Windows is where most players are.
-3. **An OBS home project with a Tumbleweed package**, then whichever other distributions have a new enough Qt.
-4. **Making the app work in the sandbox:** telling whether the game is running (as Chatterino does), and the filesystem permissions. Then a Flatpak built from our own manifest.
-5. **Submitting** to Flathub and to openSUSE, as each is ready.
 
 ## Decisions
 
@@ -231,5 +233,5 @@ The data directory moves to `~/.var/app/<app-id>/data/Lockdeader`, since Flatpak
 
 These will be worked out later.
 
-- **Flatpak game folders:** which locations get static permissions, and how libraries on other drives are reached.
-- **Oldest Qt supported:** which also decides which distributions OBS can build for.
+- **Flatpak game folders:** which locations get static permissions, and how libraries on other drives are reached (TASK-20).
+- **Oldest Qt supported:** which also decides which distributions OBS can build for (TASK-15).

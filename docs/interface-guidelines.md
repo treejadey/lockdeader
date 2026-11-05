@@ -225,4 +225,4 @@ Windows matters as much as Linux, so each of these needs both.
 
 ## Where the app doesn't follow these yet
 
-- There's no `.desktop` file or Windows installer yet.
+Tracked as Backlog tasks, e.g. the Windows Start menu shortcut (TASK-25).

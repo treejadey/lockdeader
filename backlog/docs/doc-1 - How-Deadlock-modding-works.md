@@ -1,5 +1,10 @@
-# How Deadlock modding works
-
+---
+id: doc-1
+title: How Deadlock modding works
+type: other
+created_date: '2026-11-05T09:30:00Z'
+updated_date: '2026-11-05T09:34:00Z'
+---
 State of things as of 2026-10-10. This covers how the game loads client mods, how [Deadlock Mod Manager](https://github.com/deadlock-mod-manager/deadlock-mod-manager) (DMM, deadlockmods.app) drives that, and how it talks to GameBanana. Anything marked *(community)* comes from testing or from mod-manager code, not from Valve. Valve publishes no modding documentation.
 
 ## The game side

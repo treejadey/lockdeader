@@ -1,8 +1,8 @@
 # Flatpak
 
 `io.github.treejadey.Lockdeader.yml` builds this checkout as a Flatpak, to
-try it out. It isn't on Flathub; see `docs/distribution.md` for what that
-would take.
+try it out. It isn't on Flathub; see Backlog TASK-22 and
+doc-3, Distribution design, for what that would take.
 
 ## Building and running
 

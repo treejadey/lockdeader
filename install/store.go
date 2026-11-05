@@ -1,6 +1,6 @@
 // Package install downloads mods from GameBanana and keeps the VPKs taken out
 // of them in a store in the data directory (Cache/Mods), named by their
-// SHA-256. See docs/mod-support-plan.md.
+// SHA-256. See Backlog doc-2, Mod support design.
 package install
 
 import (

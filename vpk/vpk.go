@@ -2,8 +2,8 @@
 // games load their files from. It reads only the directory tree, never the
 // file data, which is all that telling which files a mod has takes; and it
 // writes new VPKs by streaming the data of files given to it, so mods can be
-// packed and merged without holding them in memory. See
-// docs/deadlock-modding.md.
+// packed and merged without holding them in memory. See Backlog
+// doc-1, How Deadlock modding works.
 package vpk
 
 import (

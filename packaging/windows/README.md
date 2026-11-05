@@ -36,5 +36,5 @@ GitHub zips as `Lockdeader-<version>-windows-x64.zip`.
 - **`qt.conf`**, which tells Qt where those are. Without it, MSYS2's Qt
   looks for its QML modules and translations in `share\qt6\` next to the
   app, finds no `QtQuick`, and the app quits before its window opens.
-- **`LICENSE.txt`.** Licences for what's bundled are still to come (see
-  `docs/distribution.md`).
+- **`LICENSE.txt`.** Licences for what's bundled are still to come
+  (Backlog TASK-12).

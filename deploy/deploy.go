@@ -1,8 +1,8 @@
 // Package deploy puts the mods that are turned on into Deadlock. It keeps a
 // folder of its own in the game, game/citadel/lockdeader, holding exactly the
 // VPKs the game should load, and adds or removes Lockdeader's own lines in
-// gameinfo.gi, which make the game load that folder. See
-// docs/mod-support-plan.md.
+// gameinfo.gi, which make the game load that folder. See Backlog
+// doc-2, Mod support design.
 //
 // Nothing in the game folder is the only copy of anything: it's all rebuilt
 // from the store by Apply, so a crash at any point leaves the game loading
