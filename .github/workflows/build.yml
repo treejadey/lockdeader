@@ -23,8 +23,28 @@ env:
   NIGHTLY: ${{ !startsWith(github.ref, 'refs/tags/v') }}
 
 jobs:
+  # Before anything slow: a release's tag has to name the version the app says
+  # it is, or both builds would run for a release that can't happen. It runs
+  # for every build, as a job that's skipped would skip the ones after it.
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check the tag matches VERSION.txt
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $version = (Get-Content VERSION.txt -Raw).Trim()
+
+          if ($env:GITHUB_REF_NAME -ne "v$version") {
+            throw "The tag is $env:GITHUB_REF_NAME, but VERSION.txt says $version, so the tag should be v$version."
+          }
+
   windows:
     name: Windows app
+    needs: version
     runs-on: windows-latest
     # The first build compiles miqt's Qt bindings, which takes a long time.
     # Go's build cache is kept between runs (see below), so later ones don't.
@@ -37,18 +57,6 @@ jobs:
       GOFLAGS: -trimpath
     steps:
       - uses: actions/checkout@v7
-
-      # Before anything slow: a release's tag has to name the version the app
-      # says it is.
-      - name: Check the tag matches VERSION.txt
-        if: startsWith(github.ref, 'refs/tags/v')
-        shell: pwsh
-        run: |
-          $version = (Get-Content VERSION.txt -Raw).Trim()
-
-          if ($env:GITHUB_REF_NAME -ne "v$version") {
-            throw "The tag is $env:GITHUB_REF_NAME, but VERSION.txt says $version, so the tag should be v$version."
-          }
 
       # cgo can't use MSVC, so Qt and the compiler come from MSYS2's UCRT64
       # environment. windeployqt is in qt6-base, and needs qt6-tools'
@@ -189,6 +197,7 @@ jobs:
 
   flatpak:
     name: Linux Flatpak
+    needs: version
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
