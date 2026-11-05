@@ -48,8 +48,9 @@ const thumbnailWidth = 530
 // Qt main thread.
 //
 // It's a QStandardItemModel rather than a QAbstractListModel subclass because
-// miqt v0.14.0's roleNames override freed its return value before Qt read it
-// (fixed in v0.15.0).
+// miqt (v0.15.0 still) never frees the QVariant a Go data() override returns:
+// it would leak one for every cell QML reads, and letting Go's GC free it
+// could free it before C++ has copied it.
 type modListModel struct {
 	*qt.QStandardItemModel
 

@@ -1,14 +1,5 @@
 package main
 
-/*
-#cgo pkg-config: Qt6Core
-// GCC 16 warns about this in Qt's own headers; nothing to fix on our side.
-#cgo CXXFLAGS: -Wno-sfinae-incomplete
-#include <stdlib.h>
-#include "translator.h"
-*/
-import "C"
-
 import (
 	"embed"
 	"io/fs"
@@ -73,14 +64,27 @@ func translationFS() fs.FS {
 // thread.
 var translator atomic.Pointer[i18n.Translator]
 
-// installTranslator hands Qt's translate calls to t (see translator.cpp).
-// Its translator always answers, so Qt never asks one installed before it.
+// The QTranslator that asks translator, installed once.
+var goTranslator *qt.QTranslator
+
+// installTranslator hands Qt's translate calls to t. Its translator always
+// answers, so Qt never asks one installed before it.
 func installTranslator(t *i18n.Translator) {
 	translator.Store(t)
-	C.lockdeader_install_translator()
-}
 
-//export lockdeaderTranslate
-func lockdeaderTranslate(source, disambiguation *C.char, n C.int) *C.char {
-	return C.CString(translator.Load().Translate(C.GoString(source), C.GoString(disambiguation), int(n)))
+	if goTranslator != nil {
+		return
+	}
+
+	goTranslator = qt.NewQTranslator()
+
+	goTranslator.OnTranslate(func(_ func(string, string, string, int) string, _, source, disambiguation string, n int) string {
+		return translator.Load().Translate(source, disambiguation, n)
+	})
+
+	// A QTranslator with no file loaded says it's empty, and Qt treats
+	// installing an empty one as no change of language.
+	goTranslator.OnIsEmpty(func(func() bool) bool { return false })
+
+	qt.QCoreApplication_InstallTranslator(goTranslator)
 }
