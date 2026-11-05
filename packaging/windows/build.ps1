@@ -174,21 +174,31 @@ $section = @(
 )
 
 foreach ($package in $packages) {
+    # Not $version, which is the app's, and goes to GitHub at the end.
     $info = & $pacman -Qi $package
-    $version = ($info | Select-String '^Version\s*:\s*(.+)$').Matches[0].Groups[1].Value.Trim()
+    $packageVersion = ($info | Select-String '^Version\s*:\s*(.+)$').Matches[0].Groups[1].Value.Trim()
     $licence = ($info | Select-String '^Licenses\s*:\s*(.+)$').Matches[0].Groups[1].Value.Trim()
+    $short = $package -replace '^mingw-w64-ucrt-x86_64-', ''
 
-    # A package's files under share/licenses, without the folders.
+    # A package's files under share/licenses, without the folders. Some, like
+    # ICU, keep theirs elsewhere (share/icu/<version>/LICENSE); then any file
+    # named like a licence anywhere in the package will do.
     $prefix = '/ucrt64/share/licenses/'
-    $files = & $pacman -Qlq $package | Where-Object { $_.StartsWith($prefix) -and -not $_.EndsWith('/') }
+    $all = & $pacman -Qlq $package | Where-Object { -not $_.EndsWith('/') }
+    $files = @($all | Where-Object { $_.StartsWith($prefix) } | ForEach-Object { @{ From = $_; To = $_.Substring($prefix.Length) } })
+
+    if (-not $files) {
+        $files = @($all | Where-Object { (Split-Path $_ -Leaf) -match '^(licen[cs]e|copying|notice)([-._].*)?$' } |
+            ForEach-Object { @{ From = $_; To = "$short/" + (Split-Path $_ -Leaf) } })
+    }
+
     $folders = @()
 
     foreach ($file in $files) {
-        $inLicenses = $file.Substring($prefix.Length)
-        $target = Join-Path $licensesDir $inLicenses
+        $target = Join-Path $licensesDir $file.To
         New-Item -ItemType Directory -Path (Split-Path $target) -Force | Out-Null
-        Copy-Item (Join-Path $Msys2Root $file.TrimStart('/')) $target
-        $folders += 'licenses/' + $inLicenses.Split('/')[0]
+        Copy-Item (Join-Path $Msys2Root $file.From.TrimStart('/')) $target
+        $folders += 'licenses/' + $file.To.Split('/')[0]
     }
 
     $where = if ($folders) {
@@ -200,7 +210,7 @@ foreach ($package in $packages) {
         'no licence file in the package'
     }
 
-    $section += "$package $version"
+    $section += "$package $packageVersion"
     $section += "    Licence: $licence ($where)"
 }
 
