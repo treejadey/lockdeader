@@ -4,13 +4,14 @@ title: Merge shared sound event tables that several mods change
 status: To Do
 assignee: []
 created_date: '2026-11-05T17:29:00Z'
-updated_date: '2026-11-05T17:29:00Z'
+updated_date: '2026-11-05T18:27:00Z'
 labels:
   - mod-support
 dependencies:
   - TASK-1
 documentation:
   - doc-2
+  - doc-4
 priority: medium
 type: feature
 ordinal: 30000
@@ -42,3 +43,9 @@ Unknowns: whether the game accepts a table written in an older or uncompressed K
 <!-- DOD:BEGIN -->
 - [ ] #1 Checked in the game with Hatchling, Ted and Flowery on together: each hero's pick line plays
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Survey of 125 mods (2026-11-05) in doc-4, Merging files that mods share: sound event tables are mergeable per event; vdata only for added entries; per-hero panorama CSS and localization later, with their own readers; HUD panorama and assets not. Compare numbers at KV3 text precision (6 decimals), since mods recompile decompiled tables. Open: telling a mod's own changes from a stale copy's.
+<!-- SECTION:NOTES:END -->
