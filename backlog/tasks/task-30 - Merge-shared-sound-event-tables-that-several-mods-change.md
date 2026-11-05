@@ -1,11 +1,11 @@
 ---
 id: TASK-30
 title: Merge shared sound event tables that several mods change
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-05T17:29:00Z'
-updated_date: '2026-11-05T20:04:00Z'
+updated_date: '2026-11-05T20:07:00Z'
 labels:
   - mod-support
 dependencies:
@@ -37,7 +37,7 @@ Unknowns: whether the game accepts a table written in an older or uncompressed K
 - [x] #2 An event that two mods that are on both change, each with sound files it ships, and differently, is still a clash as under TASK-1
 - [x] #3 In a table that two or more mods that are on share: a changed event comes from a mod only if it refers to a sound file that mod ships; events a mod adds are taken; everything else comes from the game's current copy, so an out-of-date copy no longer removes or reverts other heroes' events. Numbers compare at KV3 text precision (6 decimals)
 - [x] #4 A table that only one mod that's on has is used as the mod ships it, as now
-- [ ] #5 A mod whose changes a merge leaves out shows an information marker on its card and list row, where ClashWarning sits, with a tooltip naming the mods it's merged with (proposed: "Some of its changes are left out so it works alongside %1"); a mod the merge leaves nothing out of shows nothing
+- [x] #5 A mod whose changes a merge leaves out shows a muted information marker (MergeNotice) on its card and list row, with the tooltip "Some of its sound changes are left out so it works alongside %1" naming the mods it's merged with; a mod the merge leaves nothing out of shows nothing
 - [x] #6 The merged table is rebuilt when the mods that are on change or the game updates its own copy
 - [x] #7 Tests cover merging, a real conflict, an out-of-date mod table, a lone mod's table and a table that can't be read
 <!-- AC:END -->
@@ -81,4 +81,18 @@ Step 7 (in-game check) done 2026-11-05: Hatchling (hatchdanielupdated), Ted (ted
 Step 6 done: MergeNotice (Fluent info_24_regular in Theme.subtle, on the same badge as ClashWarning over pictures) beside ClashWarning in InstalledGrid and InstalledList, from the mergedWith role; tooltip, as the user chose: "Some of its sound changes are left out so it works alongside %1". The deployer's merge returns what it left out per mod (deploy.Merged.LeftOut), and onMerged (installed.SetMerged) sets the role after each apply, even while the game runs; no game folder clears it. Headless run (offscreen, scratch data dir, fake game folder linking the real pak01) with the user's mods, in grid and list view: no QML warnings, 3 tables merged. Evidence for the criteria: #1 and #2 TestSharedTablesMerge and the in-game check; #3 merge tests and the real Hatchling/Ted/Flowery merge; #4 TestMergeTablesNothingToMerge; #6 every apply merges afresh over a newly read pak01 (TestBase covers noticing an update) and the same mods give the same VPK; #7 merge, deploy and root tests. #5 waits on the user seeing the marker in the app.
 
 Follow-up from the user's look at the app (2026-11-05): (1) bug: installedMods worked out clashes while loading, before main.go gave it the game folder, so mods sharing tables showed as clashing after a restart; the folder now comes with newInstalledMods (TestSharedTablesMergeOnStartup). (2) The user found the gold clash warning on every clashing mod confusing for non-technical users, as clashing is a handled state. Decided: only a mod that's off because mods that are on change the same files shows a marker, ClashNotice (was ClashWarning), the same muted info icon as MergeNotice, tooltip "Can’t be on at the same time as %1: they change the same files"; a mod that's on shows nothing. Recomputed in installedMods.changed after every change to which mods are on. warning_24_regular.svg removed (unused). doc-2 updated.
+
+The user checked the markers in the app (2026-11-05): only Flowery shows MergeNotice; no clash markers on mods that merge.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Mods that clash only over shared sound event tables can now be on together. Each apply merges the tables that two or more mods that are on have different copies of, over the game's own copy, into one VPK loaded first (pak01), so it wins those tables and nothing else; a lone mod's table, or identical copies, are used as they are. In a shared table, a changed event comes from a mod only if it uses a sound file the mod ships (so out-of-date copies, common on GameBanana, can't revert or remove the game's events), added events are taken, and numbers compare to six decimals, since mods recompile tables decompiled to text. Clash detection asks the same merge per pair, so only real conflicts (two mods changing one event with their own sounds) still turn a mod off.
+
+Built in steps: kv3.Encode and resource.Write (TASK-30.1 read the formats); vpk.Dir.ReadFile reads the game's chunks; package merge; deploy.Base, deploy.Clashes' mergeable callback and installedMods.merges; deploy.MergeTables and deployer.withMergedTables (kept in the store by SHA-256, so an unchanged apply rewrites nothing); MergeNotice (muted info marker, tooltip "Some of its sound changes are left out so it works alongside %1") from the deployer's onMerged. From the user's review, clashes became a calm ClashNotice on the mod that's off only, no more gold warnings, and a startup ordering bug that showed merged mods as clashing was fixed.
+
+Verified: unit tests across kv3, resource, vpk, merge, deploy and the app (each failing when its logic is broken on purpose); go vet for Linux and Windows; a dry run into a fake game folder with the real mods; in-game tests: a table written by Lockdeader was loaded (Abrams with Haze's lines), and Hatchling, Ted and Flowery on together each played their lines; the user checked the markers in the app.
+
+Follow-ups, not done: other table kinds from doc-4 (entries mods add to vdata, per-hero panorama CSS, localization) would be new tasks; TASK-31 (VPKs vpk.ReadDir turns down) affects which mods can be read for clashes and merging; the first clash check after startup reads pak01's directory on the UI thread (about 0.1 s).
+<!-- SECTION:FINAL_SUMMARY:END -->
