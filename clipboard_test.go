@@ -176,7 +176,7 @@ func TestCopyImageFromCache(t *testing.T) {
 
 	// The image gets into the cache as QML's images do, by Qt fetching it.
 	// Writing the entry directly needs QNetworkCacheMetaData.SetRawHeaders
-	// (Qt ignores entries without headers), which in miqt v0.14.0 writes past
+	// (Qt ignores entries without headers), which in miqt (v0.15.0 too) writes past
 	// the end of its buffer and corrupts the heap. The manager owns the cache
 	// from here on, so it's never deleted.
 	reply := mainthread.Wait2(func() *network.QNetworkReply {

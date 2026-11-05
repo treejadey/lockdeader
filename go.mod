@@ -2,7 +2,7 @@ module github.com/treejadey/lockdeader
 
 go 1.26.8
 
-require github.com/mappu/miqt v0.14.0
+require github.com/mappu/miqt v0.15.0
 
 require (
 	git.sr.ht/~jackmordaunt/go-toast/v2 v2.0.3

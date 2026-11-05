@@ -40,7 +40,7 @@ func TestNotices(t *testing.T) {
 
 			want := append([]string{
 				"Go standard library go1.",
-				"github.com/mappu/miqt v0.14.0",
+				"github.com/mappu/miqt v",
 				"modernc.org/sqlite",
 				"--- PATENTS ---",
 				"Inter\nhttps://github.com/rsms/inter",

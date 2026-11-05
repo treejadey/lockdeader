@@ -7,8 +7,8 @@
 
 namespace {
 
-// miqt can override QTranslator::translate, but frees the string Go returns
-// before Qt reads it (miqt v0.14.0), so this asks Go itself.
+// miqt v0.14.0 could override QTranslator::translate, but freed the string Go
+// returned before Qt read it, so this asks Go itself. v0.15.0 fixes that.
 class GoTranslator : public QTranslator {
 public:
     QString translate(const char *context, const char *sourceText, const char *disambiguation, int n) const override {
