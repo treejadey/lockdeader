@@ -16,7 +16,9 @@ Rectangle {
     property real maximumWidth: 420
 
     readonly property bool hasAction: action !== ""
-    readonly property real rightPadding: hasAction ? 4 : 12
+    // The label always has its gap for the action button (see there), so
+    // without one this pads the rest of the 12 px.
+    readonly property real rightPadding: hasAction ? 4 : 12 - label.rightPadding
 
     signal actionTriggered()
     // The message went without its action being used: it timed out, was
@@ -83,8 +85,11 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             width: Math.min(implicitWidth, root.maximumWidth - 12 - root.rightPadding
                 - (root.hasAction ? actionButton.width + closeButton.width + 2 * content.spacing : 0))
-            // Clear of the action button by the 12 px a label keeps from its control.
-            rightPadding: root.hasAction ? 12 - content.spacing : 0
+            // Clear of the action button by the 12 px a label keeps from its
+            // control. It's there even without one: padding that changes makes
+            // implicitWidth change only once the width binding reads it, which
+            // Qt reports as a binding loop.
+            rightPadding: 12 - content.spacing
             color: Theme.text
             font.weight: Font.DemiBold
             elide: Text.ElideRight
