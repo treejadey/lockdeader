@@ -1,11 +1,11 @@
 ---
 id: TASK-12
 title: Ship third-party licence notices with every build
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-05T09:33:00Z'
-updated_date: '2026-11-05T10:41:00Z'
+updated_date: '2026-11-05T13:43:00Z'
 labels:
   - distribution
 dependencies: []
@@ -25,7 +25,7 @@ Lockdeader is GPL-3.0 and bundles software under other licences, which must trav
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 A `THIRD-PARTY-NOTICES` file (or licences folder) lists every bundled component with its licence text
-- [ ] #2 The Windows zip and the Flatpak both include it
+- [x] #2 The Windows zip and the Flatpak both include it
 - [x] #3 Go module dependencies compiled into the binary are covered
 <!-- AC:END -->
 
@@ -47,4 +47,21 @@ Decision (asked 2026-11-05): generated at build time, not committed.
 Built as planned. cmd/notices (go run ./cmd/notices -o FILE) writes the notices for the target GOOS: Go standard library (LICENSE/PATENTS kept in cmd/notices/golang, since Fedora moves them out of GOROOT; TestGoLicenceUpToDate compares with GOROOT where it has them), every module go list -deps says is compiled in (all LICENSE/COPYING/NOTICE/PATENTS/AUTHORS files; fails on a module without one), and the vendored fonts, icons, miniaudio and stb_vorbis. build.ps1 runs it, maps every bundled DLL back to MSYS2 (ucrt64/bin, share/qt6/plugins or share/qt6/qml), asks pacman -Qqo for the owning packages, copies their share/licenses files into licenses/ and appends a section with version, licence and source location. The Flatpak manifest installs it next to LICENSE.
 
 Verified: go test ./... (TestNotices for linux and windows checks the right modules are in and build tools are out); local Flatpak build has /app/share/licenses/<app-id>/THIRD-PARTY-NOTICES.txt (217 KB, 33 components). build.ps1 parses in PowerShell 7 (container) and its pacman -Qi parsing and path mapping were exercised on sample output. Not yet run: the Windows CI job, so AC 2 (zip includes it) is unchecked until it has.
+
+CI on licence-notices: first runs failed for other reasons (Qt 6.12 broke miqt v0.14.0 → TASK-26; TestGoLicenceUpToDate failed on Windows because git checks the copy out with CRLF; fixed by comparing without line endings). Then found and fixed two bugs in the Windows script: the package loop overwrote $version, so the artifact was named after zstd's version; ICU keeps its licence in share/icu/<version>/, so packages with nothing in share/licenses now fall back to licence-named files anywhere in the package. Run 42036642552: all jobs pass; artifact Lockdeader-0.2.0-windows-x64 has THIRD-PARTY-NOTICES.txt (Go modules for Windows, vendored files, 26 MSYS2 packages with version/licence/source) and licenses/ with a folder for each of the 26, no warnings.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Every build now ships the licences of what it bundles, generated at build time so nothing is kept in sync by hand.
+
+- cmd/notices writes THIRD-PARTY-NOTICES.txt for the target platform: the Go standard library (copy of Go's LICENSE/PATENTS, checked against GOROOT where present), every module go list -deps says is compiled in (all its LICENSE/COPYING/NOTICE/PATENTS/AUTHORS files; a module without one stops the build), and the vendored fonts, Fluent icons, miniaudio and stb_vorbis.
+- Windows (build.ps1): runs it, traces every bundled DLL to its MSYS2 package with pacman, copies each package's licence files into licenses/ (falling back to licence-named files elsewhere, as for ICU), and appends each package's version, licence and source location (LGPL).
+- Flatpak: installs it next to LICENSE in /app/share/licenses/<app-id>/; Qt comes from the KDE runtime.
+- Docs: packaging/windows/README.md, CLAUDE.md, doc-3, CHANGELOG.
+
+Verified: go test ./...; local Flatpak build; CI run 42036642552 (Windows build, smoke test and Flatpak pass; artifact contents checked: 26 MSYS2 packages, ICU included, no warnings).
+
+Along the way: TASK-26 (miqt v0.15.0 for Qt 6.12) was needed to get Windows CI building again.
+<!-- SECTION:FINAL_SUMMARY:END -->
