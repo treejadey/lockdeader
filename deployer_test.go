@@ -1,9 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"maps"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -12,6 +17,7 @@ import (
 	"github.com/treejadey/lockdeader/appdb"
 	"github.com/treejadey/lockdeader/deploy"
 	"github.com/treejadey/lockdeader/install"
+	"github.com/treejadey/lockdeader/vpk"
 )
 
 func TestDeployer(t *testing.T) {
@@ -181,6 +187,114 @@ func TestDeployer(t *testing.T) {
 
 		if got != nil || len(applied) != 6 {
 			t.Errorf("without a folder: err %v, applied %d", got, len(applied))
+		}
+	})
+}
+
+// Mods that share a sound event table get it merged, in a VPK of its own
+// that loads first.
+func TestDeployerMergesTables(t *testing.T) {
+	db, err := appdb.OpenMemory()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer db.Close()
+
+	store := install.Store{Dir: t.TempDir()}
+	game := t.TempDir()
+	heroes := map[string]string{"Haze": "sounds/vo/haze/select.vsnd", "Lash": "sounds/vo/lash/select.vsnd"}
+
+	addVPK := func(files map[string][]byte) (string, int64) {
+		var b bytes.Buffer
+		if err := vpk.Write(&b, vpkSources(files)); err != nil {
+			t.Fatal(err)
+		}
+
+		sha, size, err := store.Add(&b)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return sha, size
+	}
+
+	// The game's pak01, written as Write writes any VPK.
+	if err := os.MkdirAll(filepath.Dir(deploy.BasePak(game)), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	gameSHA, _ := addVPK(map[string][]byte{pickTable: soundTable(t, heroes)})
+	if err := os.Rename(store.Path(gameSHA), deploy.BasePak(game)); err != nil {
+		t.Fatal(err)
+	}
+
+	var shas []string
+
+	for i, hero := range []string{"Haze", "Lash"} {
+		table := maps.Clone(heroes)
+		table[hero] = "sounds/vo/new/" + hero + ".vsnd"
+
+		sha, size := addVPK(map[string][]byte{pickTable: soundTable(t, table), table[hero] + "_c": []byte(hero)})
+		shas = append(shas, sha)
+
+		m := appdb.Mod{Section: "Mod", GameBananaID: i + 1, Name: hero, Enabled: true, LoadOrder: i, InstalledAt: time.Now(),
+			Files: []appdb.ModFile{{GameBananaID: 10 + i, Name: hero + ".zip", MD5: "00",
+				VPKs: []appdb.VPK{{Path: "pak01_dir.vpk", SHA256: sha, Size: size, Enabled: true}}}}}
+
+		if _, err := db.AddMod(context.Background(), m); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var applied [][]deploy.File
+	var done []error
+	var d *deployer
+
+	mainthread.Wait(func() {
+		d = newDeployer(db, store, func() string { return game }, func() bool { return true }, "")
+		d.apply = func(dir string, files []deploy.File) (deploy.Result, error) {
+			applied = append(applied, files)
+
+			return deploy.Result{}, nil
+		}
+		d.running = func() (bool, error) { return false, nil }
+		d.onDone = func(err error) { done = append(done, err) }
+		d.Apply(nil)
+	})
+	waitFor(t, "the apply", func() bool { return len(done) == 1 })
+
+	mainthread.Wait(func() { d.Apply(nil) })
+	waitFor(t, "the second apply", func() bool { return len(done) == 2 })
+
+	mainthread.Wait(func() {
+		files := applied[0]
+
+		if len(files) != 3 || files[1].SHA256 != shas[0] || files[2].SHA256 != shas[1] {
+			t.Fatalf("applied %v, want the merged tables, then the two mods", files)
+		}
+
+		// The same mods make the same file.
+		if applied[1][0] != files[0] {
+			t.Errorf("second apply's merged tables = %v, want %v again", applied[1][0], files[0])
+		}
+
+		data, err := os.ReadFile(files[0].Path)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		d, err := vpk.ReadDir(bytes.NewReader(data))
+		if err != nil || len(d.Entries) != 1 || d.Entries[0].Path != pickTable {
+			t.Fatalf("merged VPK: %v, %+v; want just the pick table", err, d)
+		}
+
+		table, _ := io.ReadAll(d.Open(d.Entries[0]))
+
+		for _, want := range []string{"sounds/vo/new/Haze.vsnd", "sounds/vo/new/Lash.vsnd"} {
+			if !bytes.Contains(table, []byte(want)) {
+				t.Errorf("merged table lacks %s", want)
+			}
 		}
 	})
 }

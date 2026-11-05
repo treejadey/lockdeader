@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -158,10 +159,12 @@ func (d *deployer) run(dir string, takeOutLines bool) error {
 		return deploy.ErrGameRunning
 	}
 
-	files, err := d.files()
+	mods, err := d.mods()
 	if err != nil {
 		return err
 	}
+
+	files := d.withMergedTables(dir, mods)
 
 	res, err := d.apply(dir, files)
 
@@ -175,30 +178,69 @@ func (d *deployer) run(dir string, takeOutLines bool) error {
 	return nil
 }
 
-// files lists the VPKs the game should load, in load order.
-func (d *deployer) files() ([]deploy.File, error) {
+// mods lists the mods that are on, in load order, with the VPKs of theirs
+// the game should load.
+func (d *deployer) mods() ([]deploy.Mod, error) {
 	mods, err := d.db.Mods(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
-	var files []deploy.File
+	var on []deploy.Mod
 
 	for _, m := range mods {
 		if !m.Enabled {
 			continue
 		}
 
+		var mod deploy.Mod
+
 		for _, f := range m.Files {
 			for _, v := range f.VPKs {
 				if v.Enabled {
-					files = append(files, deploy.File{SHA256: v.SHA256, Path: d.store.Path(v.SHA256), Size: v.Size})
+					mod.Files = append(mod.Files, deploy.File{SHA256: v.SHA256, Path: d.store.Path(v.SHA256), Size: v.Size})
 				}
 			}
 		}
+
+		on = append(on, mod)
 	}
 
-	return files, nil
+	return on, nil
+}
+
+// withMergedTables lists the VPKs the game should load, in load order:
+// the mods', after one holding the sound event tables they share, merged
+// (see deploy.MergeTables), which wins those. It's kept in the store like
+// the mods' VPKs, by its SHA-256, so the same mods make the same file and
+// an apply that changes nothing rewrites nothing. Tables that can't be
+// merged are left to the load order, as before merging.
+func (d *deployer) withMergedTables(dir string, mods []deploy.Mod) []deploy.File {
+	var files []deploy.File
+
+	for _, m := range mods {
+		files = append(files, m.Files...)
+	}
+
+	merged, err := deploy.MergeTables(dir, mods)
+	if err != nil {
+		slog.Warn("some tables the mods share weren't merged", "err", err)
+	}
+
+	if merged.VPK == nil {
+		return files
+	}
+
+	sha, size, err := d.store.Add(bytes.NewReader(merged.VPK))
+	if err != nil {
+		slog.Error("failed to keep the merged tables", "err", err)
+
+		return files
+	}
+
+	slog.Info("merged the tables mods share", "tables", len(merged.Tables))
+
+	return append([]deploy.File{{SHA256: sha, Path: d.store.Path(sha), Size: size}}, files...)
 }
 
 func (d *deployer) finish(err error) {

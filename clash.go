@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
 	"slices"
 	"strings"
 
@@ -12,7 +11,6 @@ import (
 
 	"github.com/treejadey/lockdeader/deploy"
 	"github.com/treejadey/lockdeader/merge"
-	"github.com/treejadey/lockdeader/vpk"
 )
 
 // Only one of two mods that change the same files can be on (see
@@ -199,44 +197,17 @@ func (m *installedMods) gameBase() *deploy.Base {
 
 // modFile reads a file from the first of a mod's VPKs that has it.
 func (m *installedMods) modFile(row *installedRow, path string) ([]byte, error) {
+	var mod deploy.Mod
+
 	for _, f := range row.mod.Files {
 		for _, v := range f.VPKs {
-			if !v.Enabled {
-				continue
-			}
-
-			if _, ok := m.vpkPaths(v.SHA256)[path]; ok {
-				return readVPKFile(m.store.Path(v.SHA256), path)
+			if v.Enabled {
+				mod.Files = append(mod.Files, deploy.File{SHA256: v.SHA256, Path: m.store.Path(v.SHA256), Size: v.Size})
 			}
 		}
 	}
 
-	return nil, fmt.Errorf("no VPK of the mod has %s", path)
-}
-
-func readVPKFile(vpkPath, path string) ([]byte, error) {
-	f, err := os.Open(vpkPath)
-	if err != nil {
-		return nil, err
-	}
-
-	d, err := vpk.ReadDir(f)
-
-	// ReadFile opens the file itself, and an open file can't be deleted on
-	// Windows.
-	f.Close()
-
-	if err != nil {
-		return nil, err
-	}
-
-	for _, e := range d.Entries {
-		if strings.ToLower(e.Path) == path {
-			return d.ReadFile(e, vpkPath)
-		}
-	}
-
-	return nil, fmt.Errorf("%s has no %s", vpkPath, path)
+	return mod.ReadFile(path)
 }
 
 // vpkKey names what a mod is made of: its VPKs that are used.
