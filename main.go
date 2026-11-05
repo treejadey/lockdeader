@@ -198,8 +198,7 @@ func main() {
 		}
 	}
 
-	installed := newInstalledMods(client, db, store)
-	installed.gameFolder = func() string { return settings.Game.Path }
+	installed := newInstalledMods(client, db, store, func() string { return settings.Game.Path })
 	details := newModDetails(client, mods.Section, mods.Lookup, installed.Install)
 
 	// Puts the mods that are on into the game after each change to them.

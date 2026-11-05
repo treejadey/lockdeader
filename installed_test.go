@@ -129,7 +129,7 @@ func newInstallTest(t *testing.T) *installTest {
 	client.BaseURL = it.srv.URL
 	client.HTTPClient = it.srv.Client()
 
-	mainthread.Wait(func() { it.installedMods = newInstalledMods(client, db, it.store) })
+	mainthread.Wait(func() { it.installedMods = newInstalledMods(client, db, it.store, nil) })
 
 	return it
 }

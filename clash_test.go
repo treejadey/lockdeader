@@ -269,7 +269,7 @@ func TestResolveClashesOnStartup(t *testing.T) {
 	}
 
 	mainthread.Wait(func() {
-		it.installedMods = newInstalledMods(it.client, it.db, it.store)
+		it.installedMods = newInstalledMods(it.client, it.db, it.store, nil)
 		it.ResolveClashes()
 	})
 
@@ -413,6 +413,14 @@ const pickTable = "soundevents/generated_vo_hero_pick_vo.vsndevts_c"
 func (it *installTest) fakeGame(t *testing.T) {
 	t.Helper()
 
+	dir := writeFakeGame(t)
+
+	mainthread.Wait(func() { it.gameFolder = func() string { return dir } })
+}
+
+func writeFakeGame(t *testing.T) string {
+	t.Helper()
+
 	dir := t.TempDir()
 	pak := deploy.BasePak(dir)
 
@@ -431,7 +439,7 @@ func (it *installTest) fakeGame(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mainthread.Wait(func() { it.gameFolder = func() string { return dir } })
+	return dir
 }
 
 // voiceMod is a voice mod for one hero: its own sound, and its copy of the
@@ -525,5 +533,29 @@ func TestSetMerged(t *testing.T) {
 
 	if mergedWith(3) != "" {
 		t.Errorf("merged with after SetMerged(nil) = %q", mergedWith(3))
+	}
+}
+
+// On startup, mods that share a table merge from the start: the clash
+// markers are worked out with the game folder, not before it's known.
+func TestSharedTablesMergeOnStartup(t *testing.T) {
+	it := newInstallTest(t)
+	game := writeFakeGame(t)
+
+	for _, m := range []appdb.Mod{
+		it.voiceMod(t, 1, "Haze Voice", true, "Haze", "sounds/vo/haze/new.vsnd"),
+		it.voiceMod(t, 2, "Lash Voice", true, "Lash", "sounds/vo/lash/new.vsnd"),
+	} {
+		if _, err := it.db.AddMod(context.Background(), m); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	mainthread.Wait(func() {
+		it.installedMods = newInstalledMods(it.client, it.db, it.store, func() string { return game })
+	})
+
+	if it.clashesOf(1) != "" || it.clashesOf(2) != "" {
+		t.Errorf("clashes on startup = %q and %q, want none", it.clashesOf(1), it.clashesOf(2))
 	}
 }

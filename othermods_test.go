@@ -102,7 +102,7 @@ func TestOtherMods(t *testing.T) {
 	changes := 0
 
 	mainthread.Wait(func() {
-		installed = newInstalledMods(client, db, store)
+		installed = newInstalledMods(client, db, store, nil)
 		installed.onChange = func() { changes++ }
 		o = newOtherMods(client, store, installed, func() string { return game })
 		o.Scan()

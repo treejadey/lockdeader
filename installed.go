@@ -135,8 +135,7 @@ type installedMods struct {
 	toggled *pendingToggle
 	// The files each VPK in the store has, by SHA-256, once read.
 	paths map[string]deploy.PathSet
-	// The game folder, to merge the tables mods share over the game's own
-	// copies (see merges). Nil, or "", and they clash instead.
+	// The game folder (see newInstalledMods).
 	gameFolder func() string
 	base       *deploy.Base
 	// Whether two mods' copies of a table merge cleanly, by merges' key.
@@ -199,7 +198,10 @@ func installedKey(section banana.Section, id int) string {
 	return fmt.Sprintf("%s/%d", section, id)
 }
 
-func newInstalledMods(client *banana.Client, db *appdb.DB, store install.Store) *installedMods {
+// gameFolder is where Deadlock is, or "" while that's unknown, or nil; the
+// tables mods share are merged over the game's own copies (see merges),
+// and without them clash.
+func newInstalledMods(client *banana.Client, db *appdb.DB, store install.Store, gameFolder func() string) *installedMods {
 	m := &installedMods{
 		QQmlPropertyMap: qml.NewQQmlPropertyMap(),
 		model:           qt.NewQStandardItemModel(),
@@ -212,6 +214,7 @@ func newInstalledMods(client *banana.Client, db *appdb.DB, store install.Store) 
 		lookingUp:       make(map[string]bool),
 		lookupSlots:     make(chan struct{}, 2),
 		paths:           make(map[string]deploy.PathSet),
+		gameFolder:      gameFolder,
 		mergeable:       make(map[string]bool),
 	}
 
