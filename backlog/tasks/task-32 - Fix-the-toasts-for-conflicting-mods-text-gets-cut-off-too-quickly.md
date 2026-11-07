@@ -1,9 +1,11 @@
 ---
 id: TASK-32
 title: 'Fix the toasts for conflicting mods: text gets cut off too quickly'
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-11-05T18:49:00Z'
+updated_date: '2026-11-07T14:40:00Z'
 labels:
   - mod-support
 dependencies: []
@@ -22,8 +24,30 @@ The toasts in question are the ones clash.go announces when turning a mod on tur
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The full text of a clash toast can be read, however long the mod names are
-- [ ] #2 The toast doesn't go away while the user is reading it (e.g. while it's hovered)
-- [ ] #3 Toasts with short text look as they do now
-- [ ] #4 Works in both themes and at 125% display scaling
+- [x] #1 The full text of a clash toast can be read, however long the mod names are
+- [x] #2 The toast doesn't go away while the user is reading it (e.g. while it's hovered)
+- [x] #3 Toasts with short text look as they do now
+- [x] #4 Works in both themes and at 125% display scaling
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Decided with the user (2026-11-07): wider, then wrap.
+1. Toast.qml: maximumWidth 600 (Main.qml caps it at the window, less 32 px). The label wraps instead of eliding; the toast grows taller to fit, with the buttons centred beside the text. A toast whose text fits on one line looks as it does now.
+2. Toast.qml: a HoverHandler stops the timer while the pointer is over the toast, and restarts it when the pointer leaves; show() doesn't start the timer while the toast is hovered.
+3. docs/interface-guidelines.md: say a toast stays while the pointer is over it.
+4. Check in the nested KWin session at 1.25 scale, in both themes, with a short toast and a long clash toast.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Checked (2026-11-07): qmltestrunner tests in a scratch copy of qml/ (not in the repo, which has no QML test setup) cover going by itself, staying while hovered, a new message arriving while hovered, short text on one line at the old size (36 px with Undo), and long text wrapping at 600 px and at a 300 px cap. Screenshots in the nested KWin session at 1.25 scale, in both themes (dark forced in a throwaway build, since Qt ignores a requested colour scheme there): the long clash toast wraps to two lines with even padding, and the shorter ones look as before. Right after show() the toast's size lags one message behind until the next frame; the old toast does the same, so it isn't from this change.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Toasts are now up to 600 px wide (capped by the window, less 32 px) and wrap text that's longer, instead of cutting it off at 420 px. A wrapped toast with an action keeps the padding a single line has beside its buttons, so a clash toast with a long mod name shows all of its text. While the pointer is over a toast, its timer is stopped; it restarts in full when the pointer leaves, and a message shown while hovered waits too. Toasts that fit on one line look as before. The interface guidelines say so as well. Verified with QML tests (qmltestrunner, kept out of the repo) and screenshots at 1.25 scale in both themes.
+<!-- SECTION:FINAL_SUMMARY:END -->
