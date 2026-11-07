@@ -17,14 +17,15 @@ Item {
     implicitHeight: implicitWidth
     visible: clashes !== ""
 
-    // Looks like an unchecked TickBox, which it sits across the card from.
+    // Shaped like an unchecked TickBox, which it sits across the card from,
+    // but solid, so it reads the same on any picture.
     Rectangle {
         anchors.fill: parent
         visible: root.onPicture
         radius: 5
-        color: Qt.rgba(Theme.base.r, Theme.base.g, Theme.base.b, 0.55)
-        border.width: 1.5
-        border.color: Theme.subtle
+        color: Theme.base
+        border.width: 1
+        border.color: Theme.badgeOutline
     }
 
     TintedIcon {

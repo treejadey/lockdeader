@@ -40,6 +40,11 @@ QtObject {
     readonly property color accent: theme.foam
     readonly property color textOnAccent: "#191724"
 
+    // Edges the solid badges over mods' pictures (ClashNotice, MergeNotice,
+    // NewReleaseNotice): just enough to part them from a picture of the
+    // same colour.
+    readonly property color badgeOutline: Qt.rgba(0, 0, 0, 0.1)
+
     // Behind text being typed into: set into the row in the dark style,
     // standing out from it in the light one.
     readonly property color field: theme.dark ? theme.highlightLow : theme.surface
