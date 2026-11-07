@@ -8,11 +8,14 @@ import (
 
 	qt "github.com/mappu/miqt/qt6"
 	"github.com/mappu/miqt/qt6/qml"
+
+	"github.com/treejadey/lockdeader/banana"
 )
 
-// modSearch backs the search field on the mods page. QML writes the search
-// to "query", and Go narrows the listing down to the mods whose names contain
-// it. Writing true to "pick" opens the loaded mod that matches the search best
+// modSearch backs the search field and the sort order on the mods page. QML
+// writes the search to "query", and Go narrows the listing down to the mods
+// whose names contain it. "sorts" lists the orders the listing can be in, as
+// {id, name} objects, and QML writes the id of the one picked to "sort". Writing true to "pick" opens the loaded mod that matches the search best
 // (see matchRank), waiting for the results first if they're still on their
 // way. Go then puts the mod's row in "pickedRow" and bumps "pickId", so the
 // view can scroll to it.
@@ -24,6 +27,8 @@ type modSearch struct {
 	mods     *modListModel
 	open     func(id int) // opens a mod in the details panel
 	onChange func()       // may be nil
+	// Called with the sort picked, to remember it; may be nil.
+	onSort func(banana.Sort)
 
 	pendingPick int // the listing generation to pick from once it loads; -1 for none
 	picks       int
@@ -39,6 +44,18 @@ func newModSearch(mods *modListModel, open func(id int), onChange func()) *modSe
 	}
 
 	s.Insert("query", qt.NewQVariant14(""))
+	s.Insert("sort", qt.NewQVariant14(string(mods.sort)))
+
+	var sorts []qt.QVariant
+
+	for _, o := range modSorts() {
+		sorts = append(sorts, *qt.NewQVariant20(map[string]qt.QVariant{
+			"id":   *qt.NewQVariant14(string(o.sort)),
+			"name": *qt.NewQVariant14(o.name),
+		}))
+	}
+
+	s.Insert("sorts", qt.NewQVariant43(sorts))
 	s.Insert("pick", qt.NewQVariant8(false))
 	s.Insert("pickedRow", qt.NewQVariant4(-1))
 	s.Insert("pickId", qt.NewQVariant4(0))
@@ -55,6 +72,8 @@ func newModSearch(mods *modListModel, open func(id int), onChange func()) *modSe
 		switch key {
 		case "query":
 			s.SetQuery(value.ToString())
+		case "sort":
+			s.SetSort(banana.Sort(value.ToString()))
 		case "pick":
 			if value.ToBool() {
 				// Clear the key, so picking again is still a change.
@@ -70,6 +89,59 @@ func newModSearch(mods *modListModel, open func(id int), onChange func()) *modSe
 func (s *modSearch) SetQuery(query string) {
 	if s.mods.SetQuery(query) && s.onChange != nil {
 		s.onChange()
+	}
+}
+
+type modSort struct {
+	sort banana.Sort
+	name string
+}
+
+// The orders the mods page offers, the first being GameBanana's own. Not
+// SortLatestUpdated: it leaves out every mod that's never been updated, and
+// GameBanana's own order already puts recent updates first.
+func modSorts() []modSort {
+	return []modSort{
+		{banana.SortDefault, tr("Recent Activity")},
+		{banana.SortNewest, tr("Newest")},
+		{banana.SortMostLiked, tr("Most Liked")},
+		{banana.SortMostViewed, tr("Most Viewed")},
+		{banana.SortMostDownloaded, tr("Most Downloaded")},
+	}
+}
+
+// validSort is sort if the mods page offers it, and GameBanana's own order
+// if not, e.g. for one remembered by another version.
+func validSort(sort banana.Sort) banana.Sort {
+	for _, o := range modSorts() {
+		if o.sort == sort {
+			return sort
+		}
+	}
+
+	return banana.SortDefault
+}
+
+// SetSort ignores an order the mods page doesn't offer.
+func (s *modSearch) SetSort(sort banana.Sort) {
+	if validSort(sort) != sort {
+		s.Insert("sort", qt.NewQVariant14(string(s.mods.sort)))
+
+		return
+	}
+
+	s.Insert("sort", qt.NewQVariant14(string(sort)))
+
+	if !s.mods.SetSort(sort) {
+		return
+	}
+
+	if s.onChange != nil {
+		s.onChange()
+	}
+
+	if s.onSort != nil {
+		s.onSort(sort)
 	}
 }
 

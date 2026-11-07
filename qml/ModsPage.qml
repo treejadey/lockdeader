@@ -92,6 +92,9 @@ Item {
                 showViews: !root.sounds
                 viewIndex: uiState.modsView
                 onViewIndexChanged: uiState.modsView = viewIndex
+                sorts: search.sorts
+                sortId: search.sort
+                onSortPicked: (id) => search.sort = id
                 onCrumbClicked: (depth) => root.crumbClicked(depth)
                 // Searches once the user pauses typing, rather than for every letter.
                 onSearchEdited: searchDelay.restart()

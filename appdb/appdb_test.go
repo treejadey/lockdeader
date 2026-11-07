@@ -613,7 +613,7 @@ func TestUIState(t *testing.T) {
 
 	want := UIState{Page: 1, ModsView: 1, InstalledView: 1, Section: "Sound", CategoryID: 47611,
 		CategoryPath: "3,47611", ModsTopMod: 725782, ModsTopOffset: 40, OpenMod: 12,
-		InstalledTop: 7, InstalledTopOffset: 3, SettingsY: 320}
+		InstalledTop: 7, InstalledTopOffset: 3, SettingsY: 320, ModsSort: "Generic_MostLiked"}
 
 	if err := d.SetUIState(ctx, want); err != nil {
 		t.Fatal(err)

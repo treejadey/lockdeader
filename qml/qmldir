@@ -11,6 +11,7 @@ ClashNotice 1.0 ClashNotice.qml
 ContentSwitcher 1.0 ContentSwitcher.qml
 DisabledFill 1.0 DisabledFill.qml
 DownloadProgress 1.0 DownloadProgress.qml
+DropDown 1.0 DropDown.qml
 ErrorLabel 1.0 ErrorLabel.qml
 FilePickerList 1.0 FilePickerList.qml
 GalleryCarousel 1.0 GalleryCarousel.qml

@@ -23,7 +23,7 @@ const restorePages = 3
 //	installedTop, installedTopOffset: the same, by row, on the installed page
 //	settingsY
 //
-// Go keeps the category and the open mod up to date itself. Once it knows
+// Go keeps the category, the sort and the open mod up to date itself. Once it knows
 // where the mods page should scroll to, it sets "modsRestoreRow" (-1 for the
 // top) and "modsRestoreOffset", then bumps "modsRestoreId".
 //
@@ -94,6 +94,11 @@ func (b *uiStateBridge) State() appdb.UIState {
 func (b *uiStateBridge) SetCategory(section banana.Section, id int) {
 	b.state.Section = string(section)
 	b.state.CategoryID = id
+	b.changed()
+}
+
+func (b *uiStateBridge) SetModsSort(sort banana.Sort) {
+	b.state.ModsSort = string(sort)
 	b.changed()
 }
 

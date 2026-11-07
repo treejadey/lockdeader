@@ -19,6 +19,7 @@ const (
 	keyInstalledTop       = "ui.installed_top"
 	keyInstalledTopOffset = "ui.installed_top_offset"
 	keySettingsY          = "ui.settings_y"
+	keyModsSort           = "ui.mods_sort"
 )
 
 // UIState is where the user left the app, so it can reopen there.
@@ -33,6 +34,9 @@ type UIState struct {
 	CategoryID int
 	// The categories opened to get there, as "Section/id", comma-separated.
 	CategoryPath string
+	// The order the mods page lists mods in, as GameBanana names it; "" for
+	// GameBanana's own.
+	ModsSort string
 
 	// The first mod on screen, by GameBanana id, and how far past its top the
 	// view is scrolled, in pixels. 0 for the top of the list.
@@ -101,6 +105,10 @@ func (d *DB) UIState(ctx context.Context) (UIState, error) {
 		return DefaultUIState(), err
 	}
 
+	if _, err := d.state(ctx, keyModsSort, &s.ModsSort); err != nil {
+		return DefaultUIState(), err
+	}
+
 	return s, nil
 }
 
@@ -122,5 +130,6 @@ func (d *DB) SetUIState(ctx context.Context, s UIState) error {
 		keyInstalledTop:       s.InstalledTop,
 		keyInstalledTopOffset: s.InstalledTopOffset,
 		keySettingsY:          s.SettingsY,
+		keyModsSort:           s.ModsSort,
 	})
 }

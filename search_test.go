@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"slices"
 	"strings"
 	"testing"
 
@@ -145,6 +147,90 @@ func TestModSearchPick(t *testing.T) {
 	mainthread.Wait(func() {
 		if len(opened) != 2 {
 			t.Errorf("picking without a search opened %v", opened)
+		}
+	})
+}
+
+// TestModSearchSort sends the picked order with every listing, in any
+// category and with a search, and remembers it.
+func TestModSearchSort(t *testing.T) {
+	var requests []url.Values
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mainthread.Wait(func() { requests = append(requests, r.URL.Query()) })
+		w.Write([]byte(`{"_aMetadata": {"_nRecordCount": 0, "_bIsComplete": true}, "_aRecords": []}`))
+	}))
+	t.Cleanup(srv.Close)
+
+	client := banana.NewClient()
+	client.BaseURL = srv.URL
+
+	var remembered []banana.Sort
+	var changes int
+	var mods *modListModel
+
+	s := mainthread.Wait2(func() *modSearch {
+		mods = newModListModel(client, qml.NewQQmlPropertyMap())
+		s := newModSearch(mods, func(int) {}, func() { changes++ })
+		s.onSort = func(sort banana.Sort) { remembered = append(remembered, sort) }
+
+		return s
+	})
+
+	// Each listing's last request.
+	last := func(n int) url.Values {
+		t.Helper()
+
+		waitFor(t, "the listing", func() bool { return len(requests) >= n })
+
+		return mainthread.Wait2(func() url.Values { return requests[n-1] })
+	}
+
+	mainthread.Wait(func() { s.SetSort(banana.SortMostLiked) })
+
+	if got := last(1).Get("_sSort"); got != "Generic_MostLiked" {
+		t.Errorf("_sSort = %q, want Generic_MostLiked", got)
+	}
+
+	mainthread.Wait(func() { mods.SetCategory(banana.SectionSounds, 6270) })
+	mainthread.Wait(func() { s.SetQuery("abrams") })
+
+	q := last(3)
+	if q.Get("_sSort") != "Generic_MostLiked" || q.Get("_aFilters[Generic_Category]") != "6270" ||
+		q.Get("_aFilters[Generic_Name]") != "contains,abrams" {
+		t.Errorf("request with a category and a search = %v", q)
+	}
+
+	// An order the page doesn't offer changes nothing.
+	mainthread.Wait(func() { s.SetSort("Generic_Bogus") })
+
+	// GameBanana's own order sends no sort.
+	mainthread.Wait(func() { s.SetSort(banana.SortDefault) })
+
+	if q := last(4); q.Has("_sSort") {
+		t.Errorf("_sSort = %q for GameBanana's own order, want none", q.Get("_sSort"))
+	}
+
+	mainthread.Wait(func() {
+		if len(requests) != 4 {
+			t.Errorf("%d requests, want 4", len(requests))
+		}
+
+		if want := []banana.Sort{banana.SortMostLiked, banana.SortDefault}; !slices.Equal(remembered, want) {
+			t.Errorf("remembered %q, want %q", remembered, want)
+		}
+
+		if got := s.Value("sort").ToString(); got != "" {
+			t.Errorf("sort = %q, want \"\"", got)
+		}
+
+		// The sorts, the search, and back.
+		if changes != 3 {
+			t.Errorf("onChange called %d times, want 3", changes)
+		}
+
+		if got := len(s.Value("sorts").ToList()); got != len(modSorts()) {
+			t.Errorf("%d sorts offered, want %d", got, len(modSorts()))
 		}
 	})
 }

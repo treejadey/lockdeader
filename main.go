@@ -184,6 +184,9 @@ func main() {
 	client.UserAgent = banana.UserAgent(version)
 	mods := newModListModel(client, app)
 	mods.SetHideNSFW(!settings.Browse.ShowNSFW)
+	// Before the category is restored, which loads the list, and the saved
+	// scroll position is looked for in it.
+	mods.SetSort(validSort(banana.Sort(uiState.ModsSort)))
 
 	// Installs the app quit during leave files behind; nothing is installing yet.
 	store := install.Store{Dir: dirs.ModCache}
@@ -226,6 +229,7 @@ func main() {
 	categories := newCategoryBrowser(client, mods, listingChanged)
 	search := newModSearch(mods, details.Select, listingChanged)
 
+	search.onSort = ui.SetModsSort
 	categories.onSelected = ui.SetCategory
 	details.onSelected = ui.SetOpenMod
 

@@ -787,6 +787,26 @@ msgstr "Табличний вигляд"
 msgid "List view"
 msgstr "Списочний выгляд"
 
+#: search.go
+msgid "Recent Activity"
+msgstr ""
+
+#: search.go
+msgid "Newest"
+msgstr ""
+
+#: search.go
+msgid "Most Liked"
+msgstr ""
+
+#: search.go
+msgid "Most Viewed"
+msgstr ""
+
+#: search.go
+msgid "Most Downloaded"
+msgstr ""
+
 #: settingspage.go
 msgid "Choose Deadlock’s Folder"
 msgstr "Оберіть папку Deadlock"

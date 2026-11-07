@@ -60,6 +60,7 @@ type modListModel struct {
 	section    banana.Section
 	categoryID int    // 0 for the whole section
 	query      string // "" for all mods
+	sort       banana.Sort
 	hideNSFW   bool
 	generation int // goes up with every category or query change
 	byID       map[int]banana.Mod
@@ -124,7 +125,8 @@ func (m *modListModel) FetchNextPage() {
 	m.setLoading(true)
 
 	generation := m.generation
-	opts := banana.ListModsOptions{Section: m.section, CategoryID: m.categoryID, Name: m.query, Page: m.nextPage}
+	opts := banana.ListModsOptions{Section: m.section, CategoryID: m.categoryID, Name: m.query, Sort: m.sort,
+		Page: m.nextPage}
 
 	go func() {
 		result, err := m.client.ListMods(context.Background(), opts)
@@ -138,7 +140,7 @@ func (m *modListModel) FetchNextPage() {
 
 			if err != nil {
 				slog.Error("failed to fetch mods", "section", opts.Section, "category", opts.CategoryID,
-					"query", opts.Name, "page", opts.Page, "err", err)
+					"query", opts.Name, "sort", opts.Sort, "page", opts.Page, "err", err)
 				m.setError(err)
 				m.continueSeek()
 
@@ -146,7 +148,7 @@ func (m *modListModel) FetchNextPage() {
 			}
 
 			slog.Info("fetched mods", "section", opts.Section, "category", opts.CategoryID,
-				"query", opts.Name, "page", opts.Page, "count", len(result.Mods), "total", result.Total)
+				"query", opts.Name, "sort", opts.Sort, "page", opts.Page, "count", len(result.Mods), "total", result.Total)
 
 			m.nextPage++
 			m.done = result.IsLast
@@ -244,6 +246,18 @@ func (m *modListModel) SetQuery(query string) (changed bool) {
 	}
 
 	m.query = query
+	m.reload()
+
+	return true
+}
+
+// The sort applies to every category and search.
+func (m *modListModel) SetSort(sort banana.Sort) (changed bool) {
+	if sort == m.sort {
+		return false
+	}
+
+	m.sort = sort
 	m.reload()
 
 	return true
