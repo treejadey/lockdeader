@@ -68,6 +68,11 @@ Item {
         menu.popup()
     }
 
+    function configure(key) {
+        installed.configure = key
+        configDialog.open()
+    }
+
     // Mods from other tools, under the installed ones: a heading and the
     // same cards or rows, which only show their state. It takes no room
     // while there are none.
@@ -190,6 +195,7 @@ Item {
             footer: otherSectionGrid
             onEnabledToggled: (key, enabled) => root.setEnabled(key, enabled)
             onMenuRequested: (key, status, variants) => root.showMenu(key, status, variants)
+            onConfigureRequested: (key) => root.configure(key)
         }
 
         InstalledList {
@@ -201,6 +207,7 @@ Item {
             footer: otherSectionList
             onEnabledToggled: (key, enabled) => root.setEnabled(key, enabled)
             onMenuRequested: (key, status, variants) => root.showMenu(key, status, variants)
+            onConfigureRequested: (key) => root.configure(key)
         }
 
         Column {
@@ -270,10 +277,7 @@ Item {
             text: qsTr("Change Configuration…")
             icon.source: "icons/options_24_regular.svg"
             shown: menu.status === "" && menu.variants > 1
-            onTriggered: {
-                installed.configure = menu.key
-                configDialog.open()
-            }
+            onTriggered: root.configure(menu.key)
         }
 
         PopupMenuItem {
@@ -300,5 +304,6 @@ Item {
 
         configuration: installed.configuration
         onChangeRequested: (key, ids) => installed.setConfiguration = { key: key, ids: ids }
+        onNewDismissed: (key, id) => installed.dismissNew = { key: key, id: id }
     }
 }

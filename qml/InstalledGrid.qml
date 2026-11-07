@@ -27,6 +27,7 @@ Item {
 
     signal enabledToggled(string key, bool enabled)
     signal menuRequested(string key, string status, int variants)
+    signal configureRequested(string key)
 
     function topItem() {
         return ScrollPosition.top(grid)
@@ -82,6 +83,9 @@ Item {
             // The mods it's merged with, when that left some of its changes
             // out, joined; "" if none.
             required property string mergedWith
+            // How many files it has on GameBanana that were uploaded after
+            // the ones installed.
+            required property int newReleases
 
             readonly property bool installing: status !== ""
             // Where the tile is in the cell: centred, then shifted with the
@@ -118,6 +122,12 @@ Item {
                         margins: 8
                     }
                     spacing: 4
+
+                    NewReleaseNotice {
+                        onPicture: true
+                        count: cell.newReleases
+                        onClicked: root.configureRequested(cell.key)
+                    }
 
                     ClashNotice {
                         onPicture: true

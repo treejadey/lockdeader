@@ -5,8 +5,8 @@ AppDialog {
     id: root
 
     // As in installed.configuration: {key, name, loading, error, errorDetail, options},
-    // where options are {id, name, detail, size, added, picked, installed}
-    // objects.
+    // where options are {id, name, detail, size, added, picked, installed,
+    // isNew} objects.
     property var configuration: ({})
     readonly property var variants: configuration.options ?? []
 
@@ -20,6 +20,7 @@ AppDialog {
     }
 
     signal changeRequested(string key, var ids)
+    signal newDismissed(string key, string id)
 
     function isSelected(id) {
         return selectedIds.indexOf(id) >= 0
@@ -55,6 +56,7 @@ AppDialog {
         selectedIds: root.selectedIds
         keepOne: true
         onToggled: (id) => root.toggle(id)
+        onNewDismissed: (id) => root.newDismissed(root.configuration.key, id)
     }
 
     // While the mod's files on GameBanana are being looked up, only its

@@ -33,6 +33,7 @@ Item {
     signal enabledToggled(string key, bool enabled)
     // Emitted on a right click.
     signal menuRequested(string key, string status, int variants)
+    signal configureRequested(string key)
 
     function topItem() {
         return ScrollPosition.top(list)
@@ -81,6 +82,9 @@ Item {
             // The mods it's merged with, when that left some of its changes
             // out, joined; "" if none.
             required property string mergedWith
+            // How many files it has on GameBanana that were uploaded after
+            // the ones installed.
+            required property int newReleases
 
             readonly property bool installing: status !== ""
 
@@ -149,6 +153,11 @@ Item {
                 x: nameLabel.x + Math.min(nameLabel.implicitWidth, nameLabel.width) + 6
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 6
+
+                NewReleaseNotice {
+                    count: row.newReleases
+                    onClicked: root.configureRequested(row.key)
+                }
 
                 ClashNotice {
                     clashes: row.clashes

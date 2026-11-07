@@ -243,6 +243,14 @@ msgstr ""
 msgid "%1M"
 msgstr ""
 
+#: qml/FilePickerList.qml
+msgid "New"
+msgstr ""
+
+#: qml/FilePickerList.qml qml/InstalledPage.qml
+msgid "Dismiss"
+msgstr ""
+
 #: qml/ImageViewer.qml
 msgid "Copy Image"
 msgstr ""
@@ -327,10 +335,6 @@ msgstr ""
 
 #: qml/InstalledPage.qml
 msgid "No Installed Mods Found"
-msgstr ""
-
-#: qml/InstalledPage.qml
-msgid "Dismiss"
 msgstr ""
 
 #: qml/InstalledPage.qml
@@ -431,6 +435,13 @@ msgid ""
 "Couldn’t load mods\n"
 "%1"
 msgstr ""
+
+#: qml/NewReleaseNotice.qml
+#, qt-plural-format
+msgid "%n new release on GameBanana: choose which version to use"
+msgid_plural "%n new releases on GameBanana: choose which version to use"
+msgstr[0] ""
+msgstr[1] ""
 
 #: qml/RelativeTime.qml
 #, qt-plural-format

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strconv"
 	"testing"
 	"time"
@@ -682,5 +683,45 @@ func TestAddLocalMod(t *testing.T) {
 
 	if len(mods) != 2 || mods[0].GameBananaID != ids[0] || mods[1].Files[0].GameBananaID >= 0 {
 		t.Errorf("Mods() = %+v", mods)
+	}
+}
+
+func TestDismissFile(t *testing.T) {
+	ctx := context.Background()
+	d, _ := openTemp(t)
+
+	mod, err := d.AddMod(ctx, testMod())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, id := range []int{700, 500, 700} {
+		if err := d.DismissFile(ctx, mod.ID, id); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	mods, err := d.Mods(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(mods) != 1 || !slices.Equal(mods[0].Dismissed, []int{500, 700}) {
+		t.Errorf("Dismissed = %v, want [500 700]", mods[0].Dismissed)
+	}
+
+	// They go with the mod.
+	if err := d.RemoveMod(ctx, mod.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	var left int
+
+	if err := d.db.QueryRowContext(ctx, "SELECT count(*) FROM dismissed_files").Scan(&left); err != nil {
+		t.Fatal(err)
+	}
+
+	if left != 0 {
+		t.Errorf("%d dismissed files left after removing the mod", left)
 	}
 }

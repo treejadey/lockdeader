@@ -37,6 +37,7 @@ const (
 	roleInstalledVariants
 	roleInstalledClashes
 	roleInstalledMergedWith
+	roleInstalledNewReleases
 )
 
 var installedRoleNames = map[int][]byte{
@@ -56,6 +57,7 @@ var installedRoleNames = map[int][]byte{
 	roleInstalledVariants:    []byte("variants"),
 	roleInstalledClashes:     []byte("clashes"),
 	roleInstalledMergedWith:  []byte("mergedWith"),
+	roleInstalledNewReleases: []byte("newReleases"),
 }
 
 // The "status" role.
@@ -91,6 +93,8 @@ const maxRunningInstalls = 2
 //	configure:  key: fills in "configuration" (see configure) for the mod
 //	setConfiguration: {key, ids}: picks which of a mod's options it uses,
 //	            by id (see Configure)
+//	dismissNew: {key, id}: stops marking one of a mod's options, by id, as
+//	            new (see DismissNew)
 //	refresh:    true: looks up which files the installed mods have on
 //	            GameBanana, for those it isn't known for yet
 //	applyNow:   true: puts the mods into the game again, after that failed
@@ -231,6 +235,7 @@ func newInstalledMods(client *banana.Client, db *appdb.DB, store install.Store, 
 
 	m.Insert("setEnabled", qt.NewQVariant20(map[string]qt.QVariant{}))
 	m.Insert("setConfiguration", qt.NewQVariant20(map[string]qt.QVariant{}))
+	m.Insert("dismissNew", qt.NewQVariant20(map[string]qt.QVariant{}))
 	m.Insert("refresh", qt.NewQVariant8(false))
 	m.Insert("configure", qt.NewQVariant14(""))
 	m.Insert("configuration", qt.NewQVariant20(map[string]qt.QVariant{}))
@@ -280,6 +285,19 @@ func newInstalledMods(client *banana.Client, db *appdb.DB, store install.Store, 
 			}
 
 			m.Configure(keyValue.ToString(), ids)
+			m.Insert(key, qt.NewQVariant20(map[string]qt.QVariant{}))
+
+			return
+		case "dismissNew":
+			request := value.ToMap()
+			keyValue, idValue := request["key"], request["id"]
+
+			var fileID int
+
+			if _, err := fmt.Sscanf(idValue.ToString(), "file:%d", &fileID); err == nil {
+				m.DismissNew(keyValue.ToString(), fileID)
+			}
+
 			m.Insert(key, qt.NewQVariant20(map[string]qt.QVariant{}))
 
 			return
@@ -796,6 +814,7 @@ func (m *installedMods) addRow(key string) *installedRow {
 	item.SetData(qt.NewQVariant14(key), roleInstalledKey)
 	item.SetData(qt.NewQVariant14(""), roleInstalledClashes)
 	item.SetData(qt.NewQVariant14(""), roleInstalledMergedWith)
+	item.SetData(qt.NewQVariant4(0), roleInstalledNewReleases)
 	m.model.AppendRow([]*qt.QStandardItem{item})
 
 	row := &installedRow{key: key, item: item}
@@ -841,7 +860,18 @@ func (m *installedMods) show(row *installedRow) {
 		item.SetData(qt.NewQVariant6(mod.UpdatedAt.Unix()), roleInstalledUpdated)
 		item.SetData(qt.NewQVariant8(mod.NSFW), roleInstalledNSFW)
 		item.SetData(qt.NewQVariant8(mod.Enabled), roleInstalledEnabled)
-		item.SetData(qt.NewQVariant4(len(m.options(row))), roleInstalledVariants)
+
+		opts := m.options(row)
+		newReleases := 0
+
+		for _, o := range opts {
+			if o.isNew {
+				newReleases++
+			}
+		}
+
+		item.SetData(qt.NewQVariant4(len(opts)), roleInstalledVariants)
+		item.SetData(qt.NewQVariant4(newReleases), roleInstalledNewReleases)
 	} else if row.job != nil {
 		info := row.job.info
 
@@ -855,6 +885,7 @@ func (m *installedMods) show(row *installedRow) {
 		// New mods are turned on once they're installed.
 		item.SetData(qt.NewQVariant8(true), roleInstalledEnabled)
 		item.SetData(qt.NewQVariant4(0), roleInstalledVariants)
+		item.SetData(qt.NewQVariant4(0), roleInstalledNewReleases)
 	}
 
 	status := statusInstalled

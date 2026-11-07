@@ -17,6 +17,7 @@ type migration func(ctx context.Context, tx *sql.Tx) error
 var migrations = []migration{
 	execSQL(schemaV1),
 	execSQL(schemaV2),
+	execSQL(schemaV3),
 }
 
 func execSQL(statements string) migration {
@@ -87,4 +88,15 @@ const schemaV2 = `
 ALTER TABLE mods ADD COLUMN thumbnail  TEXT    NOT NULL DEFAULT '';  -- URL of its preview image; '' if it has none
 ALTER TABLE mods ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0;   -- when the installed version was last updated on GameBanana
 ALTER TABLE mods ADD COLUMN nsfw       INTEGER NOT NULL DEFAULT 0 CHECK (nsfw IN (0, 1));  -- GameBanana marks it not safe for work
+`
+
+// Files of installed mods on GameBanana that the user has said aren't new
+// to them, so they're no longer marked as new releases. They go with the mod.
+const schemaV3 = `
+CREATE TABLE dismissed_files (
+    gamebanana_id INTEGER PRIMARY KEY,         -- the file's id: gamebanana.com/dl/<id>
+    mod_id        INTEGER NOT NULL REFERENCES mods (id) ON DELETE CASCADE
+) STRICT;
+
+CREATE INDEX dismissed_files_mod_id ON dismissed_files (mod_id);
 `

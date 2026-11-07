@@ -409,6 +409,11 @@ func main() {
 
 	categories.Load()
 
+	// Whether the installed mods have new releases on GameBanana is looked
+	// up in the background, a few at a time; one that fails is tried again
+	// when the installed page is next shown.
+	installed.lookUpAll()
+
 	// Lockdeader's lines in gameinfo.gi are only for its own launches, so
 	// they come out on startup; and the mods go into the game again, in
 	// case a previous session left that unfinished.

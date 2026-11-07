@@ -8,7 +8,8 @@ Rectangle {
     id: root
 
     // {id, name, size, added} objects, plus a line about each under detailKey.
-    // size is formatted, e.g. "450 KB"; added is in Unix seconds.
+    // size is formatted, e.g. "450 KB"; added is in Unix seconds. One with
+    // isNew true is marked as new, with a button that emits newDismissed().
     property var files: []
     property string detailKey: "detail"
     property var selectedIds: []
@@ -23,6 +24,7 @@ Rectangle {
     readonly property bool onlyOne: selectedIds.length === 1
 
     signal toggled(var id)
+    signal newDismissed(var id)
 
     function isSelected(id) {
         return selectedIds.indexOf(id) >= 0
@@ -189,6 +191,71 @@ Rectangle {
                         verticalCenter: parent.verticalCenter
                     }
                     spacing: 4
+
+                    // Uploaded since the mod was installed: most likely a new
+                    // release of it.
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: file.modelData.isNew === true
+                        width: newLabel.implicitWidth + dismissNew.width + 8
+                        height: 18
+                        radius: height / 2
+                        color: Theme.accent
+
+                        Label {
+                            id: newLabel
+
+                            anchors {
+                                left: parent.left
+                                leftMargin: 7
+                                verticalCenter: parent.verticalCenter
+                            }
+                            text: qsTr("New")
+                            color: Theme.textOnAccent
+                            font.pixelSize: 11
+                            font.weight: Font.DemiBold
+                        }
+
+                        // Drawn over the file's button, so it gets its own
+                        // clicks.
+                        AbstractButton {
+                            id: dismissNew
+
+                            anchors {
+                                right: parent.right
+                                rightMargin: 1
+                                verticalCenter: parent.verticalCenter
+                            }
+                            width: 16
+                            height: 16
+                            padding: 3
+                            hoverEnabled: true
+                            focusPolicy: Qt.TabFocus
+                            onClicked: root.newDismissed(file.modelData.id)
+
+                            HoverHandler {
+                                cursorShape: Qt.PointingHandCursor
+                            }
+
+                            ToolTip.visible: hovered
+                            ToolTip.delay: 500
+                            ToolTip.text: qsTr("Dismiss")
+
+                            background: Rectangle {
+                                radius: width / 2
+                                color: dismissNew.down ? Qt.rgba(Theme.textOnAccent.r, Theme.textOnAccent.g, Theme.textOnAccent.b, 0.3)
+                                     : dismissNew.hovered ? Qt.rgba(Theme.textOnAccent.r, Theme.textOnAccent.g, Theme.textOnAccent.b, 0.18)
+                                     : "transparent"
+                                border.width: dismissNew.visualFocus ? 1 : 0
+                                border.color: Theme.textOnAccent
+                            }
+
+                            contentItem: TintedIcon {
+                                source: "icons/dismiss_24_regular.svg"
+                                color: Theme.textOnAccent
+                            }
+                        }
+                    }
 
                     TintedIcon {
                         anchors.verticalCenter: parent.verticalCenter

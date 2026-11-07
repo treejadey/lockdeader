@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"slices"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -60,6 +62,8 @@ type installTest struct {
 	srv   *httptest.Server
 	// While it's false, the server's files are missing.
 	serving atomic.Bool
+	// While it's true, looking up a mod's files fails.
+	profilesDown atomic.Bool
 	// While it's set, downloads hang until it's closed.
 	hold atomic.Pointer[chan struct{}]
 	// The files the server has, by path, and the files each mod has on
@@ -88,6 +92,12 @@ func newInstallTest(t *testing.T) *installTest {
 		var id int
 
 		if _, err := fmt.Sscanf(r.URL.Path, "/Mod/%d/ProfilePage", &id); err == nil {
+			if it.profilesDown.Load() {
+				http.Error(w, "down", http.StatusServiceUnavailable)
+
+				return
+			}
+
 			it.mu.Lock()
 			files := it.profiles[id]
 			it.mu.Unlock()
@@ -559,6 +569,7 @@ type configOption struct {
 	detail    string
 	picked    bool
 	installed bool
+	isNew     bool
 }
 
 func (it *installTest) configuration(t *testing.T, key string) []configOption {
@@ -579,8 +590,8 @@ func (it *installTest) configuration(t *testing.T, key string) []configOption {
 
 		for _, v := range opts.ToList() {
 			m := v.ToMap()
-			id, detail, picked, installed := m["id"], m["detail"], m["picked"], m["installed"]
-			list = append(list, configOption{id.ToString(), detail.ToString(), picked.ToBool(), installed.ToBool()})
+			id, detail, picked, installed, isNew := m["id"], m["detail"], m["picked"], m["installed"], m["isNew"]
+			list = append(list, configOption{id.ToString(), detail.ToString(), picked.ToBool(), installed.ToBool(), isNew.ToBool()})
 		}
 	})
 
@@ -678,5 +689,212 @@ func TestLookUpFiles(t *testing.T) {
 		}
 
 		time.Sleep(5 * time.Millisecond)
+	}
+}
+
+// waitForRole waits for a row's int role to be want.
+func (it *installTest) waitForRole(t *testing.T, key string, role, want int) {
+	t.Helper()
+
+	deadline := time.Now().Add(5 * time.Second)
+
+	for it.role(key, role).ToInt() != want {
+		if time.Now().After(deadline) {
+			t.Fatalf("role %d of %s = %d, want %d", role, key, it.role(key, role).ToInt(), want)
+		}
+
+		time.Sleep(5 * time.Millisecond)
+	}
+}
+
+// TestNewReleases marks a mod with files on GameBanana uploaded since it was
+// installed, and picking the newest clears the mark.
+func TestNewReleases(t *testing.T) {
+	it := newInstallTest(t)
+	key := installedKey(banana.SectionMods, 7)
+	installed := it.file(t, 1, "v1")
+	older := it.file(t, 2, "v0")
+	older.DateAdded = installed.DateAdded - 1000
+	// Newer than the installed file, but there when the mod was installed.
+	notNew := it.file(t, 5, "v1.1")
+	notNew.DateAdded = installed.DateAdded + 1000
+	// Uploaded once it's installed, which is made an hour ago below.
+	newer := it.file(t, 3, "v2")
+	newer.DateAdded = time.Now().Unix() - 200
+	newest := it.file(t, 4, "v3")
+	newest.DateAdded = time.Now().Unix() - 100
+
+	// Another mod, so the mod's place in the load order shows.
+	other := it.file(t, 9, "other")
+	mainthread.Wait(func() { it.Install(testInfo(8), []banana.File{other}) })
+	it.waitForStatus(t, installedKey(banana.SectionMods, 8), statusInstalled)
+
+	info := testInfo(7)
+	info.available = []banana.File{installed, older, notNew, newer, newest}
+
+	mainthread.Wait(func() { it.Install(info, []banana.File{installed}) })
+	it.waitForStatus(t, key, statusInstalled)
+
+	mainthread.Wait(func() {
+		row := it.rows[key]
+		hourAgo := time.Now().Add(-time.Hour)
+		row.mod.InstalledAt = hourAgo
+
+		for i := range row.mod.Files {
+			row.mod.Files[i].DownloadedAt = hourAgo
+		}
+
+		it.show(row)
+	})
+
+	if n := it.role(key, roleInstalledNewReleases).ToInt(); n != 2 {
+		t.Errorf("newReleases = %d, want 2", n)
+	}
+
+	wantNew := map[string]bool{"vpk:": false, "file:2": false, "file:5": false, "file:3": true, "file:4": true}
+
+	for _, o := range it.configuration(t, key) {
+		prefix := o.id
+		if strings.HasPrefix(prefix, "vpk:") {
+			prefix = "vpk:"
+		}
+
+		if o.isNew != wantNew[prefix] {
+			t.Errorf("%s: isNew = %v, want %v", o.id, o.isNew, wantNew[prefix])
+		}
+	}
+
+	mainthread.Wait(func() { it.SetEnabled(key, false) })
+	before := it.mods(t)
+
+	// Picking the newest release installs it in place of the old one.
+	mainthread.Wait(func() { it.Configure(key, []string{"file:4"}) })
+	it.waitForStatus(t, key, statusInstalled)
+	it.waitForRole(t, key, roleInstalledNewReleases, 0)
+
+	after := it.mods(t)
+	if len(after) != 2 || len(after[1].Files) != 1 || after[1].Files[0].GameBananaID != 4 {
+		t.Fatalf("mods after picking the newest: %+v", after)
+	}
+
+	if after[1].Enabled || after[1].LoadOrder != before[1].LoadOrder || after[0].LoadOrder != before[0].LoadOrder {
+		t.Errorf("enabled %v, load order %d, %d; want off, %d, %d",
+			after[1].Enabled, after[0].LoadOrder, after[1].LoadOrder, before[0].LoadOrder, before[1].LoadOrder)
+	}
+}
+
+func TestNewReleasesFailedLookup(t *testing.T) {
+	it := newInstallTest(t)
+	key := installedKey(banana.SectionMods, 5)
+	only := it.file(t, 1, "only")
+	newer := it.file(t, 2, "newer")
+	newer.DateAdded = time.Now().Unix() + 1000
+	it.mu.Lock()
+	it.profiles[5] = []banana.File{only, newer}
+	it.mu.Unlock()
+
+	it.profilesDown.Store(true)
+
+	mainthread.Wait(func() { it.Install(testInfo(5), []banana.File{only}) })
+	it.waitForStatus(t, key, statusInstalled)
+
+	// The lookup started once it was installed fails, which marks nothing.
+	deadline := time.Now().Add(5 * time.Second)
+
+	for mainthread.Wait2(func() bool { return it.lookingUp[key] }) {
+		if time.Now().After(deadline) {
+			t.Fatal("the lookup didn't finish")
+		}
+
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	if mainthread.Wait2(func() bool { return it.available[key] != nil }) {
+		t.Fatal("the lookup didn't fail")
+	}
+
+	if n := it.role(key, roleInstalledNewReleases).ToInt(); n != 0 {
+		t.Errorf("newReleases after a failed lookup = %d, want 0", n)
+	}
+
+	// It's tried again next time.
+	it.profilesDown.Store(false)
+	mainthread.Wait(it.lookUpAll)
+	it.waitForRole(t, key, roleInstalledNewReleases, 1)
+}
+
+func TestNewReleasesLocalMod(t *testing.T) {
+	it := newInstallTest(t)
+
+	mainthread.Wait(func() {
+		err := it.AddInstalled(appdb.Mod{
+			Section: string(sectionLocal), Name: "pak01_dir.vpk", Enabled: true, InstalledAt: time.Now(),
+			Files: []appdb.ModFile{{Name: "pak01_dir.vpk", UploadedAt: time.Unix(1_790_000_000, 0),
+				VPKs: []appdb.VPK{{Path: "pak01_dir.vpk", SHA256: strings.Repeat("a", 64), Size: 1, Enabled: true}}}},
+		})
+		if err != nil {
+			t.Error(err)
+		}
+	})
+
+	mods := it.mods(t)
+	if len(mods) != 1 {
+		t.Fatalf("mods = %+v", mods)
+	}
+
+	key := installedKey(sectionLocal, mods[0].GameBananaID)
+
+	mainthread.Wait(it.lookUpAll)
+
+	if n := it.role(key, roleInstalledNewReleases).ToInt(); n != 0 {
+		t.Errorf("newReleases = %d, want 0", n)
+	}
+
+	for _, o := range it.configuration(t, key) {
+		if o.isNew {
+			t.Errorf("%s is new", o.id)
+		}
+	}
+}
+
+// TestDismissNew stops marking dismissed files as new, for good, and the mod
+// once they all are.
+func TestDismissNew(t *testing.T) {
+	it := newInstallTest(t)
+	key := installedKey(banana.SectionMods, 7)
+	installed := it.file(t, 1, "v1")
+	newer := it.file(t, 2, "v2")
+	newer.DateAdded = time.Now().Unix() + 1000
+	newest := it.file(t, 3, "v3")
+	newest.DateAdded = time.Now().Unix() + 2000
+
+	info := testInfo(7)
+	info.available = []banana.File{installed, newer, newest}
+
+	mainthread.Wait(func() { it.Install(info, []banana.File{installed}) })
+	it.waitForStatus(t, key, statusInstalled)
+	it.waitForRole(t, key, roleInstalledNewReleases, 2)
+
+	mainthread.Wait(func() { it.DismissNew(key, 2) })
+
+	if n := it.role(key, roleInstalledNewReleases).ToInt(); n != 1 {
+		t.Errorf("newReleases after dismissing one = %d, want 1", n)
+	}
+
+	for _, o := range it.configuration(t, key) {
+		if o.isNew != (o.id == "file:3") {
+			t.Errorf("%s: isNew = %v", o.id, o.isNew)
+		}
+	}
+
+	mainthread.Wait(func() { it.DismissNew(key, 3) })
+
+	if n := it.role(key, roleInstalledNewReleases).ToInt(); n != 0 {
+		t.Errorf("newReleases after dismissing both = %d, want 0", n)
+	}
+
+	// It lasts.
+	if mods := it.mods(t); len(mods) != 1 || !slices.Equal(mods[0].Dismissed, []int{2, 3}) {
+		t.Errorf("Dismissed = %v, want [2 3]", mods[0].Dismissed)
 	}
 }

@@ -260,6 +260,14 @@ msgstr ""
 msgid "%1M"
 msgstr ""
 
+#: qml/FilePickerList.qml
+msgid "New"
+msgstr ""
+
+#: qml/FilePickerList.qml qml/InstalledPage.qml
+msgid "Dismiss"
+msgstr "Відхилити"
+
 #: qml/ImageViewer.qml
 msgid "Copy Image"
 msgstr "Скопіювати Зображення"
@@ -348,10 +356,6 @@ msgstr "Глянути Моди"
 #: qml/InstalledPage.qml
 msgid "No Installed Mods Found"
 msgstr "Не Знайшли Встановлених Модів"
-
-#: qml/InstalledPage.qml
-msgid "Dismiss"
-msgstr "Відхилити"
 
 #: qml/InstalledPage.qml
 msgid "Cancel Install"
@@ -453,6 +457,14 @@ msgid ""
 msgstr ""
 "Не змогли прогрузити моди:\n"
 "%1"
+
+#: qml/NewReleaseNotice.qml
+#, qt-plural-format
+msgid "%n new release on GameBanana: choose which version to use"
+msgid_plural "%n new releases on GameBanana: choose which version to use"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
 
 #: qml/RelativeTime.qml
 #, qt-plural-format

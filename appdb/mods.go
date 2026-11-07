@@ -23,6 +23,9 @@ type Mod struct {
 	UpdatedAt    time.Time // when the installed version was last updated on GameBanana
 	NSFW         bool      // GameBanana marks it not safe for work
 	Files        []ModFile
+	// The ids of files on GameBanana that the user has dismissed as new
+	// releases of it (see DismissFile).
+	Dismissed []int
 }
 
 // A ModFile is an archive downloaded from GameBanana: enough to download it
@@ -228,6 +231,24 @@ func (d *DB) Mods(ctx context.Context) ([]Mod, error) {
 		return nil, err
 	}
 
+	err = query(ctx, tx, `SELECT gamebanana_id, mod_id FROM dismissed_files ORDER BY gamebanana_id`,
+		func(rows *sql.Rows) error {
+			var fileID int
+			var modID int64
+
+			if err := rows.Scan(&fileID, &modID); err != nil {
+				return err
+			}
+
+			m := byID[modID]
+			mods[m].Dismissed = append(mods[m].Dismissed, fileID)
+
+			return nil
+		})
+	if err != nil {
+		return nil, err
+	}
+
 	err = query(ctx, tx, `
 		SELECT id, file_id, path, sha256, size, enabled, verified_at
 		FROM mod_vpks ORDER BY id`,
@@ -255,6 +276,19 @@ func (d *DB) Mods(ctx context.Context) ([]Mod, error) {
 	}
 
 	return mods, nil
+}
+
+// DismissFile records that the file with GameBanana id fileID, one of the
+// mod's files there that isn't installed, is no longer to be marked as a new
+// release of it. Dismissing a file twice changes nothing.
+func (d *DB) DismissFile(ctx context.Context, modID int64, fileID int) error {
+	_, err := d.db.ExecContext(ctx,
+		"INSERT INTO dismissed_files (gamebanana_id, mod_id) VALUES (?, ?) ON CONFLICT DO NOTHING", fileID, modID)
+	if err != nil {
+		return fmt.Errorf("appdb: %w", err)
+	}
+
+	return nil
 }
 
 func (d *DB) SetModEnabled(ctx context.Context, id int64, enabled bool) error {

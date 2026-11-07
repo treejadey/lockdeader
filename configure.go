@@ -27,6 +27,10 @@ type option struct {
 	size   int64
 	added  time.Time // when the archive was uploaded
 	picked bool
+	// It isn't installed, was uploaded after the user last downloaded any
+	// of the mod's files, and hasn't been dismissed (DismissNew): most likely
+	// a new release of the mod.
+	isNew bool
 	// For an option that isn't installed: the file to download.
 	file *banana.File
 }
@@ -67,8 +71,13 @@ func (m *installedMods) options(row *installedRow) []option {
 
 	installed := make(map[int]appdb.ModFile, len(row.mod.Files))
 
+	// When the user last installed something of the mod, in Unix seconds:
+	// files uploaded since are new to them, whatever else the mod has.
+	lastInstalled := row.mod.InstalledAt.Unix()
+
 	for _, f := range row.mod.Files {
 		installed[f.GameBananaID] = f
+		lastInstalled = max(lastInstalled, f.DownloadedAt.Unix())
 	}
 
 	var opts []option
@@ -84,6 +93,7 @@ func (m *installedMods) options(row *installedRow) []option {
 		opts = append(opts, option{
 			id: fmt.Sprintf("file:%d", f.ID), name: f.Name, detail: f.Description,
 			size: f.Size, added: time.Unix(f.DateAdded, 0), file: &f,
+			isNew: f.DateAdded > lastInstalled && !slices.Contains(row.mod.Dismissed, f.ID),
 		})
 	}
 
@@ -104,9 +114,10 @@ func (m *installedMods) options(row *installedRow) []option {
 //	loading: its files on GameBanana are being looked up; until they're
 //	         known, only its installed options are listed
 //	error:   why looking them up failed, if it did
-//	options: {id, name, detail, size, added, picked, installed} objects:
-//	         size is formatted, e.g. "450 KB", and added is when the archive
-//	         was uploaded, in Unix seconds
+//	options: {id, name, detail, size, added, picked, installed, isNew}
+//	         objects: size is formatted, e.g. "450 KB", added is when the
+//	         archive was uploaded, in Unix seconds, and isNew says it's
+//	         marked as new (see option)
 func (m *installedMods) configure(key string) {
 	row := m.rows[key]
 	if row == nil || row.mod == nil {
@@ -132,6 +143,7 @@ func (m *installedMods) publishConfiguration(row *installedRow, lookupErr error)
 			"added":     *qt.NewQVariant6(o.added.Unix()),
 			"picked":    *qt.NewQVariant8(o.picked),
 			"installed": *qt.NewQVariant8(o.file == nil),
+			"isNew":     *qt.NewQVariant8(o.isNew),
 		}))
 	}
 
@@ -195,6 +207,30 @@ func (m *installedMods) lookUp(row *installedRow) {
 			}
 		})
 	}()
+}
+
+// DismissNew stops marking the mod's file with GameBanana id fileID as new.
+func (m *installedMods) DismissNew(key string, fileID int) {
+	row := m.rows[key]
+	if row == nil || row.mod == nil || slices.Contains(row.mod.Dismissed, fileID) {
+		return
+	}
+
+	if err := m.db.DismissFile(context.Background(), row.mod.ID, fileID); err != nil {
+		slog.Error("failed to dismiss a new file", "mod", key, "file", fileID, "err", err)
+
+		return
+	}
+
+	row.mod.Dismissed = append(row.mod.Dismissed, fileID)
+
+	if row.job == nil {
+		m.show(row)
+	}
+
+	if m.configuring == key {
+		m.publishConfiguration(row, nil)
+	}
 }
 
 // configChange is what's left to do to change a mod's configuration once
