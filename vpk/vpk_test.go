@@ -262,7 +262,7 @@ func TestReadDirErrors(t *testing.T) {
 		"empty":            {nil, ErrNotVPK},
 		"short header":     {good[:10], ErrNotVPK},
 		"wrong magic":      {append([]byte("nope"), good[4:]...), ErrNotVPK},
-		"version 1":        {file(tree, "lo!!!")[:4:4], ErrNotVPK},
+		"magic only":       {good[:4], ErrNotVPK},
 		"truncated tree":   {good[:headerSize+len(tree)-4], ErrCorrupt},
 		"no terminator":    {func() []byte { b := slices.Clone(good); b[headerSize+len("txt\x00 \x00hello\x00")+16] = 0; return b }(), ErrCorrupt},
 		"data past end":    {func() []byte { b := slices.Clone(good); binary.LittleEndian.PutUint32(b[12:], 2); return b }(), ErrCorrupt},
@@ -271,13 +271,12 @@ func TestReadDirErrors(t *testing.T) {
 		"only a few bytes": {good[:headerSize+3], ErrCorrupt},
 	}
 
-	// A version 1 file has the magic but a different version.
-	v1 := slices.Clone(good)
-	binary.LittleEndian.PutUint32(v1[4:], 1)
-	tests["version 1"] = struct {
+	v3 := slices.Clone(good)
+	binary.LittleEndian.PutUint32(v3[4:], 3)
+	tests["version 3"] = struct {
 		data []byte
 		err  error
-	}{v1, ErrVersion}
+	}{v3, ErrVersion}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -404,5 +403,125 @@ func TestReadFile(t *testing.T) {
 
 	if _, err := d.ReadFile(d.Entries[1], filepath.Join(dir, "pak01.vpk")); err == nil {
 		t.Error("ReadFile found chunks for a VPK not named _dir.vpk")
+	}
+}
+
+// version1 turns a version 2 VPK into the version 1 VPK with the same files:
+// a shorter header, and nothing after the data.
+func version1(v2 []byte) []byte {
+	treeSize := binary.LittleEndian.Uint32(v2[8:])
+	dataSize := binary.LittleEndian.Uint32(v2[12:])
+
+	v1 := binary.LittleEndian.AppendUint32(nil, magic)
+	v1 = binary.LittleEndian.AppendUint32(v1, 1)
+	v1 = binary.LittleEndian.AppendUint32(v1, treeSize)
+
+	return append(v1, v2[headerSize:headerSize+int64(treeSize)+int64(dataSize)]...)
+}
+
+func TestReadDirVersion1(t *testing.T) {
+	files := map[string]string{"sounds/a.vsnd_c": "first", "soundevents/b.vsndevts_c": "second", "empty.txt": ""}
+
+	var sources []Source
+
+	for path, data := range files {
+		sources = append(sources, source(path, data))
+	}
+
+	data := version1(write(t, sources...))
+	d := read(t, data)
+
+	if len(d.Entries) != len(files) {
+		t.Fatalf("got %d entries, want %d", len(d.Entries), len(files))
+	}
+
+	dirPath := filepath.Join(t.TempDir(), "pak01_dir.vpk")
+
+	if err := os.WriteFile(dirPath, data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, e := range d.Entries {
+		if got := contents(t, d, e); got != files[e.Path] {
+			t.Errorf("%s: contents %q, want %q", e.Path, got, files[e.Path])
+		}
+
+		if got, err := d.ReadFile(e, dirPath); err != nil || string(got) != files[e.Path] {
+			t.Errorf("ReadFile(%s) = %q, %v; want %q", e.Path, got, err, files[e.Path])
+		}
+	}
+
+	// With no data size in the header, the data has to reach the end of
+	// the last file.
+	if _, err := ReadDir(bytes.NewReader(data[:len(data)-1])); !errors.Is(err, ErrCorrupt) {
+		t.Errorf("ReadDir of a cut off version 1 VPK = %v, want ErrCorrupt", err)
+	}
+}
+
+// TestReadDirEmptyFileAnywhere reads VPKs that list an empty file at offset
+// 0xFFFFFFFF, as some mods do, and checks that a file with data there is
+// still turned down.
+func TestReadDirEmptyFileAnywhere(t *testing.T) {
+	build := func(length uint32) []byte {
+		var tree []byte
+		add := func(s string) { tree = append(tree, s...); tree = append(tree, 0) }
+
+		add("txt")
+		add(" ")
+		add("readme")
+		tree = binary.LittleEndian.AppendUint32(tree, 0) // the CRC of nothing
+		tree = binary.LittleEndian.AppendUint16(tree, 0)
+		tree = binary.LittleEndian.AppendUint16(tree, embedded)
+		tree = binary.LittleEndian.AppendUint32(tree, 0xFFFFFFFF)
+		tree = binary.LittleEndian.AppendUint32(tree, length)
+		tree = binary.LittleEndian.AppendUint16(tree, terminator)
+		add("real")
+		tree = binary.LittleEndian.AppendUint32(tree, crc32.ChecksumIEEE([]byte("data")))
+		tree = binary.LittleEndian.AppendUint16(tree, 0)
+		tree = binary.LittleEndian.AppendUint16(tree, embedded)
+		tree = binary.LittleEndian.AppendUint32(tree, 0)
+		tree = binary.LittleEndian.AppendUint32(tree, 4)
+		tree = binary.LittleEndian.AppendUint16(tree, terminator)
+		add("")
+		add("")
+		add("")
+
+		return file(tree, "data")
+	}
+
+	for name, data := range map[string][]byte{"version 1": version1(build(0)), "version 2": build(0)} {
+		t.Run(name, func(t *testing.T) {
+			d := read(t, data)
+
+			dirPath := filepath.Join(t.TempDir(), "mod.vpk")
+
+			if err := os.WriteFile(dirPath, data, 0o644); err != nil {
+				t.Fatal(err)
+			}
+
+			want := map[string]string{"readme.txt": "", "real.txt": "data"}
+
+			if len(d.Entries) != len(want) {
+				t.Fatalf("got %d entries, want %d", len(d.Entries), len(want))
+			}
+
+			for _, e := range d.Entries {
+				if got := contents(t, d, e); got != want[e.Path] {
+					t.Errorf("%s: contents %q, want %q", e.Path, got, want[e.Path])
+				}
+
+				if got, err := d.ReadFile(e, dirPath); err != nil || string(got) != want[e.Path] {
+					t.Errorf("ReadFile(%s) = %q, %v; want %q", e.Path, got, err, want[e.Path])
+				}
+			}
+		})
+	}
+
+	for name, data := range map[string][]byte{"version 1": version1(build(1)), "version 2": build(1)} {
+		t.Run(name+" with data", func(t *testing.T) {
+			if _, err := ReadDir(bytes.NewReader(data)); !errors.Is(err, ErrCorrupt) {
+				t.Errorf("got %v, want ErrCorrupt", err)
+			}
+		})
 	}
 }

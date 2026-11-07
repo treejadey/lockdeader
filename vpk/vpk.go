@@ -1,5 +1,5 @@
-// Package vpk reads and writes version 2 VPK files, the archives Source 2
-// games load their files from. It reads only the directory tree, never the
+// Package vpk reads version 1 and 2 VPK files, the archives Source 2 games
+// load their files from, and writes version 2 ones. It reads only the directory tree, never the
 // file data, which is all that telling which files a mod has takes; and it
 // writes new VPKs by streaming the data of files given to it, so mods can be
 // packed and merged without holding them in memory. See Backlog
@@ -18,9 +18,12 @@ import (
 )
 
 const (
-	magic      = 0x55AA1234
-	version    = 2
-	headerSize = 28
+	magic   = 0x55AA1234
+	version = 2
+	// Version 1's header has only the magic, the version and the tree's
+	// size; version 2 adds the data's size and the checksums' sizes.
+	headerSize1 = 12
+	headerSize  = 28
 	// The archive index of a file whose data is in the _dir.vpk itself, after
 	// the tree, rather than in a pakNN_NNN.vpk chunk.
 	embedded = 0x7FFF
@@ -36,7 +39,7 @@ const (
 
 var (
 	ErrNotVPK  = errors.New("vpk: not a VPK file")
-	ErrVersion = errors.New("vpk: not a version 2 VPK")
+	ErrVersion = errors.New("vpk: not a version 1 or 2 VPK")
 	ErrCorrupt = errors.New("vpk: the file's directory is damaged")
 	// ErrChecksum is returned by ReadFile for data that doesn't match the
 	// directory's checksum, e.g. a chunk that a game update changed after
@@ -71,15 +74,15 @@ type Dir struct {
 
 	r         io.ReaderAt
 	dataStart int64
-	dataSize  uint32
 }
 
 // ReadDir reads a VPK's directory from r, which must start at the VPK's
-// beginning. It reads only the header and the tree.
+// beginning. It reads only the header and the tree, and for a version 1
+// VPK the last byte of its data.
 func ReadDir(r io.ReaderAt) (*Dir, error) {
 	var header [headerSize]byte
 
-	if _, err := io.ReadFull(io.NewSectionReader(r, 0, headerSize), header[:]); err != nil {
+	if _, err := io.ReadFull(io.NewSectionReader(r, 0, headerSize1), header[:headerSize1]); err != nil {
 		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
 			return nil, ErrNotVPK
 		}
@@ -87,28 +90,37 @@ func ReadDir(r io.ReaderAt) (*Dir, error) {
 		return nil, fmt.Errorf("vpk: %w", err)
 	}
 
-	fields := make([]uint32, 7)
-
-	for i := range fields {
-		fields[i] = binary.LittleEndian.Uint32(header[i*4:])
-	}
-
-	if fields[0] != magic {
+	if binary.LittleEndian.Uint32(header[:]) != magic {
 		return nil, ErrNotVPK
 	}
 
-	if fields[1] != version {
+	v := binary.LittleEndian.Uint32(header[4:])
+	if v != 1 && v != version {
 		return nil, ErrVersion
 	}
 
-	treeSize, dataSize := fields[2], fields[3]
+	size := int64(headerSize1)
+
+	if v == version {
+		size = headerSize
+
+		if _, err := io.ReadFull(io.NewSectionReader(r, headerSize1, headerSize-headerSize1), header[headerSize1:]); err != nil {
+			if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+				return nil, ErrNotVPK
+			}
+
+			return nil, fmt.Errorf("vpk: %w", err)
+		}
+	}
+
+	treeSize := binary.LittleEndian.Uint32(header[8:])
 	if treeSize > maxTreeSize {
 		return nil, ErrCorrupt
 	}
 
 	tree := make([]byte, treeSize)
 
-	if _, err := io.ReadFull(io.NewSectionReader(r, headerSize, int64(treeSize)), tree); err != nil {
+	if _, err := io.ReadFull(io.NewSectionReader(r, size, int64(treeSize)), tree); err != nil {
 		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
 			return nil, ErrCorrupt
 		}
@@ -116,7 +128,7 @@ func ReadDir(r io.ReaderAt) (*Dir, error) {
 		return nil, fmt.Errorf("vpk: %w", err)
 	}
 
-	d := &Dir{r: r, dataStart: headerSize + int64(treeSize), dataSize: dataSize}
+	d := &Dir{r: r, dataStart: size + int64(treeSize)}
 
 	// A VPK with no files has no tree at all.
 	if treeSize == 0 {
@@ -127,7 +139,48 @@ func ReadDir(r io.ReaderAt) (*Dir, error) {
 		return nil, err
 	}
 
+	if err := d.checkData(v, binary.LittleEndian.Uint32(header[12:])); err != nil {
+		return nil, err
+	}
+
 	return d, nil
+}
+
+// checkData makes sure every file's data is inside the VPK. Version 2 says
+// how much data there is; version 1 doesn't, as its data runs to the end of
+// the file, so the byte the furthest file ends at is read instead.
+func (d *Dir) checkData(v, dataSize uint32) error {
+	var end uint64
+
+	for _, e := range d.Entries {
+		if !e.External {
+			end = max(end, uint64(e.offset)+uint64(e.length))
+		}
+	}
+
+	if v == version {
+		if end > uint64(dataSize) {
+			return ErrCorrupt
+		}
+
+		return nil
+	}
+
+	if end == 0 {
+		return nil
+	}
+
+	var last [1]byte
+
+	if _, err := d.r.ReadAt(last[:], d.dataStart+int64(end)-1); err != nil {
+		if errors.Is(err, io.EOF) {
+			return ErrCorrupt
+		}
+
+		return fmt.Errorf("vpk: %w", err)
+	}
+
+	return nil
 }
 
 // The tree nests null-terminated strings: extension, directory, file name,
@@ -169,10 +222,6 @@ func (d *Dir) parseTree(tree []byte) error {
 				e, err := p.readEntry()
 				if err != nil {
 					return err
-				}
-
-				if !e.External && uint64(e.offset)+uint64(e.length) > uint64(d.dataSize) {
-					return ErrCorrupt
 				}
 
 				e.Path = joinPath(dir, name, ext)
@@ -221,6 +270,12 @@ func (p *treeParser) readEntry() (Entry, error) {
 	}
 
 	p.pos += entrySize
+
+	// Some mods list an empty file at offset 0xFFFFFFFF, which the game
+	// loads; with no data, where it would be doesn't matter.
+	if e.length == 0 {
+		e.offset = 0
+	}
 
 	if len(p.data)-p.pos < int(preloadBytes) {
 		return Entry{}, ErrCorrupt

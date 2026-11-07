@@ -95,6 +95,21 @@ func TestReadPathsLowerCase(t *testing.T) {
 	}
 }
 
+func TestReadPathsVersion1(t *testing.T) {
+	s := newStore(t)
+	f := s.add(map[string]string{"sounds/x.vsnd_c": "b"})
+	f = s.put(version1(t, readFile(t, f.Path)))
+
+	got, err := ReadPaths(f.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want := (Content{CRC32: crc32.ChecksumIEEE([]byte("b")), Size: 1}); len(got) != 1 || got["sounds/x.vsnd_c"] != want {
+		t.Errorf("ReadPaths = %v", got)
+	}
+}
+
 func TestReadPathsNotAVPK(t *testing.T) {
 	s := newStore(t)
 	f := s.add(map[string]string{"a.txt": "a"})

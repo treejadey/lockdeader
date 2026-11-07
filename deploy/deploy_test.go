@@ -3,6 +3,7 @@ package deploy
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -69,15 +70,53 @@ func (s store) add(files map[string]string) File {
 		s.t.Fatal(err)
 	}
 
-	sum := sha256.Sum256(b.Bytes())
+	return s.put(b.Bytes())
+}
+
+// put writes a VPK made some other way than by vpk.Write to the store.
+func (s store) put(data []byte) File {
+	s.t.Helper()
+
+	sum := sha256.Sum256(data)
 	sha := hex.EncodeToString(sum[:])
 	path := filepath.Join(s.dir, sha+".vpk")
 
-	if err := os.WriteFile(path, b.Bytes(), 0o644); err != nil {
+	if err := os.WriteFile(path, data, 0o644); err != nil {
 		s.t.Fatal(err)
 	}
 
-	return File{SHA256: sha, Path: path, Size: int64(b.Len())}
+	return File{SHA256: sha, Path: path, Size: int64(len(data))}
+}
+
+// version1 turns a VPK from vpk.Write into the version 1 VPK with the same
+// files: a 12-byte header, and nothing after the data.
+func version1(t *testing.T, v2 []byte) []byte {
+	t.Helper()
+
+	treeSize := binary.LittleEndian.Uint32(v2[8:])
+	dataSize := binary.LittleEndian.Uint32(v2[12:])
+
+	v1 := binary.LittleEndian.AppendUint32(nil, 0x55AA1234)
+	v1 = binary.LittleEndian.AppendUint32(v1, 1)
+	v1 = binary.LittleEndian.AppendUint32(v1, treeSize)
+
+	return append(v1, v2[28:28+int(treeSize)+int(dataSize)]...)
+}
+
+// emptyAnywhere moves the empty file name in a VPK from vpk.Write to offset
+// 0xFFFFFFFF, as some mods list theirs.
+func emptyAnywhere(t *testing.T, data []byte, name string) []byte {
+	t.Helper()
+
+	i := bytes.Index(data, []byte(name+"\x00"))
+	if i < 0 {
+		t.Fatalf("no %s in the tree", name)
+	}
+
+	data = slices.Clone(data)
+	binary.LittleEndian.PutUint32(data[i+len(name)+1+8:], 0xFFFFFFFF)
+
+	return data
 }
 
 // one makes a VPK with one file, unique to name.
@@ -437,6 +476,68 @@ func TestApplyBundles(t *testing.T) {
 
 	if !sameContents(t, files[49].Path, slotPath(game, 50)) {
 		t.Error("slot 50 is wrong")
+	}
+}
+
+// TestApplyBundlesOddVPKs bundles a version 1 VPK and one listing an empty
+// file at offset 0xFFFFFFFF, which some mods are.
+func TestApplyBundlesOddVPKs(t *testing.T) {
+	game, s := newGame(t), newStore(t)
+	var files []File
+
+	for i := range 99 {
+		files = append(files, s.one(fmt.Sprintf("m%03d", i)))
+	}
+
+	var v2 bytes.Buffer
+
+	err := vpk.Write(&v2, []vpk.Source{
+		{Path: "sounds/old.vsnd_c", CRC32: crc32.ChecksumIEEE([]byte("old")), Size: 3,
+			Open: func() (io.ReadCloser, error) { return io.NopCloser(strings.NewReader("old")), nil }},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	files = append(files, s.put(version1(t, v2.Bytes())))
+
+	skin := s.add(map[string]string{"models/skin.vmdl_c": "skin", "readme.txt": ""})
+	files = append(files, s.put(emptyAnywhere(t, readFile(t, skin.Path), "readme")))
+
+	res := apply(t, game, files)
+	if res.Placed != 99 || res.Bundled != 3 {
+		t.Errorf("Result = %+v", res)
+	}
+
+	f, err := os.Open(slotPath(game, 99))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer f.Close()
+
+	d, err := vpk.ReadDir(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]string{
+		"materials/m098.vmat_c": "data of m098",
+		"sounds/old.vsnd_c":     "old",
+		"models/skin.vmdl_c":    "skin",
+		"readme.txt":            "",
+	}
+
+	if len(d.Entries) != len(want) {
+		t.Errorf("bundle has %d files, want %d", len(d.Entries), len(want))
+	}
+
+	for _, e := range d.Entries {
+		data, _ := io.ReadAll(d.Open(e))
+
+		if w, ok := want[e.Path]; !ok || string(data) != w || e.CRC32 != crc32.ChecksumIEEE(data) {
+			t.Errorf("%s holds %q, want %q", e.Path, data, w)
+		}
 	}
 }
 

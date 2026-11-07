@@ -4,6 +4,7 @@
 - Minor: Every change to the main branch is published as the Nightly Release on GitHub, and nightly builds say "Nightly" after their version.
 - Minor: Builds include the licences of the software they bundle (THIRD-PARTY-NOTICES.txt).
 - Minor: Only one of two mods that change the same files can be on. Turning one on turns the other off, with Undo, and a warning shows which mods clash.
+- Bugfix: Mods in the older version 1 VPK format, and mods whose VPK lists an empty file at an unusual position, now install.
 
 ## 0.2.0
 - Minor: Show the version in the window title.

@@ -329,6 +329,45 @@ func TestExtractBareVPK(t *testing.T) {
 	}
 }
 
+// TestExtractOddVPKs installs the two kinds of VPK the game loads that
+// vpk.ReadDir once turned down: version 1, and one listing an empty file at
+// offset 0xFFFFFFFF.
+func TestExtractOddVPKs(t *testing.T) {
+	var tree []byte
+	add := func(s string) { tree = append(tree, s...); tree = append(tree, 0) }
+
+	add("txt")
+	add(" ")
+	add("readme")
+	tree = binary.LittleEndian.AppendUint32(tree, 0)      // the CRC of nothing
+	tree = binary.LittleEndian.AppendUint16(tree, 0)      // no preload bytes
+	tree = binary.LittleEndian.AppendUint16(tree, 0x7FFF) // in this file
+	tree = binary.LittleEndian.AppendUint32(tree, 0xFFFFFFFF)
+	tree = binary.LittleEndian.AppendUint32(tree, 0)
+	tree = binary.LittleEndian.AppendUint16(tree, 0xFFFF)
+	add("")
+	add("")
+	add("")
+
+	var v1, v2 bytes.Buffer
+	binary.Write(&v1, binary.LittleEndian, [3]uint32{vpkMagic, 1, uint32(len(tree))})
+	v1.Write(tree)
+	binary.Write(&v2, binary.LittleEndian, [7]uint32{vpkMagic, 2, uint32(len(tree))})
+	v2.Write(tree)
+
+	s := newStore(t)
+	archive := zipFile(t, [2]string{"pak01_dir.vpk", v1.String()}, [2]string{"pak02_dir.vpk", v2.String()})
+
+	vpks, err := Extract(archive, "mod", s)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(vpks) != 2 {
+		t.Errorf("Extract() = %+v, want both VPKs", vpks)
+	}
+}
+
 func TestExtractErrors(t *testing.T) {
 	notArchive := filepath.Join(t.TempDir(), "mod.exe")
 	os.WriteFile(notArchive, []byte("MZ not an archive"), 0o644)
