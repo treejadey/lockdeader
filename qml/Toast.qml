@@ -10,10 +10,11 @@ Rectangle {
     property string action: ""
     property bool shown: false
     // In milliseconds. A toast with an action stays up longer, to give time to
-    // reach it.
+    // reach it, and none goes while the pointer is over it.
     property int duration: 2000
     property int actionDuration: 6000
-    property real maximumWidth: 420
+    // Text longer than this wraps.
+    property real maximumWidth: 600
 
     readonly property bool hasAction: action !== ""
     // The label always has its gap for the action button (see there), so
@@ -32,7 +33,9 @@ Rectangle {
         text = message
         root.action = action ?? ""
         shown = true
-        timer.restart()
+
+        if (!hover.hovered)
+            timer.restart()
     }
 
     function trigger() {
@@ -56,7 +59,8 @@ Rectangle {
     }
 
     width: Math.min(content.implicitWidth + 12 + rightPadding, maximumWidth)
-    height: hasAction ? 36 : label.implicitHeight + 12
+    // Text that wraps keeps the padding a single line has beside the buttons.
+    height: hasAction ? Math.max(36, label.implicitHeight + 18) : label.implicitHeight + 12
     radius: 6
     color: Theme.overlay
     border.color: Theme.highlightMed
@@ -67,6 +71,17 @@ Rectangle {
         id: shift
 
         y: -8
+    }
+
+    HoverHandler {
+        id: hover
+
+        onHoveredChanged: {
+            if (hovered)
+                timer.stop()
+            else if (root.shown)
+                timer.restart()
+        }
     }
 
     Row {
@@ -92,7 +107,7 @@ Rectangle {
             rightPadding: 12 - content.spacing
             color: Theme.text
             font.weight: Font.DemiBold
-            elide: Text.ElideRight
+            wrapMode: Text.Wrap
         }
 
         AbstractButton {

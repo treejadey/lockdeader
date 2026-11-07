@@ -59,7 +59,7 @@ If a design doesn't fit these guidelines, decide whether it's a real exception, 
 
 - **Toasts** confirm something the user just did.
   - Phrase it as what happened ("Yamato Red was uninstalled", "Image copied").
-  - A toast can have one action, such as Undo or View. A toast with an action also has a close button, and stays up longer. Every toast goes away by itself.
+  - A toast can have one action, such as Undo or View. A toast with an action also has a close button, and stays up longer. Every toast goes away by itself, but not while the pointer is over it. Text too long for one line wraps.
 - **Info bars** sit in the view rather than over it, and stay until dealt with. They're for situations that need attention, e.g. GameBanana can't be reached, with Retry. Each has a severity:
   - **information**: something useful to know;
   - **question**: something the user should answer, but not urgently;

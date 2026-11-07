@@ -74,7 +74,7 @@ AppWindow {
 
             anchors.horizontalCenter: parent.horizontalCenter
             y: 16
-            maximumWidth: Math.min(420, parent.width - 32)
+            maximumWidth: Math.min(600, parent.width - 32)
         }
     }
 
